@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, MapPin } from 'lucide-react-native';
 
 import { useBranchStore, useUIStore } from '@/store';
+import { useCartSync } from '@/features/cart/hooks/useCartSync';
 import { useProductDetail } from '@/features/products/hooks/useProductDetail';
 import { TopProductsCarousel } from '@/features/home/components/TopProductsCarousel';
 import { BranchStockList } from '@/features/products/components/BranchStockList';
@@ -53,6 +54,7 @@ export default function ProductDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const branchId = useBranchStore((s) => s.selectedBranch?.value) ?? null;
   const showToast = useUIStore((s) => s.showToast);
+  const { addProduct } = useCartSync();
   const { data, isLoading, isError } = useProductDetail(slug, branchId);
   const [qty, setQty] = useState(1);
 
@@ -103,7 +105,17 @@ export default function ProductDetailScreen() {
   const outOfStock = stock === 0;
 
   const handleAdd = () => {
-    // Stub honesto de Fase 3A. En Fase 4 esto dispara POST /api/cart/add-product.
+    if (!branchId) return;
+    addProduct({
+      tx_slug: data.tx_slug,
+      product_id: data.id,
+      branch_id: branchId,
+      nb_product: data.nb_product,
+      nb_brand: data.nb_brand,
+      tx_img_url: data.product_img,
+      pri_product_final_price: data.pri_product_final_price,
+      qty,
+    });
     showToast({
       title: 'Producto agregado',
       description: `${qty} × ${data.nb_product}`,
