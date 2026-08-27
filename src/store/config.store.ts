@@ -16,6 +16,7 @@ export type AppConfig = {
   tx_company_whatsapp?: string;
   tx_company_email?: string;
   tx_company_address?: string;
+  tx_company_logo_url?: string;
   is_allow_delivery?: boolean | string;
   is_allow_dark_mode?: boolean | string;
   is_lite_mode?: boolean | string;
