@@ -8,12 +8,43 @@
       ],
       "@/assets/*": [
         "./assets/*"
+      ],
+      "@/theme": [
+        "./src/theme/index.ts"
+      ],
+      "@/theme/*": [
+        "./src/theme/*"
+      ],
+      "@/api": [
+        "./src/api/index.ts"
+      ],
+      "@/api/*": [
+        "./src/api/*"
+      ],
+      "@/store": [
+        "./src/store/index.ts"
+      ],
+      "@/store/*": [
+        "./src/store/*"
+      ],
+      "@/utils": [
+        "./src/utils/index.ts"
+      ],
+      "@/utils/*": [
+        "./src/utils/*"
+      ],
+      "@/components/*": [
+        "./src/components/*"
+      ],
+      "@/features/*": [
+        "./src/features/*"
       ]
     }
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "src/uniwind-types.d.ts",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ]
