@@ -5,7 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { HeroUINativeProvider } from 'heroui-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { useConfigStore } from '@/store';
+import { useConfigStore, useBranchStore } from '@/store';
 import { buildThemeColors, themeColorsToCssVars } from '@/theme';
 import { loadConfig } from '@/api';
 
@@ -66,11 +66,17 @@ export function Providers({ children }: { children: ReactNode }) {
 /** Dispara la carga inicial de la config del backend. */
 export async function bootstrapConfig() {
   const { setLoading, setError, setAppConfig } = useConfigStore.getState();
+  const { setBranches } = useBranchStore.getState();
 
   setLoading(true);
   try {
-    const cfg = await loadConfig();
-    setAppConfig(cfg);
+    const data = await loadConfig();
+    // Guardamos el app_config interno (no el envelope completo).
+    setAppConfig(data.app_config);
+    // Las branches también vienen en la config.
+    if (data.branches) {
+      setBranches(data.branches);
+    }
   } catch (err) {
     setError(err instanceof Error ? err.message : 'No se pudo cargar la configuración');
   }
