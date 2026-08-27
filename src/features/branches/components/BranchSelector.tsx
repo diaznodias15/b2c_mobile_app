@@ -5,15 +5,21 @@ import { MapPin, ChevronDown } from 'lucide-react-native';
 import { useBranchStore } from '@/store';
 import { ModalBranches } from './ModalBranches';
 
+type Props = {
+  /** Compacto: oculta el ícono map pin, solo texto + chevron. */
+  compact?: boolean;
+};
+
 /**
  * Botón compacto que muestra la sede activa y abre el
  * `ModalBranches` al tocarlo.
  *
- * Se monta en el header del Home. Si el usuario no tiene sede
+ * Se monta en el header del Home, en headers de catálogo y
+ * en el detalle de producto. Si el usuario no tiene sede
  * (caso raro, debería auto-pickearse en boot), muestra el CTA
  * "Selecciona tu sede".
  */
-export function BranchSelector() {
+export function BranchSelector({ compact = false }: Props) {
   const selectedBranch = useBranchStore((s) => s.selectedBranch);
   const [open, setOpen] = useState(false);
 
@@ -26,7 +32,7 @@ export function BranchSelector() {
         accessibilityRole="button"
         accessibilityLabel="Cambiar sede"
       >
-        <MapPin size={12} color="#0f766e" />
+        {compact ? null : <MapPin size={12} color="#0f766e" />}
         <Text
           className="text-xs font-medium text-primary"
           numberOfLines={1}

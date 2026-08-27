@@ -36,6 +36,18 @@ describe('useUIStore', () => {
     expect(useUIStore.getState().toast?.type).toBe('info');
   });
 
+  it('showToast acepta objeto {title, description}', () => {
+    useUIStore.getState().showToast({
+      title: 'Producto agregado',
+      description: '1 x Ibuprofeno',
+      type: 'success',
+    });
+    const t = useUIStore.getState().toast;
+    expect(t?.title).toBe('Producto agregado');
+    expect(t?.message).toBe('1 x Ibuprofeno');
+    expect(t?.type).toBe('success');
+  });
+
   it('clearToast clears toast', () => {
     useUIStore.getState().showToast('Hola');
     useUIStore.getState().clearToast();

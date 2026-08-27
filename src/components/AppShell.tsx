@@ -42,9 +42,12 @@ export function AppShell({ children }: AppShellProps) {
         : toast.type === 'error'
           ? 'danger'
           : 'default';
+    const label = toast.title
+      ? `${toast.title}${toast.message ? ` — ${toast.message}` : ''}`
+      : toast.message;
     toastManager.show({
       variant,
-      label: toast.message,
+      label,
     });
     // Limpiamos el toast del store después de encolarlo.
     const t = setTimeout(clearToast, 100);

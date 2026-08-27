@@ -17,10 +17,24 @@ type UIState = {
   /** Modal activo globalmente. */
   activeModal: ModalId;
   /** Snackbar/toast global. */
-  toast: { message: string; type: 'success' | 'error' | 'info' } | null;
+  toast: {
+    title?: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+  } | null;
   openModal: (id: Exclude<ModalId, null>) => void;
   closeModal: () => void;
-  showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+  showToast: (
+    payload:
+      | string
+      | {
+          title?: string;
+          description?: string;
+          message?: string;
+          type?: 'success' | 'error' | 'info';
+        },
+    type?: 'success' | 'error' | 'info'
+  ) => void;
   clearToast: () => void;
   showSessionExpired: () => void;
   reset: () => void;
@@ -35,7 +49,20 @@ export const useUIStore = create<UIState>()((set) => ({
   ...initialState,
   openModal: (id) => set({ activeModal: id }),
   closeModal: () => set({ activeModal: null }),
-  showToast: (message, type = 'info') => set({ toast: { message, type } }),
+  showToast: (payload, type = 'info') => {
+    if (typeof payload === 'string') {
+      set({ toast: { message: payload, type } });
+      return;
+    }
+    const message = payload.message ?? payload.description ?? payload.title ?? '';
+    set({
+      toast: {
+        title: payload.title,
+        message,
+        type: payload.type ?? type,
+      },
+    });
+  },
   clearToast: () => set({ toast: null }),
   showSessionExpired: () => set({ activeModal: 'sessionExpired' }),
   reset: () => set(initialState),

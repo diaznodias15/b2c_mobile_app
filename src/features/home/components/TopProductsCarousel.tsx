@@ -8,8 +8,8 @@ import {
 
 import { useTopProducts } from '@/features/home/hooks/useHomeData';
 import { useBranchStore } from '@/store';
-import { TopProductCard } from './TopProductCard';
-import type { TopProduct } from '@/types/whitelabel';
+import { ProductCardMobile } from '@/features/products/components/ProductCardMobile';
+import type { Product } from '@/types/whitelabel';
 
 type Props = {
   /** Título de la sección (default "Más vendidos"). */
@@ -87,10 +87,10 @@ function Section({
   );
 }
 
-function keyExtractor(p: TopProduct): string {
+function keyExtractor(p: Product): string {
   return String(p.id);
 }
 
-const renderCard: ListRenderItem<TopProduct> = ({ item }) => (
-  <TopProductCard product={item} />
+const renderCard: ListRenderItem<Product> = ({ item }) => (
+  <ProductCardMobile product={item} width={160} />
 );
