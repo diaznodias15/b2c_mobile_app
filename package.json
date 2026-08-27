@@ -60,19 +60,20 @@
     "vitest": "^2.1.9"
   },
   "scripts": {
-    "start": "expo start",
+    "start": "expo start --tunnel",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "start:lan": "expo start",
+    "start:clean": "expo start --clear --tunnel",
     "lint": "expo lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "clean:metro": "node -e \"const{rmSync}=require('fs');const{join}=require('path');const os=require('os');const dir=join(os.tmpdir(),'metro-cache');try{rmSync(dir,{recursive:true,force:true})}catch(e){}\"",
-    "start:clean": "expo start --clear"
+    "clean:metro": "node -e \"const{rmSync}=require('fs');const{join}=require('path');const os=require('os');const dir=join(os.tmpdir(),'metro-cache');try{rmSync(dir,{recursive:true,force:true})}catch(e){}\""
   },
   "private": true
 }
