@@ -5,9 +5,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { HeroUINativeProvider } from 'heroui-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { useConfigStore, useBranchStore } from '@/store';
+import {
+  useConfigStore,
+  useBranchStore,
+  useDepartmentStore,
+  useAdvertisingStore,
+} from '@/store';
 import { buildThemeColors, themeColorsToCssVars } from '@/theme';
 import { loadConfig } from '@/api';
+import { pickDefaultBranch } from '@/features/branches/utils/tree';
 
 /**
  * Componente raíz de providers. Lo usamos dentro de RootLayout
@@ -63,21 +69,42 @@ export function Providers({ children }: { children: ReactNode }) {
   );
 }
 
-/** Dispara la carga inicial de la config del backend. */
+/**
+ * Dispara la carga inicial de la config del backend y la reparte
+ * en los stores correspondientes.
+ *
+ * Auto-selecciona la sede por defecto (is_default=1 o la primera)
+ * si el usuario todavía no eligió una manualmente.
+ */
 export async function bootstrapConfig() {
   const { setLoading, setError, setAppConfig } = useConfigStore.getState();
-  const { setBranches } = useBranchStore.getState();
+  const branchStore = useBranchStore.getState();
+  const { setDepartments } = useDepartmentStore.getState();
+  const { setAdvertising } = useAdvertisingStore.getState();
 
   setLoading(true);
   try {
     const data = await loadConfig();
-    // Guardamos el app_config interno (no el envelope completo).
     setAppConfig(data.app_config);
-    // Las branches también vienen en la config.
+    if (data.advertisings) {
+      setAdvertising(data.advertisings);
+    }
+    if (data.departments) {
+      setDepartments(data.departments);
+    }
     if (data.branches) {
-      setBranches(data.branches);
+      branchStore.setBranchTree(data.branches);
+      // Si no hay sede seleccionada todavía, auto-pick la default.
+      if (!branchStore.selectedBranch) {
+        const def = pickDefaultBranch(data.branches);
+        if (def) {
+          branchStore.setSelectedBranch(def);
+        }
+      }
     }
   } catch (err) {
-    setError(err instanceof Error ? err.message : 'No se pudo cargar la configuración');
+    setError(
+      err instanceof Error ? err.message : 'No se pudo cargar la configuración'
+    );
   }
 }
