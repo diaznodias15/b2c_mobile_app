@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getToken, setToken } from '@/api/axiosRequest';
+import * as SecureStore from 'expo-secure-store';
+import { setToken, getToken } from '@/api/axiosRequest';
 
 /** Perfil del usuario autenticado. */
 export type User = {
@@ -49,13 +50,19 @@ export const useUserStore = create<UserState>()(
         set({ user: null, isAuthenticated: false, isLoading: false });
       },
       rehydrateAuth: async () => {
-        const token = await getToken();
+        // Leemos directamente de SecureStore para no depender del
+        // cache en memoria de axiosRequest (que podría tener un token
+        // de otra sesión o tests previos).
+        const token = await SecureStore.getItemAsync('auth_token');
+        // Sincronizamos el cache de axiosRequest para que el wrapper
+        // lo use sin un fetch extra.
+        if (token) {
+          await getToken();
+        }
         if (!token) {
           set({ user: null, isAuthenticated: false });
           return false;
         }
-        // El token existe; dejamos isAuthenticated según lo que diga
-        // el store persistido (puede tener user cacheado o no).
         return true;
       },
       reset: () => set(initialState),
