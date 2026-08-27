@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { buildThemeColors, type ConfigColors, type ThemeColors } from '@/theme';
+import { buildThemeColors } from '@/theme/colors';
+import type { ConfigColors, ThemeColors } from '@/theme/colors';
 
 /**
  * Forma esperada del `appConfig` que llega del backend.
