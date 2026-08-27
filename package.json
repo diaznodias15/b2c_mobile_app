@@ -70,7 +70,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "clean:metro": "node -e \"const{rmSync}=require('fs');const{join}=require('path');const os=require('os');const dir=join(os.tmpdir(),'metro-cache');try{rmSync(dir,{recursive:true,force:true})}catch(e){}\"",
+    "start:clean": "expo start --clear"
   },
   "private": true
 }
