@@ -1,54 +1,72 @@
-import { FlatList, Image, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { useDepartmentStore } from '@/store';
 import type { Department } from '@/types/whitelabel';
 
 type Props = {
-  /** Título de la sección. */
+  /** Título de la sección. Si está vacío, no se renderiza el header. */
   title?: string;
 };
 
 /**
  * Grid 2 columnas de departamentos.
- * Click → /productos/[department] (Fase 3, hoy stub).
+ *
+ * NOTA: usamos un layout de `View` con flex-wrap en vez de `FlatList`
+ * con `numColumns={2}` + `scrollEnabled={false}` adentro de un ScrollView.
+ * La virtualización anidada en ese combo es propensa a no renderizar
+ * items en web (y romper en Android con listas chicas). Como solo hay
+ * 4-8 departamentos, no necesitamos virtualizar.
  */
 export function DepartmentGrid({ title = 'Explora por departamento' }: Props) {
   const departments = useDepartmentStore((s) => s.departments);
   const router = useRouter();
 
-  if (departments.length === 0) return null;
+  const handlePress = (slug: string) => {
+    router.push({
+      pathname: '/productos/[department]' as any,
+      params: { department: slug },
+    });
+  };
+
+  // Aplanamos a filas de 2 para controlar el gap.
+  const rows: Department[][] = [];
+  for (let i = 0; i < departments.length; i += 2) {
+    rows.push(departments.slice(i, i + 2));
+  }
 
   return (
     <View className="mt-5">
-      <View className="px-4 mb-2 flex-row items-center justify-between">
-        <Text className="text-base font-bold text-foreground">{title}</Text>
-      </View>
-      <FlatList
-        data={departments}
-        keyExtractor={keyExtractor}
-        numColumns={2}
-        columnWrapperStyle={{ paddingHorizontal: 16, gap: 12 }}
-        contentContainerStyle={{ gap: 12 }}
-        renderItem={({ item }) => (
-          <DepartmentCard
-            department={item}
-            onPress={() =>
-              router.push({
-                pathname: '/productos/[department]' as any,
-                params: { department: item.tx_slug },
-              })
-            }
-          />
-        )}
-        scrollEnabled={false}
-      />
+      {title ? (
+        <View className="px-4 mb-2 flex-row items-center justify-between">
+          <Text className="text-base font-bold text-foreground">{title}</Text>
+        </View>
+      ) : null}
+
+      {departments.length === 0 ? (
+        <View className="px-4">
+          <Text className="text-xs text-muted text-center py-6">
+            Todavía no hay departamentos cargados.
+          </Text>
+        </View>
+      ) : (
+        <View className="px-4 gap-3">
+          {rows.map((row, i) => (
+            <View key={`row-${i}`} className="flex-row gap-3">
+              {row.map((dept) => (
+                <DepartmentCard
+                  key={dept.id}
+                  department={dept}
+                  onPress={() => handlePress(dept.tx_slug)}
+                />
+              ))}
+              {row.length === 1 ? <View className="flex-1" /> : null}
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
-}
-
-function keyExtractor(d: Department): string {
-  return String(d.id);
 }
 
 type CardProps = {
