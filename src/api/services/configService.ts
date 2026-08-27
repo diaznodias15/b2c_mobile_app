@@ -1,29 +1,24 @@
 import { axiosRequest } from '../axiosRequest';
-import type { AppConfig, Branch } from '@/store';
+import type { AppConfig } from '@/store';
 import type { ConfigColors } from '@/theme';
+import type {
+  Advertising,
+  Brand,
+  BranchGroup,
+  ConfigData,
+  Department,
+  Envelope,
+} from '@/types/whitelabel';
 
 const ENDPOINT = '/api/config/get';
-
-/** Forma del response envelope de la API. */
-type Envelope<T> = {
-  status: string;
-  message: string;
-  data: T;
-};
-
-/** Forma interna de la data en /api/config/get. */
-type ConfigData = {
-  app_config: AppConfig;
-  config_colors?: ConfigColors;
-  branches?: Branch[];
-  // Otros campos se agregan en fases siguientes (advertisings, brands, etc.)
-};
 
 /**
  * Carga la configuración global de la app (whitelabel).
  * Se llama en boot, antes de mostrar cualquier pantalla.
  *
  * Devuelve SOLO la `data` del envelope, no el envelope completo.
+ * El `data` incluye: app_config, config_colors, advertisings, brands,
+ * departments, branches (todos opcionales menos app_config).
  */
 export async function loadConfig(signal?: AbortSignal): Promise<ConfigData> {
   const envelope = await axiosRequest<Envelope<ConfigData>>({
@@ -33,3 +28,15 @@ export async function loadConfig(signal?: AbortSignal): Promise<ConfigData> {
   });
   return envelope.data;
 }
+
+// Re-exports de tipos para que callers que importan de este módulo
+// no necesiten conocer la ruta @/types/whitelabel.
+export type {
+  AppConfig,
+  ConfigColors,
+  Advertising,
+  Brand,
+  BranchGroup,
+  ConfigData,
+  Department,
+};

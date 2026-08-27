@@ -1,21 +1,33 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useBranchStore, type Branch } from './branch.store';
+import { useBranchStore } from './branch.store';
+import type { BranchGroup, BranchItem } from '@/types/whitelabel';
 
-const branchA: Branch = {
-  id: 1,
-  nb_name: 'Sede Maracaibo',
-  nb_state: 'Zulia',
-  nb_city: 'Maracaibo',
-  qty_latitude: 10.6666,
-  qty_longitude: -71.6125,
+const itemA: BranchItem = {
+  value: 1,
+  label: 'Sede Norte',
+  nb_branch: 'FARMACIA EL SAMAN DE PERIJA',
+  tx_alias: 'Sede Norte',
+  lat: 10.5,
+  lng: -71.6,
+  is_default: 1,
 };
 
-const branchB: Branch = {
-  id: 2,
-  nb_name: 'Sede Caracas',
-  nb_state: 'Distrito Capital',
-  nb_city: 'Caracas',
+const itemB: BranchItem = {
+  value: 2,
+  label: 'Sede Centro',
+  nb_branch: 'FARMACIA EL SAMAN DE PERIJA',
+  tx_alias: 'Sede Centro',
+  is_default: 0,
 };
+
+const tree: BranchGroup[] = [
+  {
+    nb_state: 'Zulia',
+    nb_city: 'Maracaibo',
+    group: 'Maracaibo | Zulia',
+    items: [itemA, itemB],
+  },
+];
 
 describe('useBranchStore', () => {
   beforeEach(() => {
@@ -25,36 +37,37 @@ describe('useBranchStore', () => {
   it('starts with empty state', () => {
     const s = useBranchStore.getState();
     expect(s.selectedBranch).toBeNull();
-    expect(s.branches).toEqual([]);
+    expect(s.branchTree).toEqual([]);
   });
 
   it('setSelectedBranch stores the branch', () => {
-    useBranchStore.getState().setSelectedBranch(branchA);
-    expect(useBranchStore.getState().selectedBranch).toEqual(branchA);
+    useBranchStore.getState().setSelectedBranch(itemA);
+    expect(useBranchStore.getState().selectedBranch).toEqual(itemA);
   });
 
   it('setSelectedBranch replaces the previous selection', () => {
-    useBranchStore.getState().setSelectedBranch(branchA);
-    useBranchStore.getState().setSelectedBranch(branchB);
-    expect(useBranchStore.getState().selectedBranch?.id).toBe(2);
+    useBranchStore.getState().setSelectedBranch(itemA);
+    useBranchStore.getState().setSelectedBranch(itemB);
+    expect(useBranchStore.getState().selectedBranch?.value).toBe(2);
   });
 
-  it('setBranches stores the full list', () => {
-    useBranchStore.getState().setBranches([branchA, branchB]);
-    expect(useBranchStore.getState().branches).toHaveLength(2);
+  it('setBranchTree stores the full tree', () => {
+    useBranchStore.getState().setBranchTree(tree);
+    expect(useBranchStore.getState().branchTree).toHaveLength(1);
+    expect(useBranchStore.getState().branchTree[0].items).toHaveLength(2);
   });
 
-  it('setBranches does NOT auto-select a branch', () => {
-    useBranchStore.getState().setBranches([branchA, branchB]);
+  it('setBranchTree does NOT auto-select a branch', () => {
+    useBranchStore.getState().setBranchTree(tree);
     expect(useBranchStore.getState().selectedBranch).toBeNull();
   });
 
-  it('reset() clears both selected and list', () => {
-    useBranchStore.getState().setBranches([branchA, branchB]);
-    useBranchStore.getState().setSelectedBranch(branchA);
+  it('reset() clears both selected and tree', () => {
+    useBranchStore.getState().setBranchTree(tree);
+    useBranchStore.getState().setSelectedBranch(itemA);
     useBranchStore.getState().reset();
     const s = useBranchStore.getState();
     expect(s.selectedBranch).toBeNull();
-    expect(s.branches).toEqual([]);
+    expect(s.branchTree).toEqual([]);
   });
 });
