@@ -1,9 +1,35 @@
-:root {
-  --font-display:
-    Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
-    Segoe UI Symbol, Noto Color Emoji;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
-  --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
-  --font-serif: Georgia, 'Times New Roman', serif;
+@import "tailwindcss";
+@import "uniwind";
+
+@theme {
+  /* ============================================================
+   * Soft theme — Farmacia El Samán de Perijá
+   * Los colores de marca se sobrescriben en runtime desde
+   * /api/config/get vía applyConfigColorsToTheme.
+   * Mantén estos valores como fallback del rediseño Soft.
+   * ============================================================ */
+
+  --color-background: #ffffff;
+  --color-foreground: #111827;
+  --color-section: #f8f9fb;
+  --color-surface: #ffffff;
+  --color-muted: #6b7280;
+  --color-border: #e5e7eb;
+
+  --color-primary: #0f766e;
+  --color-primary-foreground: #ffffff;
+  --color-success: #16a34a;
+  --color-danger: #dc2626;
+  --color-warning: #f59e0b;
+
+  --color-navbar: #ffffff;
+  --color-navbar-foreground: #111827;
+  --color-bottom-navbar: #ffffff;
+  --color-footer: #f8f9fb;
+
+  --radius-default: 14px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-full: 9999px;
 }
