@@ -88,8 +88,12 @@ export type BranchGroup = {
   items: BranchItem[];
 };
 
-/** Producto devuelto por `/api/products/top-products`. */
-export type TopProduct = {
+/**
+ * Producto base que viene en los listados (top-products, list, search).
+ * El backend manda los precios como string (`"120.00"`); los adapters
+ * los convierten a número.
+ */
+export type Product = {
   id: number;
   nb_brand: string;
   cod_barcode: string;
@@ -104,6 +108,81 @@ export type TopProduct = {
   pri_product_price: string;
   /** Precio final con impuestos en USD (string). */
   pri_product_final_price: string;
+};
+
+/** Alias de compatibilidad con código previo. */
+export type TopProduct = Product;
+
+/** Indicador de stock del backend: 0 = sin stock, 1 = pocas unidades, 2 = en stock. */
+export type StockLevel = 0 | 1 | 2;
+
+/** Detalle completo de un producto (`/api/products/detail/:slug`). */
+export type ProductDetail = {
+  id: number;
+  brand_id?: number;
+  brand_slug?: string;
+  nb_brand: string;
+  cod_barcode: string;
+  nb_product: string;
+  is_regulado?: number;
+  tx_slug: string;
+  tx_description?: string | null;
+  pri_product_price: string;
+  pri_product_final_price: string;
+  qty_product: number;
+  qty_discount?: number | string;
+  qty_tax?: number | string;
+  availability_indicator: StockLevel;
+  product_img?: string | null;
+  product_features?: ProductFeature[];
+  availability_per_branch?: AvailabilityByBranch[];
+};
+
+export type ProductFeature = {
+  id?: number;
+  nb_feature?: string;
+  tx_value?: string;
+};
+
+/** Disponibilidad en una sede específica. */
+export type BranchAvailability = {
+  branch_id: number;
+  label: string;
+  nb_branch: string;
+  tx_address?: string;
+  tx_phone?: string;
+  tx_working_hours?: string;
+  lat?: number | string;
+  lng?: number | string;
+  qty_product: number;
+  pri_product_final_price: string;
+  availability_indicator: StockLevel;
+};
+
+/** Una ciudad dentro de la disponibilidad por sede. */
+export type AvailabilityCity = {
+  nb_city: string;
+  branches: BranchAvailability[];
+};
+
+/** Estado → ciudades → branches. */
+export type AvailabilityByBranch = {
+  nb_state: string;
+  cities: AvailabilityCity[];
+};
+
+/** Paginación estándar de list/search. */
+export type Pagination = {
+  per_page?: number;
+  next_page?: number | null;
+  last_page?: number;
+  total?: number;
+};
+
+/** Metadata de filtros de precio (min/max del set completo). */
+export type PriceMetadata = {
+  min_price?: number | string;
+  max_price?: number | string;
 };
 
 /** Forma completa de `data` en `/api/config/get`. */
