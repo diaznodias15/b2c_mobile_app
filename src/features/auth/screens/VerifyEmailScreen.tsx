@@ -24,8 +24,12 @@ export default function VerifyEmailScreen() {
 
   useEffect(() => {
     if (!id || !token) {
-      setStatus('error');
-      setErrorMessage('El enlace de verificación es inválido o está incompleto');
+      // Diferimos el setState al siguiente tick para no disparar render
+      // síncrono dentro del effect.
+      Promise.resolve().then(() => {
+        setStatus('error');
+        setErrorMessage('El enlace de verificación es inválido o está incompleto');
+      });
       return;
     }
 

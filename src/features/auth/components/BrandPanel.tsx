@@ -1,5 +1,5 @@
 import { Image, View } from 'react-native';
-import { Card, Text } from 'heroui-native';
+import { Text } from 'heroui-native';
 import { useConfigStore } from '@/store';
 
 type BrandPanelProps = {

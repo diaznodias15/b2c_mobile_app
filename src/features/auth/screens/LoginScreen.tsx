@@ -18,7 +18,7 @@ export default function LoginScreen() {
   const appConfig = useConfigStore((s) => s.appConfig);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { control, handleSubmit, formState } = useForm<LoginFormValues>({
+  const { control, handleSubmit } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
     mode: 'onBlur',

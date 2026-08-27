@@ -23,7 +23,6 @@ import {
   type ResetPinFormValues,
   type ResetNewPasswordFormValues,
 } from '../schemas';
-import { useAuth } from '../hooks/useAuth';
 import {
   validateUser,
   validatePin,

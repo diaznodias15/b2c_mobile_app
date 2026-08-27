@@ -17,7 +17,6 @@ import { useRouter, type Href } from 'expo-router';
 export function GlobalModals() {
   const activeModal = useUIStore((s) => s.activeModal);
   const closeModal = useUIStore((s) => s.closeModal);
-  const openModal = useUIStore((s) => s.openModal);
   const { actions, isSubmitting } = useAuth();
   const router = useRouter();
 

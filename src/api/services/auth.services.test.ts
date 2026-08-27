@@ -1,12 +1,14 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import * as authService from './auth.services';
 
-// Mockeamos el axiosRequest para no hacer requests reales.
+// vi.mock se hoistea al top, por lo que estos imports "debajo"
+// del mock son intencionales. El linter no lo entiende.
 vi.mock('../axiosRequest', () => ({
   axiosRequest: vi.fn(),
 }));
-
+// eslint-disable-next-line import/first
 import { axiosRequest } from '../axiosRequest';
+// eslint-disable-next-line import/first
+import * as authService from './auth.services';
 
 const mockedRequest = vi.mocked(axiosRequest);
 

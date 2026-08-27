@@ -1,11 +1,10 @@
 import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { ActivityIndicator, View } from 'react-native';
-import { useRouter, usePathname, Redirect, Stack } from 'expo-router';
+import { usePathname, Redirect, Stack } from 'expo-router';
 
 import { Providers, bootstrapConfig } from '@/components/Providers';
 import { AppShell } from '@/components/AppShell';
-import AppTabs from '@/components/app-tabs';
 import { useConfigStore, useUserStore } from '@/store';
 
 SplashScreen.preventAutoHideAsync();
@@ -29,7 +28,6 @@ export default function RootLayout() {
   const isLoading = useConfigStore((s) => s.isLoading);
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const rehydrateAuth = useUserStore((s) => s.rehydrateAuth);
-  const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
