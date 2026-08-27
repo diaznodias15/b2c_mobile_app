@@ -1,6 +1,6 @@
 import { axiosRequest } from '../axiosRequest';
-import type { CartServiceResponse, Envelope } from '@/types/cart';
-import type { Product } from '@/types/whitelabel';
+import type { CartServiceResponse } from '@/types/cart';
+import type { Envelope, Product } from '@/types/whitelabel';
 import { toQueryString } from '@/utils/queryParams';
 
 const ITEMS = (branch: number) => `/api/cart/items/branch/${branch}`;
