@@ -12,8 +12,11 @@ export type Currency = {
 };
 
 export function roundTo(value: number, decimals = 2): number {
+  // Pequeño epsilon para evitar el bug clásico de floating point
+  // (e.g. 1.005 * 100 = 100.49999… → 1.00 en vez de 1.01).
   const f = 10 ** decimals;
-  return Math.round(value * f) / f;
+  const epsilon = Number.EPSILON * Math.abs(value) * f;
+  return Math.round(value * f + Math.sign(value) * epsilon) / f;
 }
 
 /**
