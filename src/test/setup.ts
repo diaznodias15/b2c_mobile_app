@@ -31,8 +31,10 @@ vi.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
-// Mock de SecureStore para tests del axios wrapper.
-vi.mock('expo-secure-store', () => ({
+// Mock del wrapper secureStorage (cross-platform) para tests.
+// Antes mockeábamos `expo-secure-store` directo, pero ahora el wrapper
+// es el que importa el código de dominio.
+vi.mock('@/utils/secureStorage', () => ({
   getItemAsync: vi.fn(async () => null),
   setItemAsync: vi.fn(async () => undefined),
   deleteItemAsync: vi.fn(async () => undefined),

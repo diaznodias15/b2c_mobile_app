@@ -1,5 +1,5 @@
 import { create, type AxiosInstance, type AxiosRequestConfig } from 'axios';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '@/utils/secureStorage';
 import { API_BASE_URL, API_TIMEOUT_MS } from './config';
 
 /**
