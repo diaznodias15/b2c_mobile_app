@@ -87,6 +87,24 @@ export async function axiosRequest<T = unknown>(
       history.set(key, Date.now());
       return res.data;
     })
+    .catch((err) => {
+      // Centralizamos el manejo de 401 vía un evento para evitar
+      // ciclos de imports. Quien quiera reaccionar (e.g. el root layout)
+      // se suscribe a onUnauthorized().
+      if (err?.response?.status === 401) {
+        listeners.unauthorized.forEach((cb) => {
+          try {
+            cb();
+          } catch (cbErr) {
+            console.error('[axiosRequest] unauthorized listener failed:', cbErr);
+          }
+        });
+      }
+      // Re-throw con mensaje limpio del backend.
+      const backendMessage =
+        err?.response?.data?.message || err?.message || 'Error de red';
+      throw new Error(backendMessage);
+    })
     .finally(() => {
       ongoing.delete(key);
     });
@@ -99,3 +117,19 @@ export async function axiosRequest<T = unknown>(
 }
 
 export { instance as axiosInstance };
+
+/* ============================================================
+ * Listeners para 401 — patrón observer para evitar ciclos.
+ * Se suscriben desde el root layout al iniciar la app.
+ * ============================================================ */
+
+type UnauthorizedListener = () => void;
+
+const listeners: { unauthorized: Set<UnauthorizedListener> } = {
+  unauthorized: new Set(),
+};
+
+export function onUnauthorized(cb: UnauthorizedListener): () => void {
+  listeners.unauthorized.add(cb);
+  return () => listeners.unauthorized.delete(cb);
+}
