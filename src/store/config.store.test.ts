@@ -9,7 +9,9 @@ const sampleConfig = {
   is_lite_mode: '1',
   is_allow_delivery: '1',
   config_colors: {
-    tx_primary_color: '#0f766e',
+    col_primary: '#008000',
+    col_background: '#F5F4F0',
+    col_navbar_departments: '#1014C5',
   },
 };
 
@@ -77,18 +79,23 @@ describe('useConfigStore', () => {
   describe('getThemeColors', () => {
     it('returns Soft defaults when no config is loaded', () => {
       const colors = useConfigStore.getState().getThemeColors();
-      expect(colors.primary).toBe('#0f766e');
-      expect(colors.background).toBe('#ffffff');
+      // Defaults del SOFT_COLORS (matchean el backend real)
+      expect(colors.primary).toBe('#008000');
+      expect(colors.background).toBe('#F5F4F0');
     });
 
-    it('uses backend colors when config has them', () => {
+    it('uses backend colors (col_*) when config has them', () => {
       useConfigStore.getState().setAppConfig({
-        config_colors: { tx_primary_color: '#ff0000' },
+        config_colors: {
+          col_primary: '#ff0000',
+          col_background: '#000000',
+        },
       });
       const colors = useConfigStore.getState().getThemeColors();
       expect(colors.primary).toBe('#ff0000');
+      expect(colors.background).toBe('#000000');
       // Mantiene Soft en los no provistos
-      expect(colors.background).toBe('#ffffff');
+      expect(colors.warning).toBe('#F5A524');
     });
   });
 

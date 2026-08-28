@@ -115,8 +115,8 @@ export default function ProductsByDepartmentScreen() {
               products={products}
               isLoading={isLoading}
               isFetchingMore={isFetchingNextPage}
-              hasNextPage={hasNextPage}
-              onEndReached={() => void fetchNextPage()}
+              hasMore={hasNextPage ?? false}
+              onLoadMore={() => void fetchNextPage()}
               sort={sort}
               emptyText="Este departamento todavía no tiene productos cargados."
             />

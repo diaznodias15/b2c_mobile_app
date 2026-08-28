@@ -150,8 +150,8 @@ export default function SearchScreen() {
               products={products}
               isLoading={isLoading}
               isFetchingMore={isFetchingNextPage}
-              hasNextPage={hasNextPage}
-              onEndReached={() => void fetchNextPage()}
+              hasMore={hasNextPage ?? false}
+              onLoadMore={() => void fetchNextPage()}
               sort="relevance"
               emptyText=""
             />

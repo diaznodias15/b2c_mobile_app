@@ -1,32 +1,64 @@
+/* ============================================================
+ * Fonts (web). Para native, los nombres de familia tambien
+ * funcionan — solo hay que cargar los .ttf via expo-font.
+ * El root layout carga el @import al montar, asi llegan
+ * via el CSS pipeline de Uniwind.
+ * ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
 @import "tailwindcss";
 @import "uniwind";
 
 @theme {
   /* ============================================================
-   * Soft theme — Farmacia El Samán de Perijá
-   * Los colores de marca se sobrescriben en runtime desde
-   * /api/config/get vía applyConfigColorsToTheme.
-   * Mantén estos valores como fallback del rediseño Soft.
+   * Soft theme tokens — Farmacia El Samán de Perijá.
+   *
+   * Los colores reales llegan en runtime desde /api/config/get
+   * (whitelabel) y se aplican via `themeColorsToCssVars` en
+   * <Providers>. Estos valores son el fallback antes de que
+   * la config llegue (o si falla).
+   *
+   * Match con SOFT_COLORS en src/theme/colors.ts — si cambias
+   * uno, cambialo en el otro.
    * ============================================================ */
 
-  --color-background: #ffffff;
-  --color-foreground: #111827;
-  --color-section: #f8f9fb;
-  --color-surface: #ffffff;
-  --color-muted: #6b7280;
-  --color-border: #e5e7eb;
+  /* Surfaces */
+  --color-background: #F5F4F0;
+  --color-section: #FEFFFE;
+  --color-surface: #FEFFFE;
+  --color-navbar: #FEFFFE;
+  --color-navbar-departments: #1014C5;
+  --color-bottom-navbar: #FEFFFE;
+  --color-footer: #FEFFFE;
+  --color-product-card: #FEFFFE;
 
-  --color-primary: #0f766e;
-  --color-primary-foreground: #ffffff;
-  --color-success: #16a34a;
-  --color-danger: #dc2626;
-  --color-warning: #f59e0b;
+  /* Foreground */
+  --color-foreground: #1A1A2E;
+  --color-muted: #60646C;
+  --color-border: rgba(26, 26, 46, 0.12);
 
-  --color-navbar: #ffffff;
-  --color-navbar-foreground: #111827;
-  --color-bottom-navbar: #ffffff;
-  --color-footer: #f8f9fb;
+  /* Brand */
+  --color-primary: #008000;
+  --color-primary-foreground: #FFFFFF;
+  --color-on-primary: #FFFFFF;
+  --color-secondary: #757575;
 
+  /* Status */
+  --color-success: #17C964;
+  --color-danger: #F87171;
+  --color-warning: #F5A524;
+
+  /* Derivados */
+  --color-primary-overlay: rgba(0, 128, 0, 0.10);
+  --color-primary-overlay-soft: rgba(0, 128, 0, 0.05);
+  --color-shadow: rgba(0, 0, 0, 0.08);
+
+  /* Typography */
+  --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Radius */
   --radius-default: 14px;
   --radius-sm: 8px;
   --radius-md: 12px;

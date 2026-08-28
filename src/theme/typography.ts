@@ -1,57 +1,66 @@
 import { Platform, type TextStyle } from 'react-native';
 
 /**
- * Familia tipográfica del rediseño Soft.
- * Spline Sans es la fuente principal de la web; en móvil usamos
- * system-ui (San Francisco en iOS, Roboto en Android) hasta que
- * se decida cargar Spline Sans vía expo-font.
+ * Familias tipograficas del rediseño.
+ *
+ * - Heading: **Plus Jakarta Sans** (sans moderna, ligeramente calida,
+ *   bien legible a tamaños grandes). Default 600/700.
+ * - Body: **Inter** (sans neutra, la mejor legibilidad a 14-16px).
+ *
+ * En WEB los nombres matchean el `@import` de Google Fonts en
+ * `src/global.css` (con espacios). En NATIVE hay que cargar los .ttf
+ * via `expo-font` con los mismos nombres (sin espacios es la
+ * convencion de expo-font, asi que el root layout mapea).
+ *
+ * Mientras no esten cargadas, caen a la font del sistema via la cadena
+ * CSS sin layout shift perceptible.
  */
-const family = Platform.select({
-  ios: 'System',
-  android: 'sans-serif',
-  default: 'System',
-});
 
-const familyMedium = Platform.select({
-  ios: 'System',
-  android: 'sans-serif-medium',
-  default: 'System',
-});
+export const FontFamily = {
+  heading: 'Plus Jakarta Sans',
+  body: 'Inter',
+  /** Code / mono. */
+  mono: Platform.select({
+    ios: 'Menlo',
+    android: 'monospace',
+    default: 'monospace',
+  }) as string,
+} as const;
 
-const familySemibold = Platform.select({
-  ios: 'System',
-  android: 'sans-serif-medium',
-  default: 'System',
-});
-
-const familyBold = Platform.select({
-  ios: 'System',
-  android: 'sans-serif',
-  default: 'System',
-});
+const headingFamily = FontFamily.heading;
+const bodyFamily = FontFamily.body;
 
 function make(
-  familyName: string,
+  family: string,
   size: number,
   lineHeight: number,
   weight: TextStyle['fontWeight']
 ): TextStyle {
-  return { fontFamily: familyName, fontSize: size, lineHeight, fontWeight: weight };
+  return { fontFamily: family, fontSize: size, lineHeight, fontWeight: weight };
 }
 
-/** Escala tipográfica alineada con la web Soft. */
+/** Escala tipografica. Headings usan Plus Jakarta Sans, body Inter. */
 export const Typography = {
-  display: make(familyBold, 32, 40, '700'),
-  h1: make(familyBold, 28, 36, '700'),
-  h2: make(familySemibold, 24, 32, '600'),
-  h3: make(familySemibold, 20, 28, '600'),
-  h4: make(familySemibold, 18, 26, '600'),
-  bodyLg: make(family, 17, 26, '400'),
-  body: make(family, 15, 22, '400'),
-  bodySm: make(family, 14, 20, '400'),
-  label: make(familyMedium, 14, 20, '500'),
-  caption: make(family, 12, 18, '400'),
-  code: make('monospace', 14, 20, '400'),
+  display: make(headingFamily, 32, 40, '700'),
+  h1: make(headingFamily, 28, 36, '700'),
+  h2: make(headingFamily, 24, 32, '700'),
+  h3: make(headingFamily, 20, 28, '600'),
+  h4: make(headingFamily, 18, 26, '600'),
+
+  bodyLg: make(bodyFamily, 17, 26, '400'),
+  body: make(bodyFamily, 15, 22, '400'),
+  bodySm: make(bodyFamily, 14, 20, '400'),
+
+  label: make(bodyFamily, 14, 20, '500'),
+  caption: make(bodyFamily, 12, 18, '400'),
+
+  code: make(FontFamily.mono, 13, 20, '400'),
 } as const;
 
 export type TypographyKey = keyof typeof Typography;
+
+/**
+ * Familias para `<Text style={{ fontFamily }}>`. Alias de FontFamily
+ * para que el codigo de UI importe un solo nombre.
+ */
+export const Fonts = FontFamily;
