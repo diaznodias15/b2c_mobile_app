@@ -86,13 +86,16 @@ export async function bootstrapConfig() {
   try {
     const data = await loadConfig();
     setAppConfig(data.app_config);
-    if (data.advertisings) {
+    // Usamos !== undefined en vez de truthy check para que un array
+    // vacio [] tambien dispare el set (importante para que el selector
+    // de sede se abra aunque el backend no tenga sucursales todavia).
+    if (data.advertisings !== undefined) {
       setAdvertising(data.advertisings);
     }
-    if (data.departments) {
+    if (data.departments !== undefined) {
       setDepartments(data.departments);
     }
-    if (data.branches) {
+    if (data.branches !== undefined) {
       branchStore.setBranchTree(data.branches);
       // Si no hay sede seleccionada todavía, auto-pick la default.
       if (!branchStore.selectedBranch) {
