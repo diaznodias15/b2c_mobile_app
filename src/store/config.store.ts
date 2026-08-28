@@ -16,18 +16,23 @@ export type AppConfig = {
   tx_company_whatsapp?: string;
   tx_company_email?: string;
   tx_company_address?: string;
+  tx_company_description?: string;
   tx_company_logo_url?: string;
+  tx_whatsapp_contact_phone?: string;
+  tx_whatsapp_default_message?: string;
   is_allow_delivery?: boolean | string;
   is_allow_dark_mode?: boolean | string;
   is_lite_mode?: boolean | string;
   is_show_cart?: boolean | string;
   is_show_user?: boolean | string;
+  is_maintenance_mode?: number | string;
   qty_cart_seconds?: number;
   qty_free_delivery_threshold?: number;
   amt_exchange_rate?: number;
+  dt_config_date?: string;
   config_colors?: ConfigColors;
   config_radius?: string | number;
-  // … el resto se completa en Fase 1
+  // … el resto se completa en fases siguientes
 };
 
 type ConfigState = {

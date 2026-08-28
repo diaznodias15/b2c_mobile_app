@@ -1,42 +1,74 @@
-import { Text, View } from 'react-native';
-import { ShieldCheck, MapPin } from 'lucide-react-native';
+import { Linking, Pressable, Text, View } from 'react-native';
+import { MapPin, MessageCircle } from 'lucide-react-native';
 
-import { useBranchStore } from '@/store';
-import { findBranchById } from '@/features/branches/utils/tree';
+import { useBranchStore, useConfigStore } from '@/store';
 
 /**
- * Banner "Entrega segura" con info de la sede activa.
- * Si no hay sede seleccionada, muestra CTA genérico.
+ * Banner "Despachamos desde tu sede" con CTA a WhatsApp.
+ * Usa el numero del whitelabel (`tx_whatsapp_contact_phone`) si
+ * esta disponible; si no, cae al telefono principal.
  */
 export function DeliveryBanner() {
   const branchTree = useBranchStore((s) => s.branchTree);
   const selectedId = useBranchStore((s) => s.selectedBranch?.value);
+  const whatsapp = useConfigStore((s) => s.appConfig?.tx_whatsapp_contact_phone);
+  const companyPhone = useConfigStore((s) => s.appConfig?.tx_company_phone);
 
-  // Buscamos la ciudad/estado del branch para mostrarlo en el banner.
-  // Si no hay match, mostramos copy genérico.
   const group = branchTree.find((g) =>
     g.items.some((it) => it.value === selectedId)
   );
 
+  const phone = whatsapp || companyPhone || '';
+  const phoneDigits = phone.replace(/[^0-9+]/g, '');
+
+  const openWhatsApp = () => {
+    if (!phoneDigits) return;
+    // Mensaje predeterminado que el usuario puede editar.
+    const msg = encodeURIComponent(
+      `Hola, soy de ${group?.nb_city ?? 'la farmacia'} y quiero consultar disponibilidad de un producto.`
+    );
+    // wa.me sin "+" requiere solo el codigo de pais + numero.
+    const url = `https://wa.me/${phoneDigits.replace('+', '')}?text=${msg}`;
+    Linking.openURL(url).catch(() => {});
+  };
+
   return (
-    <View className="mt-6 mx-4 mb-4 rounded-[14px] bg-primary/5 border border-primary/20 p-4">
-      <View className="flex-row items-center gap-2 mb-1">
-        <ShieldCheck size={16} color="#0f766e" />
+    <View
+      className="mt-6 mx-4 mb-4 rounded-[14px] p-4 border"
+      style={{
+        backgroundColor: '#00800014', // primaryOverlay (fallback)
+        borderColor: '#00800033',
+      }}
+    >
+      <View className="flex-row items-center gap-2 mb-1.5">
+        <MapPin size={14} color="#008000" />
         <Text className="text-sm font-bold text-foreground">
-          Entrega 100% segura
+          Despachamos desde tu sede
         </Text>
       </View>
-      <View className="flex-row items-center gap-1">
-        <MapPin size={12} color="#60646C" />
-        <Text className="text-xs text-muted">
-          {group
-            ? `Despachamos desde ${group.nb_city}, ${group.nb_state}`
-            : 'Selecciona tu sede para ver disponibilidad'}
-        </Text>
-      </View>
+      <Text className="text-xs text-muted leading-5">
+        {group
+          ? `${group.nb_city}, ${group.nb_state}. Hacemos entregas en la zona y retiro en tienda está disponible todo el día.`
+          : 'Elegí tu sede para ver disponibilidad y tiempos de entrega.'}
+      </Text>
+      {phoneDigits ? (
+        <Pressable
+          onPress={openWhatsApp}
+          className="flex-row items-center gap-2 mt-3 self-start"
+          accessibilityRole="button"
+          accessibilityLabel="Abrir WhatsApp para consultar"
+        >
+          <View
+            className="h-8 w-8 items-center justify-center rounded-full"
+            style={{ backgroundColor: '#25D366' }}
+          >
+            <MessageCircle size={16} color="#FFFFFF" />
+          </View>
+          <Text className="text-xs font-semibold text-foreground">
+            Consultanos por WhatsApp
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
-
-// Re-export para tests
-export { findBranchById };
