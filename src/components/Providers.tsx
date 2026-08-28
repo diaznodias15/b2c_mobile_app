@@ -77,6 +77,7 @@ export function Providers({ children }: { children: ReactNode }) {
  * si el usuario todavía no eligió una manualmente.
  */
 export async function bootstrapConfig() {
+  console.log('[bootstrap] iniciando carga de config...');
   const { setLoading, setError, setAppConfig } = useConfigStore.getState();
   const branchStore = useBranchStore.getState();
   const { setDepartments } = useDepartmentStore.getState();
@@ -85,6 +86,12 @@ export async function bootstrapConfig() {
   setLoading(true);
   try {
     const data = await loadConfig();
+    console.log('[bootstrap] config cargada:', {
+      hasAppConfig: !!data.app_config,
+      departments: data.departments?.length ?? 0,
+      branches: data.branches?.length ?? 0,
+      advertising: data.advertisings?.length ?? 0,
+    });
     setAppConfig(data.app_config);
     // Usamos !== undefined en vez de truthy check para que un array
     // vacio [] tambien dispare el set (importante para que el selector
@@ -100,12 +107,15 @@ export async function bootstrapConfig() {
       // Si no hay sede seleccionada todavía, auto-pick la default.
       if (!branchStore.selectedBranch) {
         const def = pickDefaultBranch(data.branches);
+        console.log('[bootstrap] sede auto-seleccionada:', def?.label);
         if (def) {
           branchStore.setSelectedBranch(def);
         }
       }
     }
+    console.log('[bootstrap] OK');
   } catch (err) {
+    console.error('[bootstrap] ERROR:', err);
     setError(
       err instanceof Error ? err.message : 'No se pudo cargar la configuración'
     );
