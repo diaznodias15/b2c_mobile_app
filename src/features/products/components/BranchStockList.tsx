@@ -1,8 +1,14 @@
 import { Text, View } from 'react-native';
-import { MapPin, Phone, Clock } from 'lucide-react-native';
+import {
+  MapPin,
+  Phone,
+  Clock,
+  AlertTriangle,
+  PackageX,
+  Check,
+} from 'lucide-react-native';
 
 import {
-  STOCK_DOT_COLORS,
   STOCK_LABELS,
   flattenAvailability,
 } from '@/features/products/utils/adapters';
@@ -18,13 +24,22 @@ type Props = {
   tree: AvailabilityByBranch[] | undefined;
 };
 
+function stockIcon(level: StockLevel, color: string, size = 13) {
+  if (level === 0) return <PackageX size={size} color={color} />;
+  if (level === 1) return <AlertTriangle size={size} color={color} />;
+  return <Check size={size} color={color} />;
+}
+
+function stockColor(level: StockLevel): string {
+  if (level === 0) return '#F87171';
+  if (level === 1) return '#F5A524';
+  return '#17C964';
+}
+
 /**
  * Lista de sedes con disponibilidad del producto.
- * Cada fila muestra: dot de stock + nombre + dirección + teléfono + precio final.
- * La sede actualmente seleccionada va destacada.
- *
- * Por ahora es solo visual (no se puede cambiar de sede desde acá);
- * eso entra en una iteración futura junto con el mapa de disponibilidad.
+ * Cada fila muestra: icono de stock + nombre + dirección + horario +
+ * teléfono + precio final. La sede actualmente seleccionada va destacada.
  */
 export function BranchStockList({ tree }: Props) {
   const currentBranchId = useBranchStore((s) => s.selectedBranch?.value);
@@ -58,19 +73,17 @@ function BranchRow({
   active: boolean;
 }) {
   const stock = branch.availability_indicator as StockLevel;
+  const color = stockColor(stock);
   return (
     <View
       className={`mx-4 rounded-[14px] p-3 border ${
         active
           ? 'bg-primary/5 border-primary/30'
-          : 'bg-backgroundElement border-transparent'
+          : 'bg-product-card border-border'
       }`}
     >
       <View className="flex-row items-center gap-2">
-        <View
-          className="h-2.5 w-2.5 rounded-full"
-          style={{ backgroundColor: STOCK_DOT_COLORS[stock] }}
-        />
+        {stockIcon(stock, color)}
         <Text
           className={
             active
@@ -113,16 +126,13 @@ function BranchRow({
           </View>
         ) : null}
         <View className="flex-row items-center justify-between mt-1">
-          <Text
-            className={
-              stock === 0
-                ? 'text-[11px] font-medium text-danger'
-                : 'text-[11px] font-medium text-foreground'
-            }
-          >
+          <Text className="text-[11px] font-medium" style={{ color }}>
             {STOCK_LABELS[stock]} · {branch.qty_product} unidades
           </Text>
-          <Text className="text-sm font-bold text-foreground">
+          <Text
+            className="text-sm font-bold text-foreground"
+            style={{ fontVariant: ['tabular-nums'] }}
+          >
             {formatPrice(Number(branch.pri_product_final_price), 'USD')}
           </Text>
         </View>

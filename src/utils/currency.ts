@@ -47,3 +47,32 @@ export function formatPrice(
   });
   return `${currencyAlias} ${formatted}`;
 }
+
+/** Formato compacto sin decimales para badges (e.g. "Bs. 4.205"). */
+export function formatPriceCompact(
+  amount: number,
+  currencyAlias: 'Bs.' | 'USD'
+): string {
+  const formatted = roundTo(amount).toLocaleString('es-VE', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
+  return `${currencyAlias} ${formatted}`;
+}
+
+/**
+ * Devuelve Bs. y USD a partir de un precio en USD y la tasa.
+ * Si no hay rate (>0) o el precio es 0, devuelve la conversion como `null`
+ * para que el caller oculte la linea secundaria.
+ */
+export function formatDualCurrency(
+  usdAmount: number,
+  exchangeRate: number | null | undefined
+): { usd: string; bs: string | null } {
+  const usd = formatPrice(usdAmount, 'USD');
+  if (!exchangeRate || exchangeRate <= 0 || usdAmount <= 0) {
+    return { usd, bs: null };
+  }
+  const bsAmount = convertPrice(usdAmount, 'USD', 'Bs.', exchangeRate);
+  return { usd, bs: formatPriceCompact(bsAmount, 'Bs.') };
+}

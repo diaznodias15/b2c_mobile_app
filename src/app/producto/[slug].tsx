@@ -9,9 +9,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, MapPin } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  MapPin,
+  Package,
+  AlertTriangle,
+  PackageX,
+  Check,
+} from 'lucide-react-native';
 
-import { useBranchStore, useUIStore } from '@/store';
+import { useBranchStore, useConfigStore, useUIStore } from '@/store';
 import { useCartSync } from '@/features/cart/hooks/useCartSync';
 import { useProductDetail } from '@/features/products/hooks/useProductDetail';
 import { TopProductsCarousel } from '@/features/home/components/TopProductsCarousel';
@@ -21,7 +28,6 @@ import { QuantityStepper } from '@/features/products/components/QuantityStepper'
 import { AddToCartCTA } from '@/features/products/components/AddToCartCTA';
 import { BranchSelector } from '@/features/branches/components/BranchSelector';
 import {
-  STOCK_DOT_COLORS,
   STOCK_LABELS,
   hasDescription,
   hasFeatures,
@@ -34,8 +40,15 @@ import {
   finalPrice,
   hasDiscount,
 } from '@/features/home/utils/adapters';
-import { formatPrice } from '@/utils/currency';
+import { formatDualCurrency, formatPrice } from '@/utils/currency';
 import type { StockLevel } from '@/types/whitelabel';
+
+/** Devuelve el icono Lucide que matchea el nivel de stock. */
+function stockIcon(level: StockLevel, color: string, size = 16) {
+  if (level === 0) return <PackageX size={size} color={color} />;
+  if (level === 1) return <AlertTriangle size={size} color={color} />;
+  return <Check size={size} color={color} />;
+}
 
 /**
  * Pantalla de detalle de producto.
@@ -54,6 +67,10 @@ export default function ProductDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const branchId = useBranchStore((s) => s.selectedBranch?.value) ?? null;
   const showToast = useUIStore((s) => s.showToast);
+  const exchangeRateRaw = useConfigStore(
+    (s) => s.appConfig?.amt_exchange_rate
+  );
+  const exchangeRate = exchangeRateRaw ? Number(exchangeRateRaw) : null;
   const { addProduct } = useCartSync();
   const { data, isLoading, isError } = useProductDetail(slug, branchId);
   const [qty, setQty] = useState(1);
@@ -159,40 +176,70 @@ export default function ProductDetailScreen() {
           </View>
 
           {/* Info principal */}
-          <View className="px-4 pt-4 gap-1.5">
-            <Text className="text-[11px] text-muted uppercase tracking-wider">
+          <View className="px-4 pt-4 gap-2">
+            <Text className="text-[11px] text-muted uppercase tracking-wider font-semibold">
               {data.nb_brand}
             </Text>
-            <Text className="text-lg font-bold text-foreground" numberOfLines={3}>
+            <Text
+              className="text-lg font-bold text-foreground"
+              numberOfLines={3}
+              style={{ lineHeight: 24 }}
+            >
               {data.nb_product}
             </Text>
-            <View className="flex-row items-center gap-2 mt-1">
+            <View className="mt-1">
               {showDiscount ? (
-                <Text className="text-xs text-muted line-through">
+                <Text
+                  className="text-xs text-muted line-through"
+                  style={{ fontVariant: ['tabular-nums'] }}
+                >
                   {formatPrice(baseP, 'USD')}
                 </Text>
               ) : null}
-              <Text className="text-2xl font-bold text-foreground">
-                {formatPrice(finalP, 'USD')}
-              </Text>
-              {showDiscount ? (
-                <View className="bg-danger rounded-md px-1.5 py-0.5">
-                  <Text className="text-[10px] font-bold text-primary-foreground">
-                    -{discount}%
+              <View className="flex-row items-baseline gap-2">
+                <Text
+                  className="text-2xl font-bold text-foreground"
+                  style={{ fontVariant: ['tabular-nums'] }}
+                >
+                  {formatPrice(finalP, 'USD')}
+                </Text>
+                {showDiscount ? (
+                  <View
+                    className="rounded-md px-1.5 py-0.5"
+                    style={{ backgroundColor: '#F5A524' }}
+                  >
+                    <Text className="text-[10px] font-bold text-foreground">
+                      -{discount}%
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+              {(() => {
+                const dual = formatDualCurrency(finalP, exchangeRate);
+                return dual.bs ? (
+                  <Text className="text-xs text-muted mt-0.5">
+                    o {dual.bs} al cambio de hoy
                   </Text>
-                </View>
-              ) : null}
+                ) : null;
+              })()}
             </View>
-            <View className="flex-row items-center gap-1.5 mt-1">
-              <View
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: STOCK_DOT_COLORS[stock] }}
-              />
+            <View
+              className="flex-row items-center gap-1.5 mt-2 self-start px-2.5 py-1 rounded-full"
+              style={{
+                backgroundColor:
+                  outOfStock ? '#F8717115' : '#17C96415',
+              }}
+            >
+              {stockIcon(
+                stock,
+                outOfStock ? '#F87171' : '#17C964',
+                14
+              )}
               <Text
                 className={
                   outOfStock
-                    ? 'text-xs font-medium text-danger'
-                    : 'text-xs font-medium text-foreground'
+                    ? 'text-xs font-semibold text-danger'
+                    : 'text-xs font-semibold text-success'
                 }
               >
                 {STOCK_LABELS[stock]}

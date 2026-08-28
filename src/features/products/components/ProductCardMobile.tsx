@@ -7,7 +7,8 @@ import {
   finalPrice,
   hasDiscount,
 } from '@/features/home/utils/adapters';
-import { formatPrice } from '@/utils/currency';
+import { formatDualCurrency, formatPrice } from '@/utils/currency';
+import { useConfigStore } from '@/store';
 import type { Product } from '@/types/whitelabel';
 
 type Props = {
@@ -24,8 +25,9 @@ type Props = {
  *  - ProductGrid (flex 1, numColumns 2)
  *  - SearchResults
  *
- * Muestra: imagen, badge descuento, marca, nombre, precio (con
- * tachado si hay descuento), botón "Ver" implícito (Pressable).
+ * Muestra: imagen, badge descuento, marca, nombre, precio USD grande
+ * + Bs. compacto abajo (dual currency del whitelabel), y el precio
+ * base tachado si hay descuento.
  */
 export function ProductCardMobile({
   product,
@@ -35,6 +37,15 @@ export function ProductCardMobile({
   const router = useRouter();
   const showDiscount = hasDiscount(product);
   const discount = discountPercent(product);
+  const exchangeRateRaw = useConfigStore(
+    (s) => s.appConfig?.amt_exchange_rate
+  );
+  const exchangeRate = exchangeRateRaw ? Number(exchangeRateRaw) : null;
+
+  const dual = formatDualCurrency(finalPrice(product), exchangeRate);
+  const baseDual = showDiscount
+    ? formatDualCurrency(basePrice(product), exchangeRate)
+    : null;
 
   return (
     <Pressable
@@ -45,7 +56,7 @@ export function ProductCardMobile({
         })
       }
       style={[{ width }, compact ? null : { flex: 1 }]}
-      className="bg-backgroundElement rounded-[14px] overflow-hidden"
+      className="bg-product-card rounded-[14px] overflow-hidden border border-border"
       accessibilityRole="button"
       accessibilityLabel={`Ver detalle de ${product.nb_product}`}
     >
@@ -62,8 +73,8 @@ export function ProductCardMobile({
           </View>
         )}
         {showDiscount ? (
-          <View className="absolute top-1.5 left-1.5 bg-danger rounded-md px-1.5 py-0.5">
-            <Text className="text-[10px] font-bold text-primary-foreground">
+          <View className="absolute top-1.5 left-1.5 bg-warning rounded-md px-1.5 py-0.5">
+            <Text className="text-[10px] font-bold text-foreground">
               -{discount}%
             </Text>
           </View>
@@ -83,14 +94,20 @@ export function ProductCardMobile({
           {product.nb_product}
         </Text>
         <View className="mt-0.5">
-          {showDiscount ? (
+          {baseDual ? (
             <Text className="text-[10px] text-muted line-through">
-              {formatPrice(basePrice(product), 'USD')}
+              {baseDual.usd}
             </Text>
           ) : null}
-          <Text className="text-sm font-bold text-foreground">
-            {formatPrice(finalPrice(product), 'USD')}
+          <Text
+            className="text-sm font-bold text-foreground"
+            style={{ fontVariant: ['tabular-nums'] }}
+          >
+            {dual.usd}
           </Text>
+          {dual.bs ? (
+            <Text className="text-[10px] text-muted">{dual.bs}</Text>
+          ) : null}
         </View>
       </View>
     </Pressable>
