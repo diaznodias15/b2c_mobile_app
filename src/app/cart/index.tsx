@@ -7,9 +7,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { ShoppingBag } from 'lucide-react-native';
 
 import AppTabs from '@/components/app-tabs';
+import { EmptyState } from '@/components/EmptyState';
 import { useCartStore, selectItemsByBranch } from '@/store/cart.store';
 import { useBranchStore } from '@/store/branch.store';
 import { useCartSync } from '@/features/cart/hooks/useCartSync';
@@ -57,26 +57,12 @@ export default function CartIndexScreen() {
         </View>
 
         {empty ? (
-          <View className="flex-1 items-center justify-center px-8 gap-3">
-            <View className="h-16 w-16 items-center justify-center rounded-full bg-backgroundElement">
-              <ShoppingBag size={28} color="#60646C" />
-            </View>
-            <Text className="text-base font-bold text-foreground text-center">
-              Tu carrito está vacío
-            </Text>
-            <Text className="text-xs text-muted text-center">
-              Explorá los departamentos desde Inicio y agregá productos.
-            </Text>
-            <Pressable
-              onPress={() => router.replace('/')}
-              className="mt-3 bg-primary rounded-[14px] py-3 px-6"
-              accessibilityRole="button"
-            >
-              <Text className="text-sm font-bold text-primary-foreground">
-                Ir a Inicio
-              </Text>
-            </Pressable>
-          </View>
+          <EmptyState
+            illustration="cart"
+            title="Tu carrito está vacío"
+            description="Explorá los departamentos desde Inicio y agregá los productos que necesites."
+            cta={{ label: 'Ir a Inicio', onPress: () => router.replace('/') }}
+          />
         ) : (
           <>
             <ScrollView

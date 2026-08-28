@@ -12,6 +12,7 @@ import { Search as SearchIcon, X, Clock } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import AppTabs from '@/components/app-tabs';
+import { EmptyState } from '@/components/EmptyState';
 import { useBranchStore } from '@/store';
 import { useProductSearch } from '@/features/products/hooks/useProductSearch';
 import { ProductGrid } from '@/features/products/components/ProductGrid';
@@ -112,15 +113,11 @@ export default function SearchScreen() {
             </Text>
           </View>
         ) : isReady && !isLoading && products.length === 0 ? (
-          <View className="flex-1 items-center justify-center px-8">
-            <SearchIcon size={28} color="#60646C" />
-            <Text className="text-sm font-bold text-foreground mt-3 text-center">
-              Sin resultados para "{debouncedQuery}"
-            </Text>
-            <Text className="text-xs text-muted text-center mt-1">
-              Probá con otra palabra o revisá la ortografía.
-            </Text>
-          </View>
+          <EmptyState
+            illustration="search"
+            title={`Sin resultados para "${debouncedQuery}"`}
+            description="Probá con otra palabra, revisá la ortografía, o cambiá de departamento."
+          />
         ) : (
           <ScrollView
             contentContainerStyle={{ paddingVertical: 8 }}
