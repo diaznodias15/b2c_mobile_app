@@ -2,16 +2,30 @@ import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomTabs } from '@/components/bottom-tabs';
+import { SOFT_COLORS } from '@/theme/colors';
 
 export default function CategoriesScreen() {
   const insets = useSafeAreaInsets();
   return (
-    <View className="flex-1 bg-background">
+    <View style={{ flex: 1, backgroundColor: SOFT_COLORS.background }}>
       <View
-        className="flex-1 items-center justify-center"
-        style={{ paddingTop: insets.top, paddingBottom: 60 + insets.bottom }}
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingTop: insets.top,
+          paddingBottom: 60 + insets.bottom,
+        }}
       >
-        <Text className="text-3xl font-bold text-foreground">Categorias</Text>
+        <Text
+          style={{
+            fontSize: 24,
+            fontWeight: '700',
+            color: SOFT_COLORS.foreground,
+          }}
+        >
+          Categorías
+        </Text>
       </View>
       <BottomTabs />
     </View>
