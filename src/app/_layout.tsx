@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
+import { View } from 'react-native';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HeroUINativeProvider } from 'heroui-native';
-
-import { AppShell } from '@/components/AppShell';
 
 export default function RootLayout() {
   const queryClient = useMemo(
@@ -30,19 +29,9 @@ export default function RootLayout() {
               },
             }}
           >
-            <AppShell>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: 'transparent' },
-                }}
-              >
-                <Stack.Screen name="index" />
-                <Stack.Screen name="categories" />
-                <Stack.Screen name="search" />
-                <Stack.Screen name="profile" />
-              </Stack>
-            </AppShell>
+            <View className="flex-1 bg-background">
+              <Stack screenOptions={{ headerShown: false }} />
+            </View>
           </HeroUINativeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
