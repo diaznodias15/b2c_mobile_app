@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { View } from 'react-native';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -31,11 +30,19 @@ export default function RootLayout() {
               },
             }}
           >
-            <View className="flex-1 bg-background">
-              <AppShell>
-                <Stack screenOptions={{ headerShown: false }} />
-              </AppShell>
-            </View>
+            <AppShell>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: 'transparent' },
+                }}
+              >
+                <Stack.Screen name="index" />
+                <Stack.Screen name="categories" />
+                <Stack.Screen name="search" />
+                <Stack.Screen name="profile" />
+              </Stack>
+            </AppShell>
           </HeroUINativeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
