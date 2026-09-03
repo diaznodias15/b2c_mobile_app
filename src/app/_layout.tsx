@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
+import { View } from 'react-native';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { HeroUINativeProvider } from 'heroui-native';
 
 export default function RootLayout() {
   const queryClient = useMemo(
@@ -19,7 +21,18 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <Stack screenOptions={{ headerShown: false }} />
+          <HeroUINativeProvider
+            config={{
+              textProps: {
+                allowFontScaling: true,
+                maxFontSizeMultiplier: 1.4,
+              },
+            }}
+          >
+            <View className="flex-1 bg-background">
+              <Stack screenOptions={{ headerShown: false }} />
+            </View>
+          </HeroUINativeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
