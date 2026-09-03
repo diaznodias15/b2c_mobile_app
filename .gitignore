@@ -5,6 +5,11 @@ node_modules/
 
 # Expo
 .expo/
+.expo.*
+.expo.bundle.*
+.expo.devserver.log*
+.expo.bak*
+.expo.disabled*
 dist/
 dist-test/
 coverage/
@@ -34,6 +39,7 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript
@@ -44,3 +50,9 @@ example
 # generated native folders
 /ios
 /android
+
+# backup files (renamed from .tsx / .ts before deletion on Windows)
+**/*.bak
+**/*.bak/
+**/*.disabled
+**/*.disabled.bak
