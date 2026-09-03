@@ -1,16 +1,17 @@
 import { usePathname, useRouter } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { House, LayoutGrid, Search, User } from 'lucide-react-native';
 
 const TABS = [
-  { label: 'Inicio', href: '/' },
-  { label: 'Categorías', href: '/categories' },
-  { label: 'Buscar', href: '/search' },
-  { label: 'Perfil', href: '/profile' },
+  { label: 'Inicio', href: '/', icon: House },
+  { label: 'Categorías', href: '/categories', icon: LayoutGrid },
+  { label: 'Buscar', href: '/search', icon: Search },
+  { label: 'Perfil', href: '/profile', icon: User },
 ] as const;
 
 /**
- * Barra de tabs inferior hecha con Pressable + router.push.
+ * Barra de tabs inferior con Pressable + router.push.
  *
  * La alternativa es `NativeTabs` de expo-router/unstable-native-tabs, pero
  * nos dio pantalla blanca en el device, probablemente por incompatibilidad
@@ -37,6 +38,8 @@ export function BottomTabs() {
     >
       {TABS.map((tab) => {
         const active = pathname === tab.href;
+        const Icon = tab.icon;
+        const iconColor = active ? '#008000' : '#60646C';
         return (
           <Pressable
             key={tab.href}
@@ -52,11 +55,12 @@ export function BottomTabs() {
                   : 'h-1 w-8 rounded-full bg-transparent mb-1'
               }
             />
+            <Icon size={22} color={iconColor} />
             <Text
               className={
                 active
-                  ? 'text-sm font-semibold text-primary'
-                  : 'text-sm text-muted'
+                  ? 'text-xs font-semibold text-primary mt-1'
+                  : 'text-xs text-muted mt-1'
               }
             >
               {tab.label}
