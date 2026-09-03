@@ -13,21 +13,27 @@ const TABS = [
 ] as const;
 
 /**
- * Barra de tabs inferior con Pressable + router.push.
+ * Barra de tabs inferior.
+ *
+ * Va pineada al fondo con `position: 'absolute'` (equivalente a
+ * `position: fixed` en web) para que:
+ *   1. El contenido de la pantalla SIEMPRE ocupe toda la altura disponible
+ *      sin tener que descontar la altura de la tab bar.
+ *   2. La tab bar NO dependa del flex layout del padre. En Android (Expo
+ *      Go) el `flex: 1` no se aplicaba consistentemente y el contenido se
+ *      colapsaba a 0px.
  *
  * La alternativa es `NativeTabs` de expo-router/unstable-native-tabs, pero
- * nos dio pantalla blanca en el device, probablemente por incompatibilidad
- * con el New Architecture en Expo Go. Esta version es 100% JS y anda en
- * cualquier plataforma.
+ * nos dio pantalla blanca en el device. Esta version es 100% JS.
  *
- * Cada screen agrega este componente al final y el router se encarga del
- * resto. No necesitamos anidar navegadores.
+ * Cada screen debe agregar `paddingBottom` al contenido para que el texto
+ * no quede tapado por las tabs (usamos TAB_BAR_HEIGHT como constante).
  *
- * NOTA: usamos `style` inline (NO className) porque las clases de Uniwind
- * para flex-direction, fontSize, color y margin en Text/View no se aplican
- * de forma consistente entre web y Android (Expo Go). Los estilos inline
- * via StyleSheet son la fuente de verdad en este componente.
+ * Estilos: 100% inline (NO className) porque las clases de Uniwind para
+ * flex/fontSize/color/margin no se aplican igual entre web y Android.
  */
+export const TAB_BAR_HEIGHT = 64;
+
 export function BottomTabs() {
   const router = useRouter();
   const pathname = usePathname();
@@ -36,6 +42,10 @@ export function BottomTabs() {
   return (
     <View
       style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
         flexDirection: 'row',
         backgroundColor: SOFT_COLORS.bottomNavbar,
         borderTopWidth: 1,
@@ -57,7 +67,7 @@ export function BottomTabs() {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              paddingVertical: 10,
+              paddingVertical: 8,
             }}
             accessibilityRole="button"
             accessibilityLabel={tab.label}
@@ -68,7 +78,7 @@ export function BottomTabs() {
                 height: 3,
                 borderRadius: 2,
                 backgroundColor: active ? SOFT_COLORS.primary : 'transparent',
-                marginBottom: 6,
+                marginBottom: 4,
               }}
             />
             <Icon size={22} color={iconColor} />

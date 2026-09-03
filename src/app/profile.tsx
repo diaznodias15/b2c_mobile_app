@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BottomTabs } from '@/components/bottom-tabs';
+import { BottomTabs, TAB_BAR_HEIGHT } from '@/components/bottom-tabs';
 import { SOFT_COLORS } from '@/theme/colors';
 
 export default function ProfileScreen() {
@@ -14,7 +14,7 @@ export default function ProfileScreen() {
           alignItems: 'center',
           justifyContent: 'center',
           paddingTop: insets.top,
-          paddingBottom: 60 + insets.bottom,
+          paddingBottom: TAB_BAR_HEIGHT + insets.bottom,
         }}
       >
         <Text
