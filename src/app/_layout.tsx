@@ -6,6 +6,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HeroUINativeProvider } from 'heroui-native';
 
+import { AppShell } from '@/components/AppShell';
+
 export default function RootLayout() {
   const queryClient = useMemo(
     () =>
@@ -30,7 +32,9 @@ export default function RootLayout() {
             }}
           >
             <View className="flex-1 bg-background">
-              <Stack screenOptions={{ headerShown: false }} />
+              <AppShell>
+                <Stack screenOptions={{ headerShown: false }} />
+              </AppShell>
             </View>
           </HeroUINativeProvider>
         </QueryClientProvider>
