@@ -1,3 +1,41 @@
+diff --git a/node_modules/expo-constants/build/Constants.js b/node_modules/expo-constants/build/Constants.js
+index a736bf7..87557ee 100644
+--- a/node_modules/expo-constants/build/Constants.js
++++ b/node_modules/expo-constants/build/Constants.js
+@@ -7,6 +7,20 @@ export { AppOwnership, ExecutionEnvironment, UserInterfaceIdiom, } from './Const
+ if (!ExponentConstants) {
+     console.warn("No native ExponentConstants module found, are you sure the expo-constants's module is linked properly?");
+ }
++// PATCH: si no hay ExponentConstants nativo (e.g. Expo Go viejo en iPhone
++// que no incluye el native module de SDK 57), armamos un expoConfig stub
++// con scheme + bundleIdentifier hardcoded desde el app.json del proyecto.
++// Esto evita que `expo-linking` tire `expo-linking needs access to the
++// expo-constants manifest` y la app se quede en pantalla blanca.
++const FALLBACK_APP_CONFIG = {
++    name: 'b2c_mobile_app',
++    slug: 'b2c_mobile_app',
++    scheme: 'b2cmobileapp',
++    version: '1.0.0',
++    ios: { bundleIdentifier: 'y' },
++    android: { package: 'com.anonymous.b2c_mobile_app' },
++};
++const fallbackAppConfig = !ExponentConstants ? FALLBACK_APP_CONFIG : null;
+ const ExpoUpdates = requireOptionalNativeModule('ExpoUpdates');
+ let rawUpdatesManifest = null;
+ // If expo-updates defines a non-empty manifest, prefer that one
+@@ -45,6 +59,12 @@ if (ExponentConstants && ExponentConstants.manifest) {
+         rawAppConfig = appConfig;
+     }
+ }
++else if (fallbackAppConfig) {
++    // PATCH: si no hay ExponentConstants, usamos el fallback con scheme
++    // del app.json del proyecto. Asi hasConstantsManifest() retorna true
++    // y expo-linking puede resolver el scheme sin tirar.
++    rawAppConfig = fallbackAppConfig;
++}
+ let rawManifest = rawUpdatesManifest ?? rawDevLauncherManifest ?? rawAppConfig;
+ const { name, appOwnership, ...nativeConstants } = (ExponentConstants || {});
+ const constants = {
 diff --git a/node_modules/expo-constants/src/Constants.ts b/node_modules/expo-constants/src/Constants.ts
 index bc428b3..6ba1f2e 100644
 --- a/node_modules/expo-constants/src/Constants.ts
