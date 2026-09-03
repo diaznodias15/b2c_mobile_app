@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BottomTabs, TAB_BAR_HEIGHT } from '@/components/bottom-tabs';
+import { BottomTabs } from '@/components/bottom-tabs';
 import { SOFT_COLORS } from '@/theme/colors';
 
 export default function CategoriesScreen() {
@@ -14,7 +14,7 @@ export default function CategoriesScreen() {
           alignItems: 'center',
           justifyContent: 'center',
           paddingTop: insets.top,
-          paddingBottom: TAB_BAR_HEIGHT + insets.bottom,
+          paddingHorizontal: 24,
         }}
       >
         <Text

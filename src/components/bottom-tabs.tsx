@@ -15,25 +15,18 @@ const TABS = [
 /**
  * Barra de tabs inferior.
  *
- * Va pineada al fondo con `position: 'absolute'` (equivalente a
- * `position: fixed` en web) para que:
- *   1. El contenido de la pantalla SIEMPRE ocupe toda la altura disponible
- *      sin tener que descontar la altura de la tab bar.
- *   2. La tab bar NO dependa del flex layout del padre. En Android (Expo
- *      Go) el `flex: 1` no se aplicaba consistentemente y el contenido se
- *      colapsaba a 0px.
+ * Patron estandar de React Native: vive como hermano del contenido dentro
+ * de un View padre con `flex: 1`. El contenido usa `flex: 1` y esta barra
+ * toma su altura natural al final. Sin position absolute, sin truco raro.
  *
- * La alternativa es `NativeTabs` de expo-router/unstable-native-tabs, pero
- * nos dio pantalla blanca en el device. Esta version es 100% JS.
- *
- * Cada screen debe agregar `paddingBottom` al contenido para que el texto
- * no quede tapado por las tabs (usamos TAB_BAR_HEIGHT como constante).
+ *   <View flex:1>            <-- outer
+ *     <View flex:1>contenido</View>  <-- este se expande
+ *     <BottomTabs />          <-- este queda pegado abajo
+ *   </View>
  *
  * Estilos: 100% inline (NO className) porque las clases de Uniwind para
  * flex/fontSize/color/margin no se aplican igual entre web y Android.
  */
-export const TAB_BAR_HEIGHT = 64;
-
 export function BottomTabs() {
   const router = useRouter();
   const pathname = usePathname();
@@ -42,10 +35,6 @@ export function BottomTabs() {
   return (
     <View
       style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         flexDirection: 'row',
         backgroundColor: SOFT_COLORS.bottomNavbar,
         borderTopWidth: 1,
