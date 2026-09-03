@@ -11,9 +11,7 @@ export default function HomeScreen() {
           <Text className="text-2xl font-bold text-foreground">Hola mundo</Text>
         </View>
       </SafeAreaView>
-      <SafeAreaView edges={['bottom']}>
-        <BottomTabs />
-      </SafeAreaView>
+      <BottomTabs />
     </View>
   );
 }

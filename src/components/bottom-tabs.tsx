@@ -1,5 +1,6 @@
 import { usePathname, useRouter } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const TABS = [
   { label: 'Inicio', href: '/' },
@@ -18,13 +19,22 @@ const TABS = [
  *
  * Cada screen agrega este componente al final y el router se encarga del
  * resto. No necesitamos anidar navegadores.
+ *
+ * El padding bottom se calcula con `useSafeAreaInsets` para respetar el
+ * home indicator en iOS / gesture bar en Android, sin necesidad de envolver
+ * todo en un SafeAreaView (que en algunas versiones de react-native-safe-
+ * area-context rompe el flujo flex de la pantalla).
  */
 export function BottomTabs() {
   const router = useRouter();
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View className="flex-row bg-background border-t border-border">
+    <View
+      className="flex-row bg-background border-t border-border"
+      style={{ paddingBottom: insets.bottom }}
+    >
       {TABS.map((tab) => {
         const active = pathname === tab.href;
         return (
