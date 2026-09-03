@@ -1,0 +1,43 @@
+diff --git a/node_modules/expo-constants/src/Constants.ts b/node_modules/expo-constants/src/Constants.ts
+index bc428b3..6ba1f2e 100644
+--- a/node_modules/expo-constants/src/Constants.ts
++++ b/node_modules/expo-constants/src/Constants.ts
+@@ -36,6 +36,26 @@ if (!ExponentConstants) {
+   );
+ }
+ 
++// PATCH: si no hay ExponentConstants (e.g. Expo Go viejo en iPhone que
++// no incluye el native module de SDK 57), armamos un expoConfig stub
++// con scheme + bundleIdentifier hardcoded desde el app.json del
++// proyecto. Esto evita que `expo-linking` tire `expo-linking needs
++// access to the expo-constants manifest` y la app se quede en
++// pantalla blanca.
++//
++// Si actualizás scheme/bundleIdentifier en app.json, actualizá
++// también este fallback. (La alternativa era `require` del app.json,
++// pero Metro no resuelve JSON con `require` en runtime bundle.)
++const FALLBACK_APP_CONFIG: ExpoConfig = {
++  name: 'b2c_mobile_app',
++  slug: 'b2c_mobile_app',
++  scheme: 'b2cmobileapp',
++  version: '1.0.0',
++  ios: { bundleIdentifier: 'y' },
++  android: { package: 'com.anonymous.b2c_mobile_app' },
++};
++let fallbackAppConfig: ExpoConfig | null = !ExponentConstants ? FALLBACK_APP_CONFIG : null;
++
+ const ExpoUpdates = requireOptionalNativeModule<ExpoUpdatesModule>('ExpoUpdates');
+ 
+ let rawUpdatesManifest: UpdatesManifest | null = null;
+@@ -76,6 +96,11 @@ if (ExponentConstants && ExponentConstants.manifest) {
+   } else {
+     rawAppConfig = appConfig as any;
+   }
++} else if (fallbackAppConfig) {
++  // PATCH: si no hay ExponentConstants, usamos el app.json del proyecto
++  // como rawAppConfig. Esto le da un manifest a `expo-linking` y
++  // `expo-router` para que no tiren al inicializar.
++  rawAppConfig = fallbackAppConfig;
+ }
+ 
+ type RawManifest = UpdatesManifest | DevLauncherManifest | ExpoConfig;
