@@ -50,9 +50,3 @@ example
 # generated native folders
 /ios
 /android
-
-# backup files (renamed from .tsx / .ts before deletion on Windows)
-**/*.bak
-**/*.bak/
-**/*.disabled
-**/*.disabled.bak
