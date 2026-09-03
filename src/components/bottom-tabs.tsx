@@ -34,7 +34,10 @@ export function BottomTabs() {
   return (
     <View
       className="flex-row bg-background border-t border-border"
-      style={{ paddingBottom: insets.bottom }}
+      style={{
+        flexDirection: 'row',
+        paddingBottom: insets.bottom,
+      }}
     >
       {TABS.map((tab) => {
         const active = pathname === tab.href;
