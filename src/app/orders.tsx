@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomTabs } from '@/components/bottom-tabs';
 import { useConfigStore } from '@/store/config.store';
 
-export default function HomeScreen() {
+export default function OrdersScreen() {
   const insets = useSafeAreaInsets();
   const colors = useConfigStore((s) => s.getThemeColors());
   return (
@@ -19,7 +19,7 @@ export default function HomeScreen() {
         }}
       >
         <Text style={{ fontSize: 24, fontWeight: '700', color: colors.foreground }}>
-          Inicio
+          Pedidos
         </Text>
       </View>
       <BottomTabs />

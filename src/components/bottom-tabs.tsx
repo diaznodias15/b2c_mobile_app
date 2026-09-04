@@ -1,56 +1,71 @@
+import { useState } from 'react';
 import { usePathname, useRouter } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { House, LayoutGrid, Search, User } from 'lucide-react-native';
+import {
+  CircleQuestionMark,
+  ClipboardList,
+  Ellipsis,
+  House,
+  LayoutGrid,
+  Search,
+  ShoppingCart,
+  UserRound,
+} from 'lucide-react-native';
 
-import { SOFT_COLORS } from '@/theme/colors';
+import { useConfigStore } from '@/store/config.store';
+import { useCartStore, selectCartCount } from '@/store/cart.store';
 
-const TABS = [
+const NAV_TABS = [
   { label: 'Inicio', href: '/', icon: House },
-  { label: 'Categorías', href: '/categories', icon: LayoutGrid },
+  { label: 'Departamentos', href: '/departments', icon: LayoutGrid },
   { label: 'Buscar', href: '/search', icon: Search },
-  { label: 'Perfil', href: '/profile', icon: User },
+  { label: 'Carrito', href: '/cart', icon: ShoppingCart },
 ] as const;
 
+const MORE_MENU = [
+  { label: 'Perfil', href: '/profile', icon: UserRound },
+  { label: 'Pedidos', href: '/orders', icon: ClipboardList },
+  { label: 'Ayuda', href: '/help', icon: CircleQuestionMark },
+] as const;
+
+const MORE_ROUTES = MORE_MENU.map((item) => item.href) as readonly string[];
+
 /**
- * Barra de tabs inferior.
- *
- * Patron estandar de React Native: vive como hermano del contenido dentro
- * de un View padre con `flex: 1`. El contenido usa `flex: 1` y esta barra
- * toma su altura natural al final. Sin position absolute, sin truco raro.
- *
- *   <View flex:1>            <-- outer
- *     <View flex:1>contenido</View>  <-- este se expande
- *     <BottomTabs />          <-- este queda pegado abajo
- *   </View>
- *
- * Estilos: 100% inline (NO className) porque las clases de Uniwind para
- * flex/fontSize/color/margin no se aplican igual entre web y Android.
+ * Barra de tabs inferior. Estilos 100% inline (NO className): Uniwind no
+ * aplica de forma confiable flex-direction/align/justify/gap ni fontSize
+ * en componentes RN crudos en Android (ver AGENTS.md). "Ver Más" abre un
+ * <Modal> nativo de RN con la lista de accesos.
  */
 export function BottomTabs() {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
+  const colors = useConfigStore((s) => s.getThemeColors());
+  const cartCount = useCartStore(selectCartCount);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+
+  const isMoreActive = MORE_ROUTES.includes(pathname);
 
   return (
     <View
       style={{
         flexDirection: 'row',
-        backgroundColor: SOFT_COLORS.bottomNavbar,
+        backgroundColor: colors.bottomNavbar,
         borderTopWidth: 1,
-        borderTopColor: SOFT_COLORS.border,
+        borderTopColor: colors.border,
         paddingBottom: insets.bottom,
       }}
     >
-      {TABS.map((tab) => {
+      {NAV_TABS.map((tab) => {
         const active = pathname === tab.href;
         const Icon = tab.icon;
-        const iconColor = active ? SOFT_COLORS.primary : SOFT_COLORS.muted;
-        const labelColor = active ? SOFT_COLORS.primary : SOFT_COLORS.muted;
+        const iconColor = active ? colors.primary : colors.muted;
+
         return (
           <Pressable
             key={tab.href}
-            onPress={() => router.push(tab.href as any)}
+            onPress={() => router.replace(tab.href as any)}
             style={{
               flex: 1,
               flexDirection: 'column',
@@ -66,17 +81,39 @@ export function BottomTabs() {
                 width: 32,
                 height: 3,
                 borderRadius: 2,
-                backgroundColor: active ? SOFT_COLORS.primary : 'transparent',
+                backgroundColor: active ? colors.primary : 'transparent',
                 marginBottom: 4,
               }}
             />
-            <Icon size={22} color={iconColor} />
+            <View>
+              <Icon size={22} color={iconColor} />
+              {tab.href === '/cart' && cartCount > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    right: -8,
+                    top: -4,
+                    minWidth: 16,
+                    height: 16,
+                    borderRadius: 8,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingHorizontal: 4,
+                    backgroundColor: colors.danger,
+                  }}
+                >
+                  <Text style={{ color: '#FFFFFF', fontSize: 10, lineHeight: 16 }}>
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </Text>
+                </View>
+              )}
+            </View>
             <Text
               numberOfLines={1}
               style={{
                 fontSize: 11,
                 fontWeight: active ? '600' : '400',
-                color: labelColor,
+                color: iconColor,
                 marginTop: 4,
               }}
             >
@@ -85,6 +122,103 @@ export function BottomTabs() {
           </Pressable>
         );
       })}
+
+      <Pressable
+        onPress={() => setIsMoreOpen(true)}
+        style={{
+          flex: 1,
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingVertical: 8,
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Ver más"
+      >
+        <View
+          style={{
+            width: 32,
+            height: 3,
+            borderRadius: 2,
+            backgroundColor: isMoreActive ? colors.primary : 'transparent',
+            marginBottom: 4,
+          }}
+        />
+        <Ellipsis size={22} color={isMoreActive ? colors.primary : colors.muted} />
+        <Text
+          numberOfLines={1}
+          style={{
+            fontSize: 11,
+            fontWeight: isMoreActive ? '600' : '400',
+            color: isMoreActive ? colors.primary : colors.muted,
+            marginTop: 4,
+          }}
+        >
+          Ver más
+        </Text>
+      </Pressable>
+
+      <Modal
+        visible={isMoreOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsMoreOpen(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
+          onPress={() => setIsMoreOpen(false)}
+          accessibilityLabel="Cerrar menú"
+        >
+          <View style={{ flex: 1 }} />
+          <Pressable
+            style={{
+              backgroundColor: colors.surface,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              paddingHorizontal: 16,
+              paddingTop: 16,
+              paddingBottom: insets.bottom + 16,
+            }}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: '600',
+                color: colors.foreground,
+                marginBottom: 12,
+              }}
+            >
+              Más opciones
+            </Text>
+            {MORE_MENU.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Pressable
+                  key={item.href}
+                  onPress={() => {
+                    setIsMoreOpen(false);
+                    router.replace(item.href as any);
+                  }}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                    paddingVertical: 12,
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.label}
+                >
+                  <Icon size={20} color={colors.foreground} />
+                  <Text style={{ fontSize: 16, color: colors.foreground }}>
+                    {item.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }

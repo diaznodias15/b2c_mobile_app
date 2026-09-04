@@ -2,7 +2,6 @@ import { useMemo, type ReactNode } from 'react';
 import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { HeroUINativeProvider } from 'heroui-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { useConfigStore, useBranchStore, useDepartmentStore, useAdvertisingStore } from '@/store';
@@ -11,7 +10,7 @@ import { loadConfig } from '@/api';
 
 /**
  * Providers raiz. Un solo lugar para montar todos los providers
- * (Uniwind, HeroUI, Query, SafeArea, GestureHandler).
+ * (Uniwind, Query, SafeArea, GestureHandler).
  */
 export function Providers({ children }: { children: ReactNode }) {
   const appConfig = useConfigStore((s) => s.appConfig);
@@ -40,18 +39,9 @@ export function Providers({ children }: { children: ReactNode }) {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <HeroUINativeProvider
-            config={{
-              textProps: {
-                allowFontScaling: true,
-                maxFontSizeMultiplier: 1.4,
-              },
-            }}
-          >
-            <View style={[{ flex: 1 }, cssVars as object]} className="bg-background">
-              {children}
-            </View>
-          </HeroUINativeProvider>
+          <View style={[{ flex: 1 }, cssVars as object]} className="bg-background">
+            {children}
+          </View>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

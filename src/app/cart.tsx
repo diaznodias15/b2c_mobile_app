@@ -3,10 +3,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomTabs } from '@/components/bottom-tabs';
 import { useConfigStore } from '@/store/config.store';
+import { useCartStore, selectCartCount } from '@/store/cart.store';
 
-export default function HomeScreen() {
+export default function CartScreen() {
   const insets = useSafeAreaInsets();
   const colors = useConfigStore((s) => s.getThemeColors());
+  const cartCount = useCartStore(selectCartCount);
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View
@@ -16,10 +19,16 @@ export default function HomeScreen() {
           justifyContent: 'center',
           paddingTop: insets.top,
           paddingHorizontal: 24,
+          gap: 8,
         }}
       >
         <Text style={{ fontSize: 24, fontWeight: '700', color: colors.foreground }}>
-          Inicio
+          Carrito
+        </Text>
+        <Text style={{ fontSize: 16, color: colors.muted }}>
+          {cartCount > 0
+            ? `${cartCount} ${cartCount === 1 ? 'producto' : 'productos'}`
+            : 'Tu carrito está vacío'}
         </Text>
       </View>
       <BottomTabs />
