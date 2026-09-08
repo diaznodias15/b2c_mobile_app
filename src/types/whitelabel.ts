@@ -122,7 +122,13 @@ export type TopProduct = Product;
 /** Indicador de stock del backend: 0 = sin stock, 1 = pocas unidades, 2 = en stock. */
 export type StockLevel = 0 | 1 | 2;
 
-/** Detalle completo de un producto (`/api/products/detail/:slug`). */
+/**
+ * Detalle completo de un producto (`/api/products/detail/:slug`).
+ * Confirmado contra la API real (2026-09-08): `qty_product` es string
+ * (no number, a diferencia de lo que sugería el tipo original) y
+ * `product_img` es un array de `{tx_img_url}` (no un string suelto) —
+ * puede venir `null` si el producto no tiene fotos cargadas.
+ */
 export type ProductDetail = {
   id: number;
   brand_id?: number;
@@ -133,21 +139,21 @@ export type ProductDetail = {
   is_regulado?: number;
   tx_slug: string;
   tx_description?: string | null;
+  /** En Bs. — ver el comentario de `Product.pri_product_price`. */
   pri_product_price: string;
   pri_product_final_price: string;
-  qty_product: number;
+  qty_product: string;
   qty_discount?: number | string;
   qty_tax?: number | string;
   availability_indicator: StockLevel;
-  product_img?: string | null;
-  product_features?: ProductFeature[];
+  product_img?: { tx_img_url: string }[] | null;
+  product_features?: ProductFeature[] | null;
   availability_per_branch?: AvailabilityByBranch[];
 };
 
 export type ProductFeature = {
-  id?: number;
-  nb_feature?: string;
-  tx_value?: string;
+  tx_label: string;
+  tx_description: string;
 };
 
 /** Disponibilidad en una sede específica. */
@@ -161,7 +167,7 @@ export type BranchAvailability = {
   lat?: number | string;
   lng?: number | string;
   qty_product: number;
-  pri_product_final_price: string;
+  pri_product_final_price: number | string;
   availability_indicator: StockLevel;
 };
 

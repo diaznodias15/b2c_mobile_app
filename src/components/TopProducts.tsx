@@ -1,4 +1,5 @@
 import { ScrollView, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 
 import { ProductCardSkeleton } from '@/components/ProductCardSkeleton';
@@ -11,6 +12,7 @@ import type { ThemeColors } from '@/theme/colors';
 import type { Product } from '@/types/whitelabel';
 
 export function TopProducts({ colors }: { colors: ThemeColors }) {
+  const router = useRouter();
   const branchId = useBranchStore(selectEffectiveBranchId);
   const addProduct = useCartStore((s) => s.addProduct);
 
@@ -68,8 +70,7 @@ export function TopProducts({ colors }: { colors: ThemeColors }) {
               key={product.id}
               product={product}
               colors={colors}
-              // TODO: navegar a /product/[slug] cuando exista esa pantalla (Fase 3)
-              onPress={() => {}}
+              onPress={() => router.push(`/product/${product.tx_slug}`)}
               onAddToCart={() => handleAddToCart(product)}
             />
           ))}
