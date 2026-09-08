@@ -5,8 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PackageSearch, RefreshCcw } from 'lucide-react-native';
 
 import { BottomTabs } from '@/components/bottom-tabs';
-import { DepartmentCard } from '@/components/DepartmentCard';
+import { DepartmentCard, DEPARTMENT_CARD_HEIGHT, DEPARTMENT_CARD_WIDTH } from '@/components/DepartmentCard';
 import { bootstrapConfig } from '@/components/Providers';
+import { Skeleton } from '@/components/Skeleton';
 import { useThemeColors } from '@/store/config.store';
 import { useDepartmentStore } from '@/store/department.store';
 import type { Department } from '@/types/whitelabel';
@@ -68,6 +69,10 @@ function EmptyDepartments({ colors }: { colors: ReturnType<typeof useThemeColors
     setIsRetrying(false);
   };
 
+  if (isRetrying) {
+    return <DepartmentsGridSkeleton colors={colors} />;
+  }
+
   return (
     <View
       style={{
@@ -118,7 +123,6 @@ function EmptyDepartments({ colors }: { colors: ReturnType<typeof useThemeColors
 
       <Pressable
         onPress={handleRetry}
-        disabled={isRetrying}
         style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -127,16 +131,39 @@ function EmptyDepartments({ colors }: { colors: ReturnType<typeof useThemeColors
           paddingHorizontal: 20,
           borderRadius: 999,
           backgroundColor: colors.primary,
-          opacity: isRetrying ? 0.7 : 1,
         }}
         accessibilityRole="button"
         accessibilityLabel="Reintentar carga de departamentos"
       >
         <RefreshCcw size={16} color={colors.onPrimary} />
         <Text style={{ fontSize: 14, fontWeight: '600', color: colors.onPrimary }}>
-          {isRetrying ? 'Recargando…' : 'Reintentar'}
+          Reintentar
         </Text>
       </Pressable>
+    </View>
+  );
+}
+
+/** Grid 2x2 mientras `handleRetry` vuelve a pedir la config. */
+function DepartmentsGridSkeleton({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
+        paddingTop: 48,
+      }}
+    >
+      {[0, 1, 2, 3].map((i) => (
+        <Skeleton
+          key={i}
+          width={DEPARTMENT_CARD_WIDTH}
+          height={DEPARTMENT_CARD_HEIGHT}
+          borderRadius={16}
+          colors={colors}
+        />
+      ))}
     </View>
   );
 }
