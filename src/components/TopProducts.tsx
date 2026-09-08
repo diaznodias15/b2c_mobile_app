@@ -11,16 +11,33 @@ import { useCartStore } from '@/store/cart.store';
 import type { ThemeColors } from '@/theme/colors';
 import type { Product } from '@/types/whitelabel';
 
-export function TopProducts({ colors }: { colors: ThemeColors }) {
+export function TopProducts({
+  colors,
+  title = 'Más vendidos',
+  subtitle = 'Los productos favoritos de nuestros clientes.',
+  brand,
+  excludeSlug,
+}: {
+  colors: ThemeColors;
+  /** Título/subtítulo personalizables — ej. "relacionados" en el detalle de producto. */
+  title?: string;
+  subtitle?: string;
+  /** `brand_slug` para filtrar por marca (ej. relacionados en el detalle de producto). */
+  brand?: string;
+  /** Oculta un producto puntual del carrusel (ej. el que ya se está viendo en el detalle). */
+  excludeSlug?: string;
+}) {
   const router = useRouter();
   const branchId = useBranchStore(selectEffectiveBranchId);
   const addProduct = useCartStore((s) => s.addProduct);
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ['top-products', branchId],
-    queryFn: () => getTopProducts(branchId as number),
+  const { data, isLoading } = useQuery({
+    queryKey: ['top-products', branchId, brand ?? null],
+    queryFn: () => getTopProducts(branchId as number, { brand }),
     enabled: branchId !== null,
   });
+
+  const products = data?.filter((p) => p.tx_slug !== excludeSlug);
 
   if (branchId === null) return null;
   if (!isLoading && (!products || products.length === 0)) return null;
@@ -41,11 +58,7 @@ export function TopProducts({ colors }: { colors: ThemeColors }) {
   return (
     <View style={{ marginTop: 24 }}>
       <View style={{ paddingHorizontal: 24 }}>
-        <SectionHeader
-          title="Más vendidos"
-          subtitle="Los productos favoritos de nuestros clientes."
-          colors={colors}
-        />
+        <SectionHeader title={title} subtitle={subtitle} colors={colors} />
       </View>
 
       {isLoading ? (

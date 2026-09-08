@@ -10,6 +10,7 @@ import { ChevronLeft, Minus, Plus } from 'lucide-react-native';
 
 import { BranchInventoryList } from '@/components/BranchInventoryList';
 import { ProductDetailSkeleton } from '@/components/ProductDetailSkeleton';
+import { TopProducts } from '@/components/TopProducts';
 import { getProductDetail } from '@/api/services/products.services';
 import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
@@ -271,6 +272,16 @@ export default function ProductDetailScreen() {
             />
           )}
         </View>
+
+        {product.brand_slug && (
+          <TopProducts
+            colors={colors}
+            title={`Productos de la marca ${product.nb_brand}`}
+            subtitle="Descubre los productos más populares entre nuestros clientes."
+            brand={product.brand_slug}
+            excludeSlug={product.tx_slug}
+          />
+        )}
 
         <View style={{ height: insets.bottom + 24 }} />
       </ScrollView>
