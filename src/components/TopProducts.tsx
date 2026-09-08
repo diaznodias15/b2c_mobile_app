@@ -1,8 +1,9 @@
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 
+import { ProductCardSkeleton } from '@/components/ProductCardSkeleton';
 import { SectionHeader } from '@/components/SectionHeader';
-import { ProductCard, PRODUCT_CARD_WIDTH } from '@/components/ProductCard';
+import { ProductCard } from '@/components/ProductCard';
 import { getTopProducts } from '@/api/services/products.services';
 import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
@@ -46,9 +47,16 @@ export function TopProducts({ colors }: { colors: ThemeColors }) {
       </View>
 
       {isLoading ? (
-        <View style={{ height: PRODUCT_CARD_WIDTH, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={colors.primary} />
-        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          scrollEnabled={false}
+          contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }}
+        >
+          {[0, 1, 2].map((i) => (
+            <ProductCardSkeleton key={i} colors={colors} />
+          ))}
+        </ScrollView>
       ) : (
         <ScrollView
           horizontal
