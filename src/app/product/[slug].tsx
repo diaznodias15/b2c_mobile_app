@@ -16,6 +16,7 @@ import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
 import { useConfigStore, useThemeColors } from '@/store/config.store';
 import { useCurrencyStore } from '@/store/currency.store';
+import { useToastStore } from '@/store/toast.store';
 import { formatDisplayPrice } from '@/utils/currency';
 import { STOCK_META } from '@/utils/stock';
 import type { ThemeColors } from '@/theme/colors';
@@ -44,6 +45,7 @@ export default function ProductDetailScreen() {
 
   const branchId = useBranchStore(selectEffectiveBranchId);
   const addProduct = useCartStore((s) => s.addProduct);
+  const showToast = useToastStore((s) => s.show);
   const displayCurrency = useCurrencyStore((s) => s.displayCurrency);
   const exchangeRate = useConfigStore((s) => s.appConfig?.amt_exchange_rate);
 
@@ -86,6 +88,7 @@ export default function ProductDetailScreen() {
       pri_product_final_price: product.pri_product_final_price,
       qty: quantity,
     });
+    showToast('Producto agregado al carrito');
     setQuantity(1);
   };
 

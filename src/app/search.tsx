@@ -13,6 +13,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
 import { useThemeColors } from '@/store/config.store';
+import { useToastStore } from '@/store/toast.store';
 import type { ThemeColors } from '@/theme/colors';
 import type { Product } from '@/types/whitelabel';
 
@@ -26,6 +27,7 @@ export default function SearchScreen() {
   const colors = useThemeColors();
   const branchId = useBranchStore(selectEffectiveBranchId);
   const addProduct = useCartStore((s) => s.addProduct);
+  const showToast = useToastStore((s) => s.show);
 
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query.trim(), DEBOUNCE_MS);
@@ -61,6 +63,7 @@ export default function SearchScreen() {
       pri_product_final_price: product.pri_product_final_price,
       qty: 1,
     });
+    showToast('Producto agregado al carrito');
   };
 
   return (

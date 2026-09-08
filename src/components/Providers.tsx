@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { ProductCardSkeleton } from '@/components/ProductCardSkeleton';
 import { Skeleton } from '@/components/Skeleton';
+import { Toast } from '@/components/Toast';
 import { useConfigStore, useThemeColors, useBranchStore, useDepartmentStore, useAdvertisingStore, useBrandsStore } from '@/store';
 import { buildThemeColors, themeColorsToCssVars } from '@/theme';
 import { loadConfig } from '@/api';
@@ -57,6 +58,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <QueryClientProvider client={queryClient}>
           <View style={[{ flex: 1 }, cssVars as object]} className="bg-background">
             {isBooting ? <HomeSkeleton /> : children}
+            {!isBooting && <Toast />}
           </View>
         </QueryClientProvider>
       </SafeAreaProvider>
