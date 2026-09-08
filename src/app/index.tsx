@@ -8,6 +8,7 @@ import { BottomTabs } from '@/components/bottom-tabs';
 import { BrandsMarquee } from '@/components/BrandsMarquee';
 import { DeliveryBanner } from '@/components/DeliveryBanner';
 import { DepartmentCard } from '@/components/DepartmentCard';
+import { Footer } from '@/components/Footer';
 import { HomeNavbar } from '@/components/HomeNavbar';
 import { SectionHeader } from '@/components/SectionHeader';
 import { TopProducts } from '@/components/TopProducts';
@@ -115,6 +116,8 @@ export default function HomeScreen() {
         <DeliveryBanner colors={colors} />
 
         <BrandsMarquee colors={colors} />
+
+        <Footer colors={colors} />
       </ScrollView>
       <BottomTabs />
     </View>
