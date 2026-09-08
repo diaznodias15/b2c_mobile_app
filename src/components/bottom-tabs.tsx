@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'expo-router';
 import { Animated, Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ReanimatedAnimated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import {
   CircleQuestionMark,
   ClipboardList,
@@ -16,6 +17,7 @@ import {
 import { useThemeColors } from '@/store/config.store';
 import { useCartStore, selectCartCount } from '@/store/cart.store';
 import { useCurrencyStore, type DisplayCurrency } from '@/store/currency.store';
+import { useFlyingCartStore } from '@/store/flyingCart.store';
 
 const NAV_TABS = [
   { label: 'Inicio', href: '/', icon: House },
@@ -46,11 +48,34 @@ export function BottomTabs() {
   const cartCount = useCartStore(selectCartCount);
   const displayCurrency = useCurrencyStore((s) => s.displayCurrency);
   const setDisplayCurrency = useCurrencyStore((s) => s.setDisplayCurrency);
+  const setCartIconPosition = useFlyingCartStore((s) => s.setCartIconPosition);
+  const bounceSignal = useFlyingCartStore((s) => s.bounceSignal);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const sheetTranslateY = useRef(new Animated.Value(400)).current;
+  const cartIconRef = useRef<View>(null);
+  const bounceScale = useSharedValue(1);
+  const isFirstBounce = useRef(true);
 
   const isMoreActive = MORE_ROUTES.includes(pathname);
+
+  // "Flying to cart" hace rebotar el ícono al aterrizar (bounceSignal
+  // cambia en clearFly) — se salta el primer render para no rebotar
+  // solo porque el store ya existía con bounceSignal: 0.
+  useEffect(() => {
+    if (isFirstBounce.current) {
+      isFirstBounce.current = false;
+      return;
+    }
+    bounceScale.value = withSequence(
+      withTiming(1.35, { duration: 120 }),
+      withTiming(1, { duration: 180 })
+    );
+  }, [bounceSignal, bounceScale]);
+
+  const cartIconAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: bounceScale.value }],
+  }));
 
   useEffect(() => {
     if (!isMoreOpen) return;
@@ -88,7 +113,12 @@ export function BottomTabs() {
         return (
           <Pressable
             key={tab.href}
-            onPress={() => router.replace(tab.href as any)}
+            onPress={() => {
+              // Tocar la tab ya activa no debe re-navegar: router.replace
+              // re-monta la pantalla igual (mismo path o no), lo que
+              // resetea cualquier state local (ej. el texto de Buscar).
+              if (!active) router.replace(tab.href as any);
+            }}
             style={{
               flex: 1,
               flexDirection: 'column',
@@ -108,29 +138,43 @@ export function BottomTabs() {
                 marginBottom: 4,
               }}
             />
-            <View>
-              <Icon size={22} color={iconColor} />
-              {tab.href === '/cart' && cartCount > 0 && (
-                <View
-                  style={{
-                    position: 'absolute',
-                    right: -8,
-                    top: -4,
-                    minWidth: 16,
-                    height: 16,
-                    borderRadius: 8,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    paddingHorizontal: 4,
-                    backgroundColor: colors.danger,
-                  }}
-                >
-                  <Text style={{ color: '#FFFFFF', fontSize: 10, lineHeight: 16 }}>
-                    {cartCount > 99 ? '99+' : cartCount}
-                  </Text>
-                </View>
-              )}
-            </View>
+            {tab.href === '/cart' ? (
+              <ReanimatedAnimated.View
+                ref={cartIconRef}
+                onLayout={() => {
+                  cartIconRef.current?.measureInWindow((x, y, width, height) => {
+                    setCartIconPosition({ x: x + width / 2, y: y + height / 2 });
+                  });
+                }}
+                style={cartIconAnimatedStyle}
+              >
+                <Icon size={22} color={iconColor} />
+                {cartCount > 0 && (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      right: -8,
+                      top: -4,
+                      minWidth: 16,
+                      height: 16,
+                      borderRadius: 8,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      paddingHorizontal: 4,
+                      backgroundColor: colors.danger,
+                    }}
+                  >
+                    <Text style={{ color: '#FFFFFF', fontSize: 10, lineHeight: 16 }}>
+                      {cartCount > 99 ? '99+' : cartCount}
+                    </Text>
+                  </View>
+                )}
+              </ReanimatedAnimated.View>
+            ) : (
+              <View>
+                <Icon size={22} color={iconColor} />
+              </View>
+            )}
             <Text
               numberOfLines={1}
               style={{
