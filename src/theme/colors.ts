@@ -85,6 +85,8 @@ export type ThemeColors = {
   section: string;
   surface: string;
   navbar: string;
+  /** Color de texto/ícono sobre `navbar` (lo define el admin, no se deriva). */
+  navbarForeground: string;
   /** Strip de departamentos (color secundario destacado). */
   navbarDepartments: string;
   bottomNavbar: string;
@@ -129,6 +131,7 @@ export const SOFT_COLORS: ThemeColors = {
   section: '#FEFFFE',
   surface: '#FEFFFE',
   navbar: '#FEFFFE',
+  navbarForeground: '#1A1A2E',
   navbarDepartments: '#1014C5',
   bottomNavbar: '#FEFFFE',
   footer: '#FEFFFE',
@@ -173,6 +176,23 @@ function hexToRgba(hex: string | undefined, alpha: number): string {
 }
 
 /**
+ * true si `hex` es un color claro (luminancia perceptual alta). Se usa
+ * para elegir, por contraste, qué variante de un asset (ej. el logo
+ * light/dark) mostrar sobre una superficie cuyo color define el admin
+ * del whitelabel — no asumimos light/dark mode del sistema, sino el
+ * color real de fondo.
+ */
+export function isLightColor(hex: string | undefined): boolean {
+  if (!hex || !hex.startsWith('#') || hex.length < 7) return true;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  if ([r, g, b].some(Number.isNaN)) return true;
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6;
+}
+
+/**
  * Mapea los 30+ keys del whitelabel al set curado de tokens que
  * consume la app. Deriva overlay/shadow de los primarios.
  *
@@ -192,6 +212,7 @@ export function buildThemeColors(
     section: c.col_section ?? SOFT_COLORS.section,
     surface: c.col_section ?? SOFT_COLORS.surface,
     navbar: c.col_navbar ?? SOFT_COLORS.navbar,
+    navbarForeground: c.col_text_for_navbar ?? SOFT_COLORS.navbarForeground,
     navbarDepartments:
       c.col_navbar_departments ?? SOFT_COLORS.navbarDepartments,
     bottomNavbar:

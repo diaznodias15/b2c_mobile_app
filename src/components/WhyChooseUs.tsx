@@ -2,6 +2,7 @@ import { Text, View } from 'react-native';
 import { Archive, CircleUserRound, Truck, Undo2 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 
+import { SectionHeader } from '@/components/SectionHeader';
 import type { ThemeColors } from '@/theme/colors';
 
 const FEATURES: { icon: LucideIcon; title: string; description: string }[] = [
@@ -30,30 +31,11 @@ const FEATURES: { icon: LucideIcon; title: string; description: string }[] = [
 export function WhyChooseUs({ colors }: { colors: ThemeColors }) {
   return (
     <View style={{ paddingHorizontal: 24, marginTop: 28 }}>
-      <Text
-        style={{
-          fontSize: 18,
-          fontWeight: '700',
-          color: colors.foreground,
-          textAlign: 'center',
-          marginBottom: 6,
-        }}
-      >
-        ¿Por qué elegirnos?
-      </Text>
-      <Text
-        style={{
-          fontSize: 13,
-          color: colors.muted,
-          textAlign: 'center',
-          lineHeight: 18,
-          marginBottom: 16,
-          paddingHorizontal: 8,
-        }}
-      >
-        Nos enfocamos en brindar una experiencia de compra segura y profesional, priorizando tu
-        bienestar por encima de todo.
-      </Text>
+      <SectionHeader
+        title="¿Por qué elegirnos?"
+        subtitle="Nos enfocamos en brindar una experiencia de compra segura y profesional, priorizando tu bienestar por encima de todo."
+        colors={colors}
+      />
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
         {FEATURES.map((feature) => (

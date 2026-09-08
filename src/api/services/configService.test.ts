@@ -46,7 +46,7 @@ const fullInternalData = {
         {
           value: 1,
           label: 'Sede Norte',
-          nb_branch: 'FARMACIA EL SAMAN DE PERIJA',
+          nb_branch: 'GRUPO MARAPLUS',
           tx_alias: 'Sede Norte',
           is_default: 1,
         },

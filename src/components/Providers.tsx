@@ -4,7 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { useConfigStore, useThemeColors, useBranchStore, useDepartmentStore, useAdvertisingStore } from '@/store';
+import { useConfigStore, useThemeColors, useBranchStore, useDepartmentStore, useAdvertisingStore, useBrandsStore } from '@/store';
 import { buildThemeColors, themeColorsToCssVars } from '@/theme';
 import { loadConfig } from '@/api';
 
@@ -76,6 +76,7 @@ export async function bootstrapConfig() {
   const { setLoading, setError, setAppConfig } = useConfigStore.getState();
   const { setDepartments } = useDepartmentStore.getState();
   const { setAdvertising } = useAdvertisingStore.getState();
+  const { setBrands } = useBrandsStore.getState();
   const branchStore = useBranchStore.getState();
 
   setLoading(true);
@@ -93,6 +94,9 @@ export async function bootstrapConfig() {
     }
     if (data.branches !== undefined) {
       branchStore.setBranchTree(data.branches);
+    }
+    if (data.brands !== undefined) {
+      setBrands(data.brands);
     }
   } catch (err) {
     console.error('[bootstrapConfig] FALLÓ:', err);

@@ -37,7 +37,7 @@ export async function getTopProducts(
   if (options?.brand) {
     params.brand = options.brand;
   }
-  const url = `${TOP_PRODUCTS}?${toQueryString(params)}`;
+  const url = `${TOP_PRODUCTS}${toQueryString(params)}`;
   const envelope = await axiosRequest<Envelope<Product[]>>({
     method: 'GET',
     url,

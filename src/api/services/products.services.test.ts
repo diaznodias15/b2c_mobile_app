@@ -46,6 +46,10 @@ describe('getTopProducts', () => {
         url: expect.stringContaining('branch=7'),
       })
     );
+    // Regresión: toQueryString ya devuelve el "?" incluido — un "?" extra
+    // en el template literal produce "??branch=7" y el backend responde
+    // "La sucursal es requerida" porque no puede parsear el param.
+    expect(mockAxios.mock.calls[0][0].url).not.toContain('??');
   });
 
   it('agrega brand al query string si se pasa', async () => {

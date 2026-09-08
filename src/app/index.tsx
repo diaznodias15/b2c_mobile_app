@@ -1,14 +1,18 @@
 import { Dimensions, FlatList, ScrollView, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSharedValue } from 'react-native-reanimated';
 import { Carousel, Pagination } from 'react-native-reanimated-carousel';
 
 import { BottomTabs } from '@/components/bottom-tabs';
+import { BrandsMarquee } from '@/components/BrandsMarquee';
+import { DeliveryBanner } from '@/components/DeliveryBanner';
 import { DepartmentCard } from '@/components/DepartmentCard';
+import { HomeNavbar } from '@/components/HomeNavbar';
+import { SectionHeader } from '@/components/SectionHeader';
+import { TopProducts } from '@/components/TopProducts';
 import { WhyChooseUs } from '@/components/WhyChooseUs';
-import { useConfigStore, useThemeColors } from '@/store/config.store';
+import { useThemeColors } from '@/store/config.store';
 import { useAdvertisingStore } from '@/store/advertising.store';
 import { useDepartmentStore } from '@/store/department.store';
 
@@ -17,9 +21,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const BANNER_SIZE = SCREEN_WIDTH - 48;
 
 export default function HomeScreen() {
-  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
-  const companyName = useConfigStore((s) => s.appConfig?.tx_company_name);
   const advertising = useAdvertisingStore((s) => s.advertising);
   const departments = useDepartmentStore((s) => s.departments);
   const router = useRouter();
@@ -27,17 +29,12 @@ export default function HomeScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <HomeNavbar colors={colors} />
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 24 }}
+        contentContainerStyle={{ paddingTop: 8, paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={{ paddingHorizontal: 24, paddingVertical: 16 }}>
-          <Text style={{ fontSize: 22, fontWeight: '700', color: colors.foreground }}>
-            {companyName ?? 'Farmacia El Samán de Perijá'}
-          </Text>
-        </View>
-
         {advertising.length > 0 && (
           <View style={{ alignItems: 'center' }}>
             <Carousel
@@ -79,10 +76,14 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <View style={{ paddingHorizontal: 24, marginTop: 24, marginBottom: 12 }}>
-          <Text style={{ fontSize: 18, fontWeight: '600', color: colors.foreground }}>
-            Departamentos
-          </Text>
+        <TopProducts colors={colors} />
+
+        <View style={{ paddingHorizontal: 24, marginTop: 24 }}>
+          <SectionHeader
+            title="Departamentos"
+            subtitle="Todo lo que necesitas organizado para tu comodidad."
+            colors={colors}
+          />
         </View>
 
         {departments.length > 0 ? (
@@ -110,6 +111,10 @@ export default function HomeScreen() {
         )}
 
         <WhyChooseUs colors={colors} />
+
+        <DeliveryBanner colors={colors} />
+
+        <BrandsMarquee colors={colors} />
       </ScrollView>
       <BottomTabs />
     </View>

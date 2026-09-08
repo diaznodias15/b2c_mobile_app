@@ -1,7 +1,7 @@
-# Farmacia El Samán de Perijá — App B2C
+# Grupo Maraplus — App B2C
 
 App móvil B2C (Business-to-Consumer) para la cadena de farmacias venezolana
-**Farmacia El Samán de Perijá**. Permite a los clientes:
+**Grupo Maraplus**. Permite a los clientes:
 
 - Explorar el catálogo por departamento y categoría
 - Ver productos destacados y buscar
@@ -362,4 +362,4 @@ src/
 
 ## Licencia
 
-Privado — uso interno de Farmacia El Samán de Perijá.
+Privado — uso interno de Grupo Maraplus.

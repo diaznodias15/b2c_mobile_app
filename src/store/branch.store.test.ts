@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useBranchStore } from './branch.store';
+import { useBranchStore, selectEffectiveBranchLocation } from './branch.store';
 import type { BranchGroup, BranchItem } from '@/types/whitelabel';
 
 const itemA: BranchItem = {
   value: 1,
   label: 'Sede Norte',
-  nb_branch: 'FARMACIA EL SAMAN DE PERIJA',
+  nb_branch: 'GRUPO MARAPLUS',
   tx_alias: 'Sede Norte',
   lat: 10.5,
   lng: -71.6,
@@ -15,7 +15,7 @@ const itemA: BranchItem = {
 const itemB: BranchItem = {
   value: 2,
   label: 'Sede Centro',
-  nb_branch: 'FARMACIA EL SAMAN DE PERIJA',
+  nb_branch: 'GRUPO MARAPLUS',
   tx_alias: 'Sede Centro',
   is_default: 0,
 };
@@ -69,5 +69,41 @@ describe('useBranchStore', () => {
     const s = useBranchStore.getState();
     expect(s.selectedBranch).toBeNull();
     expect(s.branchTree).toEqual([]);
+  });
+});
+
+describe('selectEffectiveBranchLocation', () => {
+  const itemC: BranchItem = {
+    value: 3,
+    label: 'Sede San Francisco',
+    nb_branch: 'GRUPO MARAPLUS',
+    tx_alias: 'Sede San Francisco',
+    is_default: 0,
+  };
+
+  const multiGroupTree: BranchGroup[] = [
+    ...tree,
+    {
+      nb_state: 'Zulia',
+      nb_city: 'San Francisco',
+      group: 'San Francisco | Zulia',
+      items: [itemC],
+    },
+  ];
+
+  it('devuelve null si no hay branchTree', () => {
+    expect(selectEffectiveBranchLocation({ branchTree: [], selectedBranch: null })).toBeNull();
+  });
+
+  it('devuelve la ciudad/estado del grupo que contiene la sede efectiva (default)', () => {
+    expect(
+      selectEffectiveBranchLocation({ branchTree: multiGroupTree, selectedBranch: null })
+    ).toEqual({ city: 'Maracaibo', state: 'Zulia' });
+  });
+
+  it('devuelve la ciudad/estado del grupo de la sede seleccionada, no del default', () => {
+    expect(
+      selectEffectiveBranchLocation({ branchTree: multiGroupTree, selectedBranch: itemC })
+    ).toEqual({ city: 'San Francisco', state: 'Zulia' });
   });
 });
