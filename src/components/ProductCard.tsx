@@ -3,7 +3,9 @@ import { Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Plus } from 'lucide-react-native';
 
-import { formatPrice } from '@/utils/currency';
+import { useConfigStore } from '@/store/config.store';
+import { useCurrencyStore } from '@/store/currency.store';
+import { formatDisplayPrice } from '@/utils/currency';
 import type { ThemeColors } from '@/theme/colors';
 import type { Product } from '@/types/whitelabel';
 
@@ -29,6 +31,9 @@ export function ProductCard({
   const finalPrice = Number(product.pri_product_final_price);
   const basePrice = Number(product.pri_product_price);
   const hasDiscount = Boolean(product.qty_discount) && basePrice > finalPrice;
+
+  const displayCurrency = useCurrencyStore((s) => s.displayCurrency);
+  const exchangeRate = useConfigStore((s) => s.appConfig?.amt_exchange_rate);
 
   const [imageFailed, setImageFailed] = useState(false);
   const showPlaceholder = !product.tx_img_url || imageFailed;
@@ -121,14 +126,14 @@ export function ProductCard({
                 textDecorationLine: 'line-through',
               }}
             >
-              {formatPrice(basePrice, 'USD')}
+              {formatDisplayPrice(basePrice, exchangeRate, displayCurrency)}
             </Text>
           )}
           <Text
             numberOfLines={1}
             style={{ fontSize: 13.5, fontWeight: '700', color: colors.foreground }}
           >
-            {formatPrice(finalPrice, 'USD')}
+            {formatDisplayPrice(finalPrice, exchangeRate, displayCurrency)}
           </Text>
         </View>
 

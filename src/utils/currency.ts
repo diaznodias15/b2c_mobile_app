@@ -11,6 +11,14 @@ export type Currency = {
   qty_exchange_rate?: number;
 };
 
+/**
+ * Preferencia de moneda del usuario (`useCurrencyStore`): `Bs.`
+ * (bolívares) o `REF` (precio referencial en USD, la base que manda el
+ * backend). Vive acá porque es la misma unión que usa `formatDisplayPrice`
+ * para decidir cómo formatear — `currency.store.ts` la re-exporta.
+ */
+export type DisplayCurrency = 'Bs.' | 'REF';
+
 export function roundTo(value: number, decimals = 2): number {
   // Pequeño epsilon para evitar el bug clásico de floating point
   // (e.g. 1.005 * 100 = 100.49999… → 1.00 en vez de 1.01).
@@ -37,27 +45,21 @@ export function convertPrice(
   return roundTo(basePrice * exchangeRate);
 }
 
-export function formatPrice(
-  amount: number,
-  currencyAlias: 'Bs.' | 'USD'
-): string {
+export function formatPrice(amount: number, currencyLabel: string): string {
   const formatted = roundTo(amount).toLocaleString('es-VE', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  return `${currencyAlias} ${formatted}`;
+  return `${currencyLabel} ${formatted}`;
 }
 
 /** Formato compacto sin decimales para badges (e.g. "Bs. 4.205"). */
-export function formatPriceCompact(
-  amount: number,
-  currencyAlias: 'Bs.' | 'USD'
-): string {
+export function formatPriceCompact(amount: number, currencyLabel: string): string {
   const formatted = roundTo(amount).toLocaleString('es-VE', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   });
-  return `${currencyAlias} ${formatted}`;
+  return `${currencyLabel} ${formatted}`;
 }
 
 /**
@@ -75,4 +77,23 @@ export function formatDualCurrency(
   }
   const bsAmount = convertPrice(usdAmount, 'USD', 'Bs.', exchangeRate);
   return { usd, bs: formatPriceCompact(bsAmount, 'Bs.') };
+}
+
+/**
+ * Precio formateado según la preferencia de moneda del usuario
+ * (`useCurrencyStore`). `usdAmount` siempre es el precio base en USD
+ * (así vienen `pri_product_price`/`pri_product_final_price` del
+ * backend). Si el usuario eligió `Bs.` pero no hay `exchangeRate` válido
+ * todavía (config aún cargando), cae a `REF` — nunca muestra un
+ * "Bs. 0.00" engañoso por falta de tasa.
+ */
+export function formatDisplayPrice(
+  usdAmount: number,
+  exchangeRate: number | null | undefined,
+  displayCurrency: DisplayCurrency
+): string {
+  if (displayCurrency === 'Bs.' && exchangeRate && exchangeRate > 0) {
+    return formatPrice(convertPrice(usdAmount, 'USD', 'Bs.', exchangeRate), 'Bs.');
+  }
+  return formatPrice(usdAmount, 'REF');
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { roundTo, convertPrice, formatPrice } from './currency';
+import { roundTo, convertPrice, formatPrice, formatDisplayPrice } from './currency';
 
 describe('roundTo', () => {
   it('rounds to 2 decimals by default', () => {
@@ -60,5 +60,29 @@ describe('formatPrice', () => {
   it('rounds before formatting', () => {
     const result = formatPrice(1.005, 'Bs.');
     expect(result).toMatch(/1,01/);
+  });
+});
+
+describe('formatDisplayPrice', () => {
+  const rate = 36.5;
+
+  it('converts to Bs. when displayCurrency is Bs. and there is a valid rate', () => {
+    const result = formatDisplayPrice(10, rate, 'Bs.');
+    expect(result).toMatch(/^Bs\.\s*365,00/);
+  });
+
+  it('falls back to REF when displayCurrency is Bs. but there is no rate yet', () => {
+    const result = formatDisplayPrice(10, null, 'Bs.');
+    expect(result).toMatch(/^REF\s*10,00/);
+  });
+
+  it('falls back to REF when the rate is 0 or negative', () => {
+    expect(formatDisplayPrice(10, 0, 'Bs.')).toMatch(/^REF/);
+    expect(formatDisplayPrice(10, -5, 'Bs.')).toMatch(/^REF/);
+  });
+
+  it('shows REF (usdAmount as-is) when displayCurrency is REF, even with a valid rate', () => {
+    const result = formatDisplayPrice(10, rate, 'REF');
+    expect(result).toMatch(/^REF\s*10,00/);
   });
 });

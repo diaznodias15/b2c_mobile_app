@@ -15,6 +15,7 @@ import {
 
 import { useThemeColors } from '@/store/config.store';
 import { useCartStore, selectCartCount } from '@/store/cart.store';
+import { useCurrencyStore, type DisplayCurrency } from '@/store/currency.store';
 
 const NAV_TABS = [
   { label: 'Inicio', href: '/', icon: House },
@@ -43,6 +44,8 @@ export function BottomTabs() {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const cartCount = useCartStore(selectCartCount);
+  const displayCurrency = useCurrencyStore((s) => s.displayCurrency);
+  const setDisplayCurrency = useCurrencyStore((s) => s.setDisplayCurrency);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const sheetTranslateY = useRef(new Animated.Value(400)).current;
@@ -226,6 +229,27 @@ export function BottomTabs() {
           >
             Más opciones
           </Text>
+
+          <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 8 }}>
+            Moneda de precios
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+            <CurrencyOption
+              label="Bs."
+              value="Bs."
+              active={displayCurrency === 'Bs.'}
+              colors={colors}
+              onPress={setDisplayCurrency}
+            />
+            <CurrencyOption
+              label="REF"
+              value="REF"
+              active={displayCurrency === 'REF'}
+              colors={colors}
+              onPress={setDisplayCurrency}
+            />
+          </View>
+
           {MORE_MENU.map((item) => {
             const Icon = item.icon;
             return (
@@ -254,5 +278,45 @@ export function BottomTabs() {
         </Animated.View>
       </Modal>
     </View>
+  );
+}
+
+function CurrencyOption({
+  label,
+  value,
+  active,
+  colors,
+  onPress,
+}: {
+  label: string;
+  value: DisplayCurrency;
+  active: boolean;
+  colors: ReturnType<typeof useThemeColors>;
+  onPress: (value: DisplayCurrency) => void;
+}) {
+  return (
+    <Pressable
+      onPress={() => onPress(value)}
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        paddingVertical: 10,
+        borderRadius: 10,
+        backgroundColor: active ? colors.primary : colors.section,
+      }}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={`Mostrar precios en ${label}`}
+    >
+      <Text
+        style={{
+          fontSize: 14,
+          fontWeight: '700',
+          color: active ? colors.onPrimary : colors.foreground,
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }

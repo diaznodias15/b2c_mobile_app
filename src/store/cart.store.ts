@@ -101,3 +101,11 @@ export function selectItemsByBranch(
 ): CartItem[] {
   return s.items.filter((i) => i.branch_id === branchId);
 }
+
+/** Total del carrito en USD (base), suma de `qty * pri_product_final_price`. */
+export function selectCartTotal(s: { items: CartItem[] }): number {
+  return s.items.reduce(
+    (acc, it) => acc + it.qty * Number(it.pri_product_final_price),
+    0
+  );
+}

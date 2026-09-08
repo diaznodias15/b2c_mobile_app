@@ -3,6 +3,7 @@ import {
   useCartStore,
   selectCartCount,
   selectItemsByBranch,
+  selectCartTotal,
 } from './cart.store';
 import type { CartItem } from '@/types/cart';
 
@@ -113,5 +114,22 @@ describe('selectItemsByBranch', () => {
     expect(selectItemsByBranch(s, 1)).toHaveLength(2);
     expect(selectItemsByBranch(s, 2)).toHaveLength(1);
     expect(selectItemsByBranch(s, 99)).toHaveLength(0);
+  });
+});
+
+describe('selectCartTotal', () => {
+  it('suma qty * pri_product_final_price de todos los items', () => {
+    const s = {
+      items: [
+        item({ pri_product_final_price: '10.00', qty: 2 }),
+        item({ tx_slug: 'b', pri_product_final_price: '5.50', qty: 3 }),
+      ],
+    };
+    // 10*2 + 5.5*3 = 20 + 16.5 = 36.5
+    expect(selectCartTotal(s)).toBe(36.5);
+  });
+
+  it('0 si está vacío', () => {
+    expect(selectCartTotal({ items: [] })).toBe(0);
   });
 });
