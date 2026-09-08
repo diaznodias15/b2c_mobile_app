@@ -8,6 +8,7 @@ import { useSharedValue } from 'react-native-reanimated';
 import { Carousel, Pagination } from 'react-native-reanimated-carousel';
 import { ChevronLeft, Minus, Plus } from 'lucide-react-native';
 
+import { BranchInventoryList } from '@/components/BranchInventoryList';
 import { ProductDetailSkeleton } from '@/components/ProductDetailSkeleton';
 import { getProductDetail } from '@/api/services/products.services';
 import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
@@ -15,8 +16,8 @@ import { useCartStore } from '@/store/cart.store';
 import { useConfigStore, useThemeColors } from '@/store/config.store';
 import { useCurrencyStore } from '@/store/currency.store';
 import { formatDisplayPrice } from '@/utils/currency';
+import { STOCK_META } from '@/utils/stock';
 import type { ThemeColors } from '@/theme/colors';
-import type { StockLevel } from '@/types/whitelabel';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const IMAGE_HEIGHT = SCREEN_WIDTH;
@@ -32,14 +33,6 @@ const PLACEHOLDER_IMAGE = require('../../../assets/images/unavailable-product-im
  * IVA de la web (bloque 5.2) no se portea: solo mostramos precio final +
  * tachado si hay descuento, igual que ProductCard/ProductListItem.
  */
-const AVAILABILITY_META: Record<
-  StockLevel,
-  { label: (branchLabel?: string) => string; colorKey: keyof ThemeColors }
-> = {
-  2: { label: () => 'En stock', colorKey: 'success' },
-  1: { label: () => 'Pocas unidades', colorKey: 'warning' },
-  0: { label: () => 'Sin stock', colorKey: 'danger' },
-};
 
 export default function ProductDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -78,7 +71,7 @@ export default function ProductDetailScreen() {
   const hasDiscount = Boolean(product.qty_discount) && basePrice > finalPrice;
   const maxQty = Math.max(1, Number(product.qty_product) || 1);
   const canAddToCart = finalPrice > 0 && Number(product.qty_product) > 0;
-  const availability = AVAILABILITY_META[product.availability_indicator];
+  const availability = STOCK_META[product.availability_indicator];
 
   const handleAddToCart = () => {
     if (branchId === null || !canAddToCart) return;
@@ -184,7 +177,7 @@ export default function ProductDetailScreen() {
               }}
             />
             <Text style={{ fontSize: 13, fontWeight: '600', color: colors.foreground }}>
-              {availability.label()}
+              {availability.label}
             </Text>
           </View>
 
@@ -268,6 +261,14 @@ export default function ProductDetailScreen() {
                 ))}
               </View>
             </View>
+          )}
+
+          {product.availability_per_branch && (
+            <BranchInventoryList
+              availabilityPerBranch={product.availability_per_branch}
+              currentBranchId={branchId}
+              colors={colors}
+            />
           )}
         </View>
 
