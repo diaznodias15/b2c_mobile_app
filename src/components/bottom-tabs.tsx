@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'expo-router';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Animated, Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   CircleQuestionMark,
@@ -44,8 +44,28 @@ export function BottomTabs() {
   const colors = useConfigStore((s) => s.getThemeColors());
   const cartCount = useCartStore(selectCartCount);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const sheetTranslateY = useRef(new Animated.Value(400)).current;
 
   const isMoreActive = MORE_ROUTES.includes(pathname);
+
+  useEffect(() => {
+    if (!isMoreOpen) return;
+    backdropOpacity.setValue(0);
+    sheetTranslateY.setValue(400);
+    Animated.parallel([
+      Animated.timing(backdropOpacity, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+      Animated.timing(sheetTranslateY, {
+        toValue: 0,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [isMoreOpen, backdropOpacity, sheetTranslateY]);
 
   return (
     <View
@@ -161,63 +181,77 @@ export function BottomTabs() {
       <Modal
         visible={isMoreOpen}
         transparent
-        animationType="slide"
+        animationType="none"
         onRequestClose={() => setIsMoreOpen(false)}
       >
         <Pressable
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
+          style={{ flex: 1 }}
           onPress={() => setIsMoreOpen(false)}
           accessibilityLabel="Cerrar menú"
         >
-          <View style={{ flex: 1 }} />
-          <Pressable
+          <Animated.View
             style={{
-              backgroundColor: colors.surface,
-              borderTopLeftRadius: 20,
-              borderTopRightRadius: 20,
-              paddingHorizontal: 16,
-              paddingTop: 16,
-              paddingBottom: insets.bottom + 16,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              opacity: backdropOpacity,
             }}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: '600',
-                color: colors.foreground,
-                marginBottom: 12,
-              }}
-            >
-              Más opciones
-            </Text>
-            {MORE_MENU.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Pressable
-                  key={item.href}
-                  onPress={() => {
-                    setIsMoreOpen(false);
-                    router.replace(item.href as any);
-                  }}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 12,
-                    paddingVertical: 12,
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={item.label}
-                >
-                  <Icon size={20} color={colors.foreground} />
-                  <Text style={{ fontSize: 16, color: colors.foreground }}>
-                    {item.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </Pressable>
+          />
         </Pressable>
+        <Animated.View
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: colors.surface,
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            paddingBottom: insets.bottom + 16,
+            transform: [{ translateY: sheetTranslateY }],
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: '600',
+              color: colors.foreground,
+              marginBottom: 12,
+            }}
+          >
+            Más opciones
+          </Text>
+          {MORE_MENU.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Pressable
+                key={item.href}
+                onPress={() => {
+                  setIsMoreOpen(false);
+                  router.replace(item.href as any);
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  paddingVertical: 12,
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={item.label}
+              >
+                <Icon size={20} color={colors.foreground} />
+                <Text style={{ fontSize: 16, color: colors.foreground }}>
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </Animated.View>
       </Modal>
     </View>
   );
