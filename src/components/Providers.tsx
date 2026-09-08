@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import { View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -14,6 +14,9 @@ import { loadConfig } from '@/api';
  */
 export function Providers({ children }: { children: ReactNode }) {
   const appConfig = useConfigStore((s) => s.appConfig);
+  const isError = useConfigStore((s) => s.isError);
+  /** Loader de arranque: hasta que llegue la config (o falle), no mostramos pantallas vacías. */
+  const isBooting = appConfig === null && !isError;
 
   const queryClient = useMemo(
     () =>
@@ -40,11 +43,28 @@ export function Providers({ children }: { children: ReactNode }) {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <View style={[{ flex: 1 }, cssVars as object]} className="bg-background">
-            {children}
+            {isBooting ? <BootLoader /> : children}
           </View>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
+  );
+}
+
+/** Pantalla de carga mientras `bootstrapConfig` trae el whitelabel del backend. */
+function BootLoader() {
+  const colors = useConfigStore((s) => s.getThemeColors());
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.background,
+      }}
+    >
+      <ActivityIndicator size="large" color={colors.primary} />
+    </View>
   );
 }
 
