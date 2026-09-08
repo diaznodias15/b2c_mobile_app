@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronDown, ChevronLeft, ChevronUp, MapPin, Navigation, X } from 'lucide-react-native';
+import { ChevronDown, ChevronLeft, ChevronUp, MapPin, Navigation, Navigation2, X } from 'lucide-react-native';
 
 import {
   selectDefaultBranch,
@@ -20,6 +20,7 @@ import {
 } from '@/store/branch.store';
 import type { ThemeColors } from '@/theme/colors';
 import type { BranchGroup, BranchItem } from '@/types/whitelabel';
+import { openInMaps } from '@/utils/maps';
 
 // En la arquitectura vieja de Android, LayoutAnimation requiere este flag
 // experimental. En Fabric (nueva arquitectura, la que usa este proyecto)
@@ -285,6 +286,24 @@ function BranchGroupRow({
                       </Text>
                     )}
                   </View>
+
+                  {item.lat != null && item.lng != null && (
+                    <Pressable
+                      onPress={() => openInMaps(item.lat as number, item.lng as number, item.tx_alias ?? item.nb_branch)}
+                      style={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: 10,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: colors.primaryOverlaySoft,
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Cómo llegar a ${item.tx_alias ?? item.nb_branch}`}
+                    >
+                      <Navigation2 size={16} color={colors.primary} />
+                    </Pressable>
+                  )}
                 </View>
 
                 <Pressable
