@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
-import { MapPin, Store } from 'lucide-react-native';
+import { Maximize, MapPin, Store } from 'lucide-react-native';
 
+import { BranchMapModal } from '@/components/BranchMapModal';
 import { useBranchStore } from '@/store/branch.store';
 import { haversineDistanceKm } from '@/utils/geo';
 import { STOCK_META } from '@/utils/stock';
@@ -15,7 +17,7 @@ const MAX_LIST_HEIGHT = 340;
  * diferencia de `BranchItem`). El backend usa `0, 0` ("null island")
  * para "sin coordenadas cargadas", no `null`.
  */
-function hasCoords(branch: { lat?: number | string; lng?: number | string }): boolean {
+export function hasCoords(branch: { lat?: number | string; lng?: number | string }): boolean {
   const lat = Number(branch.lat);
   const lng = Number(branch.lng);
   return Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0);
@@ -40,6 +42,7 @@ export function BranchInventoryList({
   colors: ThemeColors;
 }) {
   const setSelectedBranch = useBranchStore((s) => s.setSelectedBranch);
+  const [isMapOpen, setIsMapOpen] = useState(false);
 
   const branches = availabilityPerBranch.flatMap((state) =>
     state.cities.flatMap((city) => city.branches)
@@ -67,22 +70,43 @@ export function BranchInventoryList({
 
   return (
     <View style={{ marginTop: 28 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-        <View
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 9,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.primaryOverlaySoft,
-          }}
-        >
-          <Store size={15} color={colors.primary} />
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 4,
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 9,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.primaryOverlaySoft,
+            }}
+          >
+            <Store size={15} color={colors.primary} />
+          </View>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: colors.foreground }}>
+            Inventario por sede
+          </Text>
         </View>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: colors.foreground }}>
-          Inventario por sede
-        </Text>
+
+        <Pressable
+          onPress={() => setIsMapOpen(true)}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+          accessibilityRole="button"
+          accessibilityLabel="Ver en mapa"
+        >
+          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
+            Ver en mapa
+          </Text>
+          <Maximize size={14} color={colors.primary} />
+        </Pressable>
       </View>
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -193,6 +217,13 @@ export function BranchInventoryList({
           })}
         </View>
       </ScrollView>
+
+      <BranchMapModal
+        visible={isMapOpen}
+        onClose={() => setIsMapOpen(false)}
+        branches={branches}
+        colors={colors}
+      />
     </View>
   );
 }
