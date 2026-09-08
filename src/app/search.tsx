@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { PackageSearch, Search as SearchIcon, X } from 'lucide-react-native';
 
 import { BottomTabs } from '@/components/bottom-tabs';
@@ -29,14 +29,23 @@ export default function SearchScreen() {
   const debouncedQuery = useDebouncedValue(query.trim(), DEBOUNCE_MS);
   const isQueryValid = debouncedQuery.length >= MIN_QUERY_LENGTH;
 
-  const { data, isLoading, isFetching } = useQuery({
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ['product-search', branchId, debouncedQuery],
-    queryFn: () => getProductSearch({ branch: branchId as number, product: debouncedQuery }),
+    queryFn: ({ pageParam }) =>
+      getProductSearch({ branch: branchId as number, product: debouncedQuery, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => lastPage.pagination.next_page ?? undefined,
     enabled: branchId !== null && isQueryValid,
   });
 
-  const products = data?.items ?? [];
-  const showSkeleton = isQueryValid && (isLoading || isFetching);
+  const products = data?.pages.flatMap((page) => page.items) ?? [];
+  const showSkeleton = isQueryValid && isLoading;
 
   const handleAddToCart = (product: Product) => {
     if (branchId === null) return;
@@ -96,6 +105,10 @@ export default function SearchScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24, gap: 10, flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
+        onEndReachedThreshold={0.5}
+        onEndReached={() => {
+          if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+        }}
         renderItem={({ item }) => (
           <ProductListItem
             product={item}
@@ -115,6 +128,13 @@ export default function SearchScreen() {
           ) : (
             <SearchEmptyState colors={colors} hasTypedEnough={isQueryValid} query={query} />
           )
+        }
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <View style={{ paddingVertical: 16 }}>
+              <ActivityIndicator color={colors.primary} />
+            </View>
+          ) : null
         }
       />
       <BottomTabs />
