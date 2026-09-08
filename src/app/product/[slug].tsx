@@ -6,11 +6,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useSharedValue } from 'react-native-reanimated';
 import { Carousel, Pagination } from 'react-native-reanimated-carousel';
-import { Check, ChevronLeft, Minus, Plus } from 'lucide-react-native';
+import { Check, ChevronLeft } from 'lucide-react-native';
 
 import { BranchInventoryList } from '@/components/BranchInventoryList';
 import { DiscountBadge } from '@/components/DiscountBadge';
 import { ProductDetailSkeleton } from '@/components/ProductDetailSkeleton';
+import { QuantityStepper } from '@/components/QuantityStepper';
 import { TopProducts } from '@/components/TopProducts';
 import { getProductDetail } from '@/api/services/products.services';
 import { useAddToCartFlight } from '@/hooks/useAddToCartFlight';
@@ -328,59 +329,5 @@ function BackButton({
     >
       <ChevronLeft size={22} color="#FFFFFF" />
     </Pressable>
-  );
-}
-
-function QuantityStepper({
-  value,
-  max,
-  onChange,
-  colors,
-  disabled,
-}: {
-  value: number;
-  max: number;
-  onChange: (value: number) => void;
-  colors: ThemeColors;
-  disabled: boolean;
-}) {
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 14,
-        backgroundColor: colors.section,
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        height: 46,
-        opacity: disabled ? 0.5 : 1,
-      }}
-    >
-      <Pressable
-        onPress={() => onChange(Math.max(1, value - 1))}
-        disabled={disabled || value <= 1}
-        accessibilityRole="button"
-        accessibilityLabel="Restar cantidad"
-        hitSlop={8}
-      >
-        <Minus size={16} color={colors.foreground} />
-      </Pressable>
-      <Text
-        style={{ fontSize: 16, fontWeight: '700', color: colors.foreground, minWidth: 20, textAlign: 'center' }}
-        accessibilityLiveRegion="polite"
-      >
-        {value}
-      </Text>
-      <Pressable
-        onPress={() => onChange(Math.min(max, value + 1))}
-        disabled={disabled || value >= max}
-        accessibilityRole="button"
-        accessibilityLabel="Sumar cantidad"
-        hitSlop={8}
-      >
-        <Plus size={16} color={colors.foreground} />
-      </Pressable>
-    </View>
   );
 }
