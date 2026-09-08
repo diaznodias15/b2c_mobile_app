@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { ChevronDown } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BranchSelectorModal } from '@/components/BranchSelectorModal';
 import { selectEffectiveBranch, useBranchStore } from '@/store/branch.store';
 import { isLightColor, type ThemeColors } from '@/theme/colors';
 
@@ -11,9 +13,10 @@ const LOGO_DARK = require('../../assets/images/logo-dark.webp');
 
 /**
  * Navbar fija arriba del Home: logo + nombre de la sede seleccionada +
- * flecha de "select". El chevron es puramente visual por ahora — todavía
- * no existe pantalla/modal de selección de sede (`onPress` vacío a
- * propósito, ver pedido del usuario).
+ * flecha de "select" que abre `BranchSelectorModal`. Cambiar de sede ahí
+ * actualiza `useBranchStore` y cualquier componente que dependa de la
+ * sede efectiva (ej. `TopProducts`, que usa `branchId` en su query key)
+ * se refresca solo, sin callback extra.
  *
  * El logo tiene dos variantes locales (`logo-light`/`logo-dark`, no vienen
  * del backend): `logo-light` es el logo a color, pensado para fondos
@@ -25,6 +28,7 @@ export function HomeNavbar({ colors }: { colors: ThemeColors }) {
   const insets = useSafeAreaInsets();
   const branch = useBranchStore(selectEffectiveBranch);
   const logoSource = isLightColor(colors.navbar) ? LOGO_LIGHT : LOGO_DARK;
+  const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
 
   return (
     <View
@@ -47,7 +51,7 @@ export function HomeNavbar({ colors }: { colors: ThemeColors }) {
 
       {branch && (
         <Pressable
-          onPress={() => {}}
+          onPress={() => setIsBranchModalOpen(true)}
           style={{
             flex: 1,
             flexDirection: 'row',
@@ -55,6 +59,8 @@ export function HomeNavbar({ colors }: { colors: ThemeColors }) {
             justifyContent: 'flex-end',
             gap: 6,
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Cambiar de sede"
         >
           <Text
             style={{
@@ -70,6 +76,12 @@ export function HomeNavbar({ colors }: { colors: ThemeColors }) {
           <ChevronDown size={18} color={colors.navbarForeground} strokeWidth={2} />
         </Pressable>
       )}
+
+      <BranchSelectorModal
+        visible={isBranchModalOpen}
+        onClose={() => setIsBranchModalOpen(false)}
+        colors={colors}
+      />
     </View>
   );
 }

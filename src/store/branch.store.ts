@@ -84,6 +84,23 @@ export function selectEffectiveBranch(state: {
 }
 
 /**
+ * La sede "recomendada" (la marcada `is_default`, o la primera del árbol
+ * si no hay ninguna marcada) — a diferencia de `selectEffectiveBranch`,
+ * ESTA IGNORA `selectedBranch` a propósito: es para el botón "Selección
+ * recomendada" del selector de sede, que debe ofrecer la default aunque
+ * el usuario ya tenga otra elegida.
+ */
+export function selectDefaultBranch(state: {
+  branchTree: BranchGroup[];
+}): BranchItem | null {
+  for (const group of state.branchTree) {
+    const defaultItem = group.items.find((item) => item.is_default);
+    if (defaultItem) return defaultItem;
+  }
+  return state.branchTree[0]?.items[0] ?? null;
+}
+
+/**
  * Ciudad/estado de la sede efectiva (ver `selectEffectiveBranchId`).
  * `nb_city`/`nb_state` viven en el `BranchGroup` que envuelve al item, no
  * en el `BranchItem` en sí — hay que buscar el grupo que lo contiene.
