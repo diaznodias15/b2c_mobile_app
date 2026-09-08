@@ -21,9 +21,15 @@ const DEPARTMENT_CARD_WIDTH = (SCREEN_WIDTH - 48 - 12) / 2;
  */
 export function Providers({ children }: { children: ReactNode }) {
   const appConfig = useConfigStore((s) => s.appConfig);
-  const isError = useConfigStore((s) => s.isError);
-  /** Loader de arranque: hasta que llegue la config (o falle), no mostramos pantallas vacías. */
-  const isBooting = appConfig === null && !isError;
+  /**
+   * Loader de arranque: se basa en `hasBootstrapped` (esta sesión ya
+   * terminó su fetch), NO en `appConfig !== null` — `appConfig` se
+   * rehidrata de AsyncStorage antes de que la red responda (ver el
+   * comentario en `config.store.ts`), así que usar eso hacía que el
+   * skeleton nunca apareciera salvo en la primera instalación.
+   */
+  const hasBootstrapped = useConfigStore((s) => s.hasBootstrapped);
+  const isBooting = !hasBootstrapped;
 
   const queryClient = useMemo(
     () =>
@@ -136,7 +142,7 @@ function HomeSkeleton() {
  * (Vuelve cuando tengamos pantallas que muestren el whitelabel.)
  */
 export async function bootstrapConfig() {
-  const { setLoading, setError, setAppConfig } = useConfigStore.getState();
+  const { setLoading, setError, setAppConfig, markBootstrapped } = useConfigStore.getState();
   const { setDepartments } = useDepartmentStore.getState();
   const { setAdvertising } = useAdvertisingStore.getState();
   const { setBrands } = useBrandsStore.getState();
@@ -166,5 +172,10 @@ export async function bootstrapConfig() {
     setError(
       err instanceof Error ? err.message : 'No se pudo cargar la configuración'
     );
+  } finally {
+    // Se marca al final (éxito o error) para que el skeleton de arranque
+    // cubra TODA la ventana de carga de esta sesión, incluso cuando
+    // `appConfig` ya viene rehidratado de una sesión anterior.
+    markBootstrapped();
   }
 }

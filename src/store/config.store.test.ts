@@ -60,6 +60,18 @@ describe('useConfigStore', () => {
     expect(s.errorInfo).toBeNull();
   });
 
+  it('starts with hasBootstrapped false', () => {
+    expect(useConfigStore.getState().hasBootstrapped).toBe(false);
+  });
+
+  it('markBootstrapped sets hasBootstrapped true and is independent of appConfig', () => {
+    useConfigStore.getState().markBootstrapped();
+    expect(useConfigStore.getState().hasBootstrapped).toBe(true);
+    // Simula un appConfig "viejo" rehidratado de una sesión anterior:
+    // markBootstrapped no depende de setAppConfig ni viceversa.
+    expect(useConfigStore.getState().appConfig).toBeNull();
+  });
+
   it('setMaintenance toggles maintenance flag', () => {
     useConfigStore.getState().setMaintenance(true);
     expect(useConfigStore.getState().isMaintenance).toBe(true);
@@ -107,6 +119,13 @@ describe('useConfigStore', () => {
       const stored = await AsyncStorage.getItem('config-storage');
       expect(stored).toBeTruthy();
       expect(stored).toContain('Farmacia El Samán');
+    });
+
+    it('does NOT persist hasBootstrapped (debe arrancar en false en cada proceso)', async () => {
+      useConfigStore.getState().markBootstrapped();
+      await new Promise((r) => setTimeout(r, 10));
+      const stored = await AsyncStorage.getItem('config-storage');
+      expect(stored).not.toContain('hasBootstrapped');
     });
   });
 });

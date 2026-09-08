@@ -42,10 +42,26 @@ type ConfigState = {
   isError: boolean;
   errorInfo: string | null;
   isMaintenance: boolean;
+  /**
+   * true recién cuando ESTA sesión de la app terminó su primer fetch de
+   * `/api/config/get` (éxito o error) — a propósito NO se deriva de
+   * `appConfig !== null`, porque `appConfig` se persiste en AsyncStorage
+   * (ver `partialize` abajo) y en cualquier arranque que no sea la
+   * primera instalación llega YA seteado desde el caché local, antes de
+   * que la red responda. Si `Providers.tsx` mostrara el boot skeleton
+   * hasta que `appConfig === null`, en un arranque "tibio" nunca se vería
+   * el skeleton — el Home montaría de una con `appConfig` viejo pero
+   * `departments`/`advertising`/`branches` (que NO se persisten, ver sus
+   * stores) todavía vacíos, mostrando el estado "sin datos" en vez de
+   * loading. `hasBootstrapped` nunca se persiste, así que siempre arranca
+   * en `false` en cada proceso nuevo.
+   */
+  hasBootstrapped: boolean;
   setAppConfig: (cfg: AppConfig) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setMaintenance: (maint: boolean) => void;
+  markBootstrapped: () => void;
   reset: () => void;
   /** Atajo: tokens de tema derivados de la config. */
   getThemeColors: () => ThemeColors;
@@ -53,13 +69,14 @@ type ConfigState = {
 
 const initialState: Pick<
   ConfigState,
-  'appConfig' | 'isLoading' | 'isError' | 'errorInfo' | 'isMaintenance'
+  'appConfig' | 'isLoading' | 'isError' | 'errorInfo' | 'isMaintenance' | 'hasBootstrapped'
 > = {
   appConfig: null,
   isLoading: false,
   isError: false,
   errorInfo: null,
   isMaintenance: false,
+  hasBootstrapped: false,
 };
 
 export const useConfigStore = create<ConfigState>()(
@@ -71,6 +88,7 @@ export const useConfigStore = create<ConfigState>()(
       setError: (error) =>
         set({ isError: error !== null, errorInfo: error, isLoading: false }),
       setMaintenance: (maint) => set({ isMaintenance: maint }),
+      markBootstrapped: () => set({ hasBootstrapped: true }),
       reset: () => set(initialState),
       getThemeColors: () => buildThemeColors(get().appConfig?.config_colors),
     }),
