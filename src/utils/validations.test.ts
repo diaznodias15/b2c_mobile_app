@@ -7,7 +7,7 @@ import {
   isVenezuelanPhoneValid,
   DOC_TYPES,
   PAYMENT_METHODS,
-  GENDERS,
+  GENDER_OPTIONS,
 } from './validations';
 
 describe('isEmailValid', () => {
@@ -47,11 +47,18 @@ describe('isPasswordValid', () => {
   it('rejects weak password when requireStrong is true (default)', () => {
     expect(isPasswordValid('simplepass')).toBe(false);
     expect(isPasswordValid('alllowercase1')).toBe(false);
+    // Tiene mayúscula + número pero le falta el carácter especial —
+    // el server exige las 4 condiciones (AUTH_WEB_FLOWS.md).
+    expect(isPasswordValid('Secret123')).toBe(false);
   });
 
-  it('accepts strong password (8+, mayúscula, dígito)', () => {
-    expect(isPasswordValid('Secret123')).toBe(true);
+  it('accepts strong password (8-40, minúscula+mayúscula+dígito+especial)', () => {
     expect(isPasswordValid('C0mpl3j0!')).toBe(true);
+    expect(isPasswordValid('Secreto1$')).toBe(true);
+  });
+
+  it('rejects passwords longer than 40 chars', () => {
+    expect(isPasswordValid('A1!' + 'a'.repeat(40))).toBe(false);
   });
 });
 
@@ -114,8 +121,8 @@ describe('isVenezuelanPhoneValid', () => {
 });
 
 describe('VE enums', () => {
-  it('DOC_TYPES contains V, E, P', () => {
-    expect(DOC_TYPES).toEqual(['V', 'E', 'P']);
+  it('DOC_TYPES contains V, E, P, J, G', () => {
+    expect(DOC_TYPES).toEqual(['V', 'E', 'P', 'J', 'G']);
   });
 
   it('PAYMENT_METHODS contains all VE payment methods', () => {
@@ -127,7 +134,10 @@ describe('VE enums', () => {
     expect(PAYMENT_METHODS).toContain('EXPRESS');
   });
 
-  it('GENDERS contains M, F, OTRO', () => {
-    expect(GENDERS).toEqual(['M', 'F', 'OTRO']);
+  it('GENDER_OPTIONS es binario: 0=Femenino, 1=Masculino', () => {
+    expect(GENDER_OPTIONS).toEqual([
+      { value: 0, label: 'Femenino' },
+      { value: 1, label: 'Masculino' },
+    ]);
   });
 });

@@ -21,7 +21,7 @@ describe('useUserStore', () => {
   });
 
   it('setUser stores user and marks authenticated', () => {
-    const user = { id: 1, email: 'test@example.com', name: 'Test' };
+    const user = { id: 'u1', email: 'test@example.com', name: 'Test' };
     useUserStore.getState().setUser(user);
     const s = useUserStore.getState();
     expect(s.user).toEqual(user);
@@ -36,7 +36,7 @@ describe('useUserStore', () => {
   });
 
   it('signIn stores user and saves token in SecureStore', async () => {
-    const user = { id: 1, email: 'test@example.com' };
+    const user = { id: 'u1', email: 'test@example.com', name: 'Test' };
     await useUserStore.getState().signIn(user, 'jwt-token-123');
     const s = useUserStore.getState();
     expect(s.user).toEqual(user);
@@ -49,7 +49,7 @@ describe('useUserStore', () => {
 
   it('signOut clears user and removes token from SecureStore', async () => {
     await useUserStore.getState().signIn(
-      { id: 1, email: 'test@example.com' },
+      { id: 'u1', email: 'test@example.com', name: 'Test' },
       'jwt-token-123'
     );
     await useUserStore.getState().signOut();
@@ -72,7 +72,7 @@ describe('useUserStore', () => {
   });
 
   it('reset clears state', () => {
-    useUserStore.getState().setUser({ id: 1, email: 'x@y.com' });
+    useUserStore.getState().setUser({ id: 'u1', email: 'x@y.com', name: 'Test' });
     useUserStore.getState().setLoading(true);
     useUserStore.getState().reset();
     const s = useUserStore.getState();
@@ -82,7 +82,7 @@ describe('useUserStore', () => {
   });
 
   it('persists user and isAuthenticated to AsyncStorage', async () => {
-    useUserStore.getState().setUser({ id: 1, email: 'persisted@example.com' });
+    useUserStore.getState().setUser({ id: 'u1', email: 'persisted@example.com', name: 'Test' });
     await new Promise((r) => setTimeout(r, 10));
     const stored = await AsyncStorage.getItem('user-storage');
     expect(stored).toBeTruthy();

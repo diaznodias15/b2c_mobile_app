@@ -9,10 +9,21 @@ export function isEmailValid(value: string): boolean {
   return EMAIL_RE.test(value.trim());
 }
 
+/**
+ * Política real del backend (AUTH_WEB_FLOWS.md): 8-40 caracteres,
+ * mínimo 1 minúscula + 1 mayúscula + 1 número + 1 carácter especial.
+ * `requireStrong = false` es para el login (no tiene sentido re-validar
+ * la fuerza de una contraseña ya existente, solo que no esté vacía).
+ */
 export function isPasswordValid(value: string, requireStrong = true): boolean {
-  if (value.length < 8) return false;
+  if (value.length < 8 || value.length > 40) return false;
   if (!requireStrong) return true;
-  return /[A-Z]/.test(value) && /[0-9]/.test(value);
+  return (
+    /[a-z]/.test(value) &&
+    /[A-Z]/.test(value) &&
+    /[0-9]/.test(value) &&
+    /[$&+,:;=?@#<>.^*()%!-]/.test(value)
+  );
 }
 
 export function isConfirmPasswordValid(pwd: string, confirm: string): boolean {
@@ -37,8 +48,14 @@ export function isVenezuelanPhoneValid(input: {
   return /^\d{7}$/.test(phoneNumber);
 }
 
-/** Tipos de documento VE. */
-export const DOC_TYPES = ['V', 'E', 'P'] as const;
+/**
+ * Tipos de documento que acepta el backend (`document_type`, regex
+ * `/[VEPJG]/` sin anclar — ver nota de seguridad en AUTH_WEB_FLOWS.md:
+ * el cliente DEBE restringir a estas 5 opciones con un selector, nunca
+ * un TextInput libre, porque el regex del server no está anclado y
+ * dejaría pasar basura como "XVE").
+ */
+export const DOC_TYPES = ['V', 'E', 'P', 'J', 'G'] as const;
 export type DocType = (typeof DOC_TYPES)[number];
 
 /** Métodos de pago VE. */
@@ -52,6 +69,13 @@ export const PAYMENT_METHODS = [
 ] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
-/** Genders. */
-export const GENDERS = ['M', 'F', 'OTRO'] as const;
-export type Gender = (typeof GENDERS)[number];
+/**
+ * `id_gender` del backend es binario (0 | 1), NO un enum de 3 valores
+ * como se había asumido antes — confirmado en AUTH_WEB_FLOWS.md
+ * ("radio 0=femenino / 1=masculino").
+ */
+export const GENDER_OPTIONS = [
+  { value: 0, label: 'Femenino' },
+  { value: 1, label: 'Masculino' },
+] as const;
+export type GenderValue = (typeof GENDER_OPTIONS)[number]['value'];

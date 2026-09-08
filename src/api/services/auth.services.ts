@@ -8,32 +8,44 @@ export type LoginPayload = {
   password: string;
 };
 
+/**
+ * `data` es PLANO (el user y el token en el mismo nivel), no
+ * `{ user, token }` anidado — confirmado en AUTH_WEB_FLOWS.md contra
+ * el backend real. `login()` separa `token` del resto al devolverlo.
+ */
 export type LoginResponse = {
-  data: {
-    user: User;
-    token: string;
-  };
+  data: User & { token: string };
   message: string;
-  status: number;
+  status: string;
 };
 
+/**
+ * Nombres de campo EXACTOS que espera el backend (snake_case,
+ * `id_gender` numérico, `phone_number` con guión) — ver
+ * AUTH_WEB_FLOWS.md §2. No son los mismos nombres que usa el form en
+ * pantalla (`RegisterScreen` arma este payload al enviar).
+ */
 export type RegisterPayload = {
-  email: string;
-  documentType: 'V' | 'E' | 'P';
-  documentNumber: string;
+  document_type: 'V' | 'E' | 'P' | 'J' | 'G';
+  document_id: number;
   name: string;
-  gender: 'M' | 'F' | 'OTRO';
-  countryCode: string; // +58
-  areaCode: string; // 0412 etc.
-  phoneNumber: string; // 7 dígitos
+  email: string;
   password: string;
-  acceptTerms: boolean;
+  password_confirmation: string;
+  /** 0 = femenino, 1 = masculino. */
+  id_gender: 0 | 1;
+  country_code: '+58';
+  area_code: string;
+  /** Formato "XXX-XXXX" — el server lo valida con ese regex exacto. */
+  phone_number: string;
+  terms_of_service: true;
 };
 
+/** El registro NO devuelve user ni token — el email todavía no está verificado. */
 export type RegisterResponse = {
-  data: { user: User };
+  data: null;
   message: string;
-  status: number;
+  status: string;
 };
 
 export type MeResponse = {
@@ -42,39 +54,45 @@ export type MeResponse = {
 
 export type LogoutResponse = {
   message: string;
-  status: number;
+  status: string;
 };
 
+/** El éxito/error se determina por si tira excepción (404/409), no por `data`. */
 export type VerifyEmailResponse = {
-  data: { verified: boolean };
+  data: null;
   message: string;
-  status: number;
+  status: string;
 };
 
 export type ValidateUserPayload = { email: string };
-export type ValidateUserResponse = { message: string; status: number };
+export type ValidateUserResponse = { status: string; message: string; data: null };
 
 export type ValidatePinPayload = { email: string; pin: string };
-export type ValidatePinResponse = {
-  data: { resetToken: string };
-  message: string;
-  status: number;
-};
+/**
+ * NO devuelve `resetToken` — el flujo real (AUTH_WEB_FLOWS.md §3) no
+ * usa un token intermedio: el paso 3 (`restorePassword`) manda
+ * `email` + `pin` directo. `validatePin` es solo un chequeo previo
+ * (no invalida el PIN, no lo consume) para poder avanzar de pantalla
+ * en la UI antes de pedir la contraseña nueva.
+ */
+export type ValidatePinResponse = { status: string; message: string; data: null };
 
 export type RestorePasswordPayload = {
   email: string;
-  resetToken: string;
-  newPassword: string;
+  pin: string;
+  password: string;
+  password_confirmation: string;
 };
-export type RestorePasswordResponse = { message: string; status: number };
+export type RestorePasswordResponse = { status: string; message: string; data: null };
 
 export type ResetPasswordPayload = {
-  currentPassword: string;
-  newPassword: string;
+  old_password: string;
+  new_password: string;
+  new_password_confirmation: string;
 };
-export type ResetPasswordResponse = { message: string; status: number };
+export type ResetPasswordResponse = { status: string; message: string; data: null };
 
-export type SendEmailVerificationResponse = { message: string; status: number };
+export type SendEmailVerificationResponse = { status: string; message: string; data: null };
 
 /* ============================================================
  * Servicios — cada uno consume axiosRequest, sin axios directo.
@@ -151,11 +169,21 @@ export async function verifyEmail(id: string, token: string): Promise<VerifyEmai
   }
 }
 
-export async function sendEmailVerification(): Promise<SendEmailVerificationResponse> {
+/**
+ * Público — no requiere token. Se usa tanto para reenviar el email de
+ * verificación post-registro como desde el banner de login cuando el
+ * server responde "Correo electrónico no verificado" (AUTH_WEB_FLOWS.md
+ * §4.1). El endpoint necesita `email` en el body porque en ninguno de
+ * los dos casos hay sesión activa todavía.
+ */
+export async function sendEmailVerification(
+  email: string
+): Promise<SendEmailVerificationResponse> {
   try {
     return await axiosRequest<SendEmailVerificationResponse>({
       method: 'POST',
       url: '/api/auth/send-email-verification',
+      data: { email },
       dedup: false,
     });
   } catch (err) {

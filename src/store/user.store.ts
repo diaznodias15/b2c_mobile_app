@@ -4,13 +4,22 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from '@/utils/secureStorage';
 import { setToken, getToken } from '@/api/axiosRequest';
 
-/** Perfil del usuario autenticado. */
+/**
+ * Perfil del usuario autenticado. Forma real de `data` en
+ * `POST /api/auth/login` (AUTH_WEB_FLOWS.md) — es un objeto PLANO, no
+ * `{ user, token }` anidado, y `id` es un UUID (string), no el id
+ * interno de la tabla `users`.
+ */
 export type User = {
-  id: number;
+  id: string;
+  name: string;
   email: string;
-  name?: string;
-  phone?: string;
+  /** Ya viene formateado del backend: "+58 (0414) 123-4567". */
+  tx_phone?: string;
   created_at?: string;
+  /** Solo viene en cuentas admin/super-admin — para clientes siempre null. */
+  role?: number | null;
+  permissions?: unknown[] | null;
 };
 
 type UserState = {

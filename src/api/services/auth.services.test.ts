@@ -22,20 +22,24 @@ describe('auth.services', () => {
   });
 
   describe('login', () => {
-    it('returns user and token on success', async () => {
+    it('returns the flat user+token shape on success (no user/token nesting)', async () => {
+      // La respuesta real del backend es plana (AUTH_WEB_FLOWS.md §1):
+      // el user y el token viven en el mismo nivel de `data`.
       mockedRequest.mockResolvedValueOnce({
-        user: { id: 1, email: 'a@b.com' },
+        id: 'u1',
+        name: 'Ana',
+        email: 'a@b.com',
         token: 'jwt-123',
       });
       const result = await authService.login({
         email: 'a@b.com',
-        password: 'Secret123',
+        password: 'Secret123!',
       });
-      expect(result).toEqual({ user: { id: 1, email: 'a@b.com' }, token: 'jwt-123' });
+      expect(result).toEqual({ id: 'u1', name: 'Ana', email: 'a@b.com', token: 'jwt-123' });
       expect(mockedRequest).toHaveBeenCalledWith({
         method: 'POST',
         url: '/api/auth/login',
-        data: { email: 'a@b.com', password: 'Secret123' },
+        data: { email: 'a@b.com', password: 'Secret123!' },
         dedup: false,
       });
     });
@@ -80,7 +84,7 @@ describe('auth.services', () => {
 
   describe('me', () => {
     it('returns the user from response.data', async () => {
-      const user = { id: 5, email: 'me@x.com' };
+      const user = { id: 'u5', name: 'Ana', email: 'me@x.com' };
       mockedRequest.mockResolvedValueOnce({ data: user });
       const result = await authService.me();
       expect(result).toEqual(user);
@@ -88,24 +92,25 @@ describe('auth.services', () => {
   });
 
   describe('register', () => {
-    it('posts to /api/users/register', async () => {
-      mockedRequest.mockResolvedValueOnce({
-        user: { id: 1, email: 'new@x.com' },
-      });
+    it('posts to /api/users/register with the real backend field names', async () => {
+      // El registro no devuelve user ni token (AUTH_WEB_FLOWS.md §2) —
+      // el email todavía no está verificado.
+      mockedRequest.mockResolvedValueOnce(null);
       const payload = {
-        email: 'new@x.com',
-        documentType: 'V' as const,
-        documentNumber: '12345678',
+        document_type: 'V' as const,
+        document_id: 12345678,
         name: 'María',
-        gender: 'F' as const,
-        countryCode: '+58',
-        areaCode: '0412',
-        phoneNumber: '1234567',
-        password: 'Secret123',
-        acceptTerms: true as const,
+        email: 'new@x.com',
+        password: 'Secret123!',
+        password_confirmation: 'Secret123!',
+        id_gender: 0 as const,
+        country_code: '+58' as const,
+        area_code: '0412',
+        phone_number: '123-4567',
+        terms_of_service: true as const,
       };
       const result = await authService.register(payload);
-      expect(result).toEqual({ user: { id: 1, email: 'new@x.com' } });
+      expect(result).toBeNull();
       expect(mockedRequest).toHaveBeenCalledWith({
         method: 'POST',
         url: '/api/users/register',
@@ -117,9 +122,15 @@ describe('auth.services', () => {
 
   describe('verifyEmail', () => {
     it('calls GET with id and token in URL', async () => {
-      mockedRequest.mockResolvedValueOnce({ data: { verified: true } });
+      // El éxito se determina por `message` (o por no tirar excepción),
+      // no por un `data.verified` que el backend no manda.
+      mockedRequest.mockResolvedValueOnce({
+        status: 'OK',
+        message: 'Correo electrónico verificado correctamente',
+        data: null,
+      });
       const result = await authService.verifyEmail('42', 'tok');
-      expect(result.data.verified).toBe(true);
+      expect(result.message).toBe('Correo electrónico verificado correctamente');
       expect(mockedRequest).toHaveBeenCalledWith({
         method: 'GET',
         url: '/api/auth/account/verify/42/tok',
@@ -142,33 +153,43 @@ describe('auth.services', () => {
   });
 
   describe('validatePin (reset step 2)', () => {
-    it('posts email and pin, returns resetToken', async () => {
+    it('posts email and pin — NO devuelve resetToken (el backend no lo emite)', async () => {
       mockedRequest.mockResolvedValueOnce({
-        data: { resetToken: 'rst-123' },
+        status: 'OK',
+        message: 'Código de verificación correcto',
+        data: null,
       });
       const result = await authService.validatePin({
         email: 'a@b.com',
         pin: '123456',
       });
-      expect(result.data.resetToken).toBe('rst-123');
+      expect(result.data).toBeNull();
+      expect(mockedRequest).toHaveBeenCalledWith({
+        method: 'POST',
+        url: '/api/auth/validate-pin',
+        data: { email: 'a@b.com', pin: '123456' },
+        dedup: false,
+      });
     });
   });
 
   describe('restorePassword (reset step 3)', () => {
-    it('posts email, resetToken and newPassword', async () => {
-      mockedRequest.mockResolvedValueOnce({ message: 'ok', status: 200 });
+    it('posts email, pin, password y password_confirmation (no resetToken)', async () => {
+      mockedRequest.mockResolvedValueOnce({ status: 'OK', message: 'ok', data: null });
       await authService.restorePassword({
         email: 'a@b.com',
-        resetToken: 'rst-123',
-        newPassword: 'NewSecret1',
+        pin: '123456',
+        password: 'NewSecret1!',
+        password_confirmation: 'NewSecret1!',
       });
       expect(mockedRequest).toHaveBeenCalledWith({
         method: 'POST',
         url: '/api/auth/restore-password',
         data: {
           email: 'a@b.com',
-          resetToken: 'rst-123',
-          newPassword: 'NewSecret1',
+          pin: '123456',
+          password: 'NewSecret1!',
+          password_confirmation: 'NewSecret1!',
         },
         dedup: false,
       });
@@ -176,18 +197,20 @@ describe('auth.services', () => {
   });
 
   describe('resetPassword (logged in)', () => {
-    it('posts current and new password', async () => {
-      mockedRequest.mockResolvedValueOnce({ message: 'ok', status: 200 });
+    it('posts old_password, new_password y new_password_confirmation', async () => {
+      mockedRequest.mockResolvedValueOnce({ status: 'OK', message: 'ok', data: null });
       await authService.resetPassword({
-        currentPassword: 'OldSecret1',
-        newPassword: 'NewSecret1',
+        old_password: 'OldSecret1!',
+        new_password: 'NewSecret1!',
+        new_password_confirmation: 'NewSecret1!',
       });
       expect(mockedRequest).toHaveBeenCalledWith({
         method: 'POST',
         url: '/api/auth/reset-password',
         data: {
-          currentPassword: 'OldSecret1',
-          newPassword: 'NewSecret1',
+          old_password: 'OldSecret1!',
+          new_password: 'NewSecret1!',
+          new_password_confirmation: 'NewSecret1!',
         },
         dedup: false,
       });
@@ -195,12 +218,13 @@ describe('auth.services', () => {
   });
 
   describe('sendEmailVerification', () => {
-    it('posts to send-email-verification', async () => {
-      mockedRequest.mockResolvedValueOnce({ message: 'ok', status: 200 });
-      await authService.sendEmailVerification();
+    it('posts email to send-email-verification (endpoint público, sin token)', async () => {
+      mockedRequest.mockResolvedValueOnce({ status: 'OK', message: 'ok', data: null });
+      await authService.sendEmailVerification('a@b.com');
       expect(mockedRequest).toHaveBeenCalledWith({
         method: 'POST',
         url: '/api/auth/send-email-verification',
+        data: { email: 'a@b.com' },
         dedup: false,
       });
     });
