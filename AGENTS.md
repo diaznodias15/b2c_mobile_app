@@ -2,7 +2,11 @@
 
 Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.
 
-# Arquitectura actual (2026-09-04)
+**Marca:** el proyecto se llamó "Farmacia El Samán de Perijá" y se
+rebrandeó a **"Grupo Maraplus"** — si aparece la marca vieja en un archivo
+nuevo o copiado de otro lado, corregirla.
+
+# Arquitectura actual (2026-09-08)
 
 ## Providers (`src/app/_layout.tsx` + `src/components/Providers.tsx`)
 
@@ -52,17 +56,24 @@ cambiá el otro.
 Los íconos son SVG (`lucide-react-native`) y no aceptan `className`; su
 color sale de `useConfigStore((s) => s.getThemeColors())`, no de clases.
 
-**Sobre el bug original de `<Text>` + className:** una sesión anterior
-encontró que `className` en `<Text>` se comportaba distinto entre web y
-Android (`fontSize`/`margin`/`color` no se aplicaban), lo cual motivó
-adoptar HeroUI. Al remover HeroUI se decidió **reintentar `<Text>` +
-className crudo** primero (en vez de saltar directo a estilos inline),
-bajo la hipótesis de que el bug original pudo ser un efecto secundario de
-tener HeroUI + Uniwind conviviendo, no de Uniwind puro. **Si reaparece ese
-bug** (texto sin el `fontSize`/`color`/`margin` esperado en Android),
-la salida conocida es mezclar: `className` para layout/spacing, `style`
-inline para `color`/`fontSize` en ese `<Text>` puntual — no volver a traer
-una librería de componentes por esto.
+**Sobre el bug original de `<Text>` + className — resuelto, ya no se usa
+className en pantallas/componentes:** una sesión anterior encontró que
+`className` en `<Text>` se comportaba distinto entre web y Android
+(`fontSize`/`margin`/`color` no se aplicaban), lo cual motivó adoptar
+HeroUI. Al remover HeroUI se probó reintentar `<Text>` + className crudo,
+pero el bug reapareció en Android real — **decisión final: 100% estilos
+inline (`style={{ ... }}`) en todos los componentes de pantalla**, nada de
+`className` salvo la única excepción de abajo. No perder tiempo
+reintentando className en `<Text>`/`<View>` de nuevo; si algún día se
+quiere retomar, hacerlo con un componente aislado y de bajo riesgo primero,
+no en una pantalla real.
+
+La única excepción viva es el `View` raíz de `Providers.tsx`
+(`className="bg-background"`), que solo necesita el `background` de
+`global.css`. Todo lo demás — Home, cards, navbar, marquee, banners — es
+`react-native` puro (`View`, `Text`, `Pressable`, `ScrollView`, `Image` de
+`expo-image`, `Animated`/`react-native-reanimated`) con `style` inline y
+los colores resueltos desde `useThemeColors()` (`src/store/config.store.ts`).
 
 **Cómo Uniwind resuelve colores en runtime (nativo):** cada `className` con
 color se busca contra una tabla compilada (`UniwindStore.vars`), generada
@@ -116,6 +127,108 @@ coincide con esas versiones. Hay que compilar un dev-client.
   instala en el emulador/device). Solo hace falta repetirlo si cambian
   dependencias nativas; para JS/CSS alcanza con Metro (`npm run
   start:fresh` + reload de la app).
+
+## Forma real de `/api/config/get` (verificado con curl, 2026-09-08)
+
+El backend NO anida todo bajo `app_config` como el nombre del campo
+`config_colors` en `AppConfig` sugiere. La forma real de `data` es:
+
+```
+data.app_config      // datos de la empresa (rif, teléfono, email, etc.)
+data.config_colors   // los 40+ `col_*` — HERMANO de app_config, no anidado
+data.advertisings
+data.brands
+data.departments
+data.branches
+```
+
+`bootstrapConfig()` (`src/components/Providers.tsx`) hace el merge:
+`setAppConfig({ ...data.app_config, config_colors: data.config_colors })`.
+Si algún día un `setAppConfig` deja de reflejar colores, este es el primer
+sospechoso — confirmalo con
+`curl -s https://b2c-api.icompras360.online/api/config/get | node -e "..."`
+y `Object.keys(j.data)` antes de asumir un bug de UI.
+
+**`app_config` HOY no trae `tx_company_name` ni `tx_company_logo_url`**
+(están tipados en `AppConfig` para cuando el backend los agregue, pero la
+respuesta real no los incluye a la fecha). El logo de la navbar por eso
+sale de assets locales, no del backend — ver "Logo de la navbar" abajo.
+
+`config_colors` trae pares `col_x` / `col_x_dark` para (casi) todo, pero
+**no hay ningún toggle de dark mode implementado en la app** (`is_allow_dark_mode`
+existe en `app_config` pero no se lee en ningún lado). `buildThemeColors()`
+(`src/theme/colors.ts`) solo mapea los valores `_light` (sin sufijo). No
+asumas que existe un modo oscuro real hasta que se implemente.
+
+## El anti-patrón de Zustand que más se repite: selectors que arman objetos
+
+**Nunca** hagas `useXStore((s) => s.algo())` donde `algo()` construye un
+objeto/array nuevo en cada llamada, ni `useXStore((s) => ({ a: s.a, b: s.b }))`
+inline. Zustand usa `useSyncExternalStore`, que compara snapshots por
+referencia — un objeto nuevo en cada render nunca es "igual" al anterior,
+así que React re-renderiza en loop → `"The result of getSnapshot should be
+cached"` → `"Maximum update depth exceeded"`. Ya pasó (y se arregló) al
+menos 3 veces en este proyecto: `getThemeColors()` en `config.store.ts`,
+`selectEffectiveBranchLocation` en `branch.store.ts`, y por eso
+`useEffectiveBranchLocation()` existe como hook con `useMemo`.
+
+**Regla práctica:**
+- Si el selector devuelve una referencia que YA existe en el state (ej.
+  `state.selectedBranch`, o un item encontrado con `.find()` dentro del
+  árbol sin reconstruirlo) → seguro usar directo:
+  `useBranchStore(selectEffectiveBranch)` (`src/store/branch.store.ts`).
+- Si el selector arma `{ ... }` o `[ ... ]` nuevo → hay que envolverlo en
+  un hook dedicado que seleccione las piezas primitivas/estables por
+  separado y derive el resultado con `useMemo` (ver `useThemeColors()`,
+  `useEffectiveBranchLocation()`).
+
+## Convención de fallback de imágenes (producto, marca, logo)
+
+Tres variantes del mismo patrón, todas con `expo-image` + `onError` +
+`useState`:
+
+- **Producto** (`ProductCard.tsx`): si no hay `tx_img_url` o falla la
+  carga, usa `assets/images/unavailable-product-image.webp` (imagen real,
+  no generada).
+- **Marca** (`BrandsMarquee.tsx`): si no hay logo o falla, cae a un ícono
+  `Building2` de `lucide-react-native` — no hay asset de fallback para
+  marcas, es más barato un ícono que una imagen genérica.
+- **Logo de la navbar** (`HomeNavbar.tsx`): no es un fallback por error de
+  red, es una elección de contraste. `assets/images/logo-light.webp` es el
+  logo a color (para fondos claros); `assets/images/logo-dark.webp` es una
+  versión casi blanca (para fondos oscuros — queda invisible sobre blanco,
+  ¡no confundir cuál usar!). La elección es `isLightColor(colors.navbar)`
+  (`src/theme/colors.ts`) sobre el color real del whitelabel, no el modo
+  claro/oscuro del sistema — el admin puede pintar el navbar de cualquier
+  color. Ninguna de las dos variantes viene del backend (ver arriba, el
+  API no manda logo todavía).
+
+Si se sube un asset nuevo a `assets/images/`, recordar copiarlo también a
+`C:\dev\b2c_mobile_app\assets\images\` (ver "Entorno de build local" abajo)
+o Metro no lo va a encontrar al bundlear desde ahí.
+
+## Home (`src/app/index.tsx`) — orden de secciones y patrón de título
+
+De arriba hacia abajo: `HomeNavbar` (fijo, fuera del `ScrollView`) →
+carrusel de publicidad (1:1, `react-native-reanimated-carousel`) →
+`TopProducts` ("Más vendidos") → grid de `DepartmentCard` → `WhyChooseUs`
+→ `DeliveryBanner` → `BrandsMarquee`.
+
+**Todo título de sección usa `SectionHeader`** (`src/components/
+SectionHeader.tsx`): título centrado + subtítulo opcional debajo, mismo
+tamaño/peso en todos lados. Si se agrega una sección nueva al Home,
+reusar `SectionHeader` en vez de armar un título a mano — fue pedido
+explícito del usuario para mantener consistencia.
+
+## Bugs de datos ya resueltos (no reintroducir)
+
+- **`getTopProducts` armaba `${TOP_PRODUCTS}?${toQueryString(params)}`** —
+  `toQueryString()` ya devuelve el string CON el `?` inicial, así que
+  quedaba `??branch=1` y el backend respondía `"La sucursal es
+  requerida."` aun con una sede válida. Las demás funciones de
+  `src/api/services/products.services.ts` (`getProductList`,
+  `getProductSearch`, `getProductDetail`) ya lo hacían bien. Hay test de
+  regresión (`not.toContain('??')`) en `products.services.test.ts`.
 
 ## Mapa de rutas y BottomTabs (`src/components/bottom-tabs.tsx`)
 
