@@ -167,6 +167,7 @@ export default function CartScreen() {
 }
 
 function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeColors }) {
+  const router = useRouter();
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeProduct = useCartStore((s) => s.removeProduct);
   const { displayCurrency, exchangeRate } = useDisplayCurrency();
@@ -176,7 +177,8 @@ function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeColors })
   const unitPrice = Number(item.pri_product_final_price);
 
   return (
-    <View
+    <Pressable
+      onPress={() => router.push(`/product/${item.tx_slug}`)}
       style={{
         flexDirection: 'row',
         gap: 12,
@@ -188,6 +190,8 @@ function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeColors })
         shadowOpacity: 1,
         shadowRadius: 6,
       }}
+      accessibilityRole="button"
+      accessibilityLabel={`Ver ${item.nb_product}`}
     >
       <View
         style={{
@@ -242,6 +246,6 @@ function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeColors })
           colors={colors}
         />
       </View>
-    </View>
+    </Pressable>
   );
 }
