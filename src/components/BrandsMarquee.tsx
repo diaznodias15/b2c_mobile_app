@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { SectionHeader } from '@/components/SectionHeader';
+import { Skeleton } from '@/components/Skeleton';
 import { useBrandsStore } from '@/store/brands.store';
 import type { ThemeColors } from '@/theme/colors';
 import type { Brand } from '@/types/whitelabel';
@@ -96,6 +97,7 @@ function MarqueeRow({
 
 function BrandLogo({ brand, colors }: { brand: Brand; colors: ThemeColors }) {
   const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const showFallback = !brand.tx_img_url || failed;
 
   return (
@@ -113,12 +115,24 @@ function BrandLogo({ brand, colors }: { brand: Brand; colors: ThemeColors }) {
       {showFallback ? (
         <Building2 size={22} color={colors.muted} strokeWidth={1.6} />
       ) : (
-        <Image
-          source={{ uri: brand.tx_img_url }}
-          style={{ width: '100%', height: '100%' }}
-          contentFit="contain"
-          onError={() => setFailed(true)}
-        />
+        <>
+          {!loaded && (
+            <Skeleton
+              width={ITEM_WIDTH}
+              height={ITEM_HEIGHT}
+              borderRadius={12}
+              colors={colors}
+              style={{ position: 'absolute' }}
+            />
+          )}
+          <Image
+            source={{ uri: brand.tx_img_url }}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="contain"
+            onLoad={() => setLoaded(true)}
+            onError={() => setFailed(true)}
+          />
+        </>
       )}
     </View>
   );

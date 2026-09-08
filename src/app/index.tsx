@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Dimensions, FlatList, ScrollView, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -11,15 +12,48 @@ import { DepartmentCard } from '@/components/DepartmentCard';
 import { Footer } from '@/components/Footer';
 import { HomeNavbar } from '@/components/HomeNavbar';
 import { SectionHeader } from '@/components/SectionHeader';
+import { Skeleton } from '@/components/Skeleton';
 import { TopProducts } from '@/components/TopProducts';
 import { WhyChooseUs } from '@/components/WhyChooseUs';
 import { useThemeColors } from '@/store/config.store';
 import { useAdvertisingStore } from '@/store/advertising.store';
 import { useDepartmentStore } from '@/store/department.store';
+import type { ThemeColors } from '@/theme/colors';
+import type { Advertising } from '@/types/whitelabel';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 /** La publicidad mobile de la API (`tx_img_url_mobile`) viene en formato 1:1. */
 const BANNER_SIZE = SCREEN_WIDTH - 48;
+
+/** Banner del carrusel con skeleton propio mientras carga su imagen. */
+function AdvertisingBanner({ item, colors }: { item: Advertising; colors: ThemeColors }) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <View style={{ width: '100%', height: '100%' }}>
+      {!loaded && (
+        <Skeleton
+          width="100%"
+          height="100%"
+          borderRadius={18}
+          colors={colors}
+          style={{ position: 'absolute' }}
+        />
+      )}
+      <Image
+        source={{ uri: item.tx_img_url_mobile }}
+        style={{
+          width: '100%',
+          height: '100%',
+          borderRadius: 18,
+          backgroundColor: colors.section,
+        }}
+        contentFit="cover"
+        onLoad={() => setLoaded(true)}
+      />
+    </View>
+  );
+}
 
 export default function HomeScreen() {
   const colors = useThemeColors();
@@ -47,18 +81,7 @@ export default function HomeScreen() {
               onProgressChange={(p) => {
                 carouselProgress.value = p;
               }}
-              renderItem={({ item }) => (
-                <Image
-                  source={{ uri: item.tx_img_url_mobile }}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: 18,
-                    backgroundColor: colors.section,
-                  }}
-                  contentFit="cover"
-                />
-              )}
+              renderItem={({ item }) => <AdvertisingBanner item={item} colors={colors} />}
             />
             {advertising.length > 1 && (
               <Pagination
