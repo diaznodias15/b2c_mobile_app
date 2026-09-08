@@ -2,12 +2,12 @@ import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomTabs } from '@/components/bottom-tabs';
-import { useConfigStore } from '@/store/config.store';
+import { useThemeColors } from '@/store/config.store';
 import { useCartStore, selectCartCount } from '@/store/cart.store';
 
 export default function CartScreen() {
   const insets = useSafeAreaInsets();
-  const colors = useConfigStore((s) => s.getThemeColors());
+  const colors = useThemeColors();
   const cartCount = useCartStore(selectCartCount);
 
   return (

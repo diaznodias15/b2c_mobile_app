@@ -13,7 +13,7 @@ import {
   UserRound,
 } from 'lucide-react-native';
 
-import { useConfigStore } from '@/store/config.store';
+import { useThemeColors } from '@/store/config.store';
 import { useCartStore, selectCartCount } from '@/store/cart.store';
 
 const NAV_TABS = [
@@ -41,7 +41,7 @@ export function BottomTabs() {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
-  const colors = useConfigStore((s) => s.getThemeColors());
+  const colors = useThemeColors();
   const cartCount = useCartStore(selectCartCount);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const backdropOpacity = useRef(new Animated.Value(0)).current;
@@ -80,7 +80,7 @@ export function BottomTabs() {
       {NAV_TABS.map((tab) => {
         const active = pathname === tab.href;
         const Icon = tab.icon;
-        const iconColor = active ? colors.primary : colors.muted;
+        const iconColor = active ? colors.primaryBottomNavbar : colors.secondary;
 
         return (
           <Pressable
@@ -101,7 +101,7 @@ export function BottomTabs() {
                 width: 32,
                 height: 3,
                 borderRadius: 2,
-                backgroundColor: active ? colors.primary : 'transparent',
+                backgroundColor: active ? colors.primaryBottomNavbar : 'transparent',
                 marginBottom: 4,
               }}
             />
@@ -160,17 +160,17 @@ export function BottomTabs() {
             width: 32,
             height: 3,
             borderRadius: 2,
-            backgroundColor: isMoreActive ? colors.primary : 'transparent',
+            backgroundColor: isMoreActive ? colors.primaryBottomNavbar : 'transparent',
             marginBottom: 4,
           }}
         />
-        <Ellipsis size={22} color={isMoreActive ? colors.primary : colors.muted} />
+        <Ellipsis size={22} color={isMoreActive ? colors.primaryBottomNavbar : colors.secondary} />
         <Text
           numberOfLines={1}
           style={{
             fontSize: 11,
             fontWeight: isMoreActive ? '600' : '400',
-            color: isMoreActive ? colors.primary : colors.muted,
+            color: isMoreActive ? colors.primaryBottomNavbar : colors.secondary,
             marginTop: 4,
           }}
         >

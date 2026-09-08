@@ -4,7 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { useConfigStore, useBranchStore, useDepartmentStore, useAdvertisingStore } from '@/store';
+import { useConfigStore, useThemeColors, useBranchStore, useDepartmentStore, useAdvertisingStore } from '@/store';
 import { buildThemeColors, themeColorsToCssVars } from '@/theme';
 import { loadConfig } from '@/api';
 
@@ -53,7 +53,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
 /** Pantalla de carga mientras `bootstrapConfig` trae el whitelabel del backend. */
 function BootLoader() {
-  const colors = useConfigStore((s) => s.getThemeColors());
+  const colors = useThemeColors();
   return (
     <View
       style={{
@@ -81,7 +81,10 @@ export async function bootstrapConfig() {
   setLoading(true);
   try {
     const data = await loadConfig();
-    setAppConfig(data.app_config);
+    // `config_colors` viene como campo hermano de `app_config` en el
+    // envelope real del backend (`data.config_colors`, no
+    // `data.app_config.config_colors`) — hay que mergearlo a mano.
+    setAppConfig({ ...data.app_config, config_colors: data.config_colors });
     if (data.advertisings !== undefined) {
       setAdvertising(data.advertisings);
     }
@@ -92,6 +95,7 @@ export async function bootstrapConfig() {
       branchStore.setBranchTree(data.branches);
     }
   } catch (err) {
+    console.error('[bootstrapConfig] FALLÓ:', err);
     setError(
       err instanceof Error ? err.message : 'No se pudo cargar la configuración'
     );

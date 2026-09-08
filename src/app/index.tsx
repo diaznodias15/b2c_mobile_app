@@ -6,7 +6,7 @@ import { useSharedValue } from 'react-native-reanimated';
 import { Carousel, Pagination } from 'react-native-reanimated-carousel';
 
 import { BottomTabs } from '@/components/bottom-tabs';
-import { useConfigStore } from '@/store/config.store';
+import { useConfigStore, useThemeColors } from '@/store/config.store';
 import { useAdvertisingStore } from '@/store/advertising.store';
 import { useDepartmentStore } from '@/store/department.store';
 import type { ThemeColors } from '@/theme/colors';
@@ -19,7 +19,7 @@ const DEPARTMENT_CARD_WIDTH = (SCREEN_WIDTH - 24 * 2 - 12) / 2;
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const colors = useConfigStore((s) => s.getThemeColors());
+  const colors = useThemeColors();
   const companyName = useConfigStore((s) => s.appConfig?.tx_company_name);
   const advertising = useAdvertisingStore((s) => s.advertising);
   const departments = useDepartmentStore((s) => s.departments);

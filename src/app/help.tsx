@@ -2,11 +2,11 @@ import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomTabs } from '@/components/bottom-tabs';
-import { useConfigStore } from '@/store/config.store';
+import { useThemeColors } from '@/store/config.store';
 
 export default function HelpScreen() {
   const insets = useSafeAreaInsets();
-  const colors = useConfigStore((s) => s.getThemeColors());
+  const colors = useThemeColors();
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View

@@ -102,8 +102,10 @@ export type ThemeColors = {
   // Brand
   primary: string;
   primaryForeground: string;
-  /** Color secundario del bottom navbar (gris/azul). */
+  /** Color secundario del bottom navbar (gris/azul) — tab inactivo. */
   secondary: string;
+  /** Color del tab activo del bottom navbar (puede diferir del primary general). */
+  primaryBottomNavbar: string;
 
   // Status
   success: string;
@@ -139,6 +141,7 @@ export const SOFT_COLORS: ThemeColors = {
   primary: '#008000',
   primaryForeground: '#FFFFFF',
   secondary: '#757575',
+  primaryBottomNavbar: '#008000',
 
   success: '#17C964',
   danger: '#F87171',
@@ -213,6 +216,8 @@ export function buildThemeColors(
       c.col_text_for_primary ?? SOFT_COLORS.primaryForeground,
     secondary:
       c.col_secondary_bottom_navbar ?? SOFT_COLORS.secondary,
+    primaryBottomNavbar:
+      c.col_primary_bottom_navbar ?? c.col_primary ?? SOFT_COLORS.primaryBottomNavbar,
 
     // Status
     success: c.col_success ?? SOFT_COLORS.success,

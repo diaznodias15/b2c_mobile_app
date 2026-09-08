@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -80,3 +81,17 @@ export const useConfigStore = create<ConfigState>()(
     }
   )
 );
+
+/**
+ * Hook para usar en componentes — NUNCA uses
+ * `useConfigStore((s) => s.getThemeColors())` directamente: esa llamada
+ * crea un objeto nuevo en cada render, y como corre dentro del selector
+ * de `useSyncExternalStore`, React nunca ve el mismo snapshot dos veces
+ * → "Maximum update depth exceeded" (loop infinito de renders). Acá
+ * seleccionamos solo `config_colors` (referencia estable del store) y
+ * memoizamos el cálculo de colores con `useMemo`.
+ */
+export function useThemeColors(): ThemeColors {
+  const configColors = useConfigStore((s) => s.appConfig?.config_colors);
+  return useMemo(() => buildThemeColors(configColors), [configColors]);
+}
