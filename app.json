@@ -41,7 +41,13 @@
         }
       ],
       "expo-image",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Usamos tu ubicación para sugerirte la sede más cercana."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

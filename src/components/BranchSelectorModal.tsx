@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Animated,
   LayoutAnimation,
   Modal,
@@ -11,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Location from 'expo-location';
 import { ChevronDown, ChevronLeft, ChevronUp, MapPin, Navigation, Navigation2, X } from 'lucide-react-native';
 
 import {
@@ -20,6 +23,7 @@ import {
 } from '@/store/branch.store';
 import type { ThemeColors } from '@/theme/colors';
 import type { BranchGroup, BranchItem } from '@/types/whitelabel';
+import { findNearestBranch, hasValidCoordinates } from '@/utils/geo';
 import { openInMaps } from '@/utils/maps';
 
 // En la arquitectura vieja de Android, LayoutAnimation requiere este flag
@@ -61,6 +65,7 @@ export function BranchSelectorModal({
   const sheetTranslateY = useRef(new Animated.Value(600)).current;
 
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -84,9 +89,55 @@ export function BranchSelectorModal({
     onClose();
   }
 
-  function selectRecommended() {
-    const recommended = selectDefaultBranch({ branchTree });
-    if (recommended) setSelectedBranch(recommended);
+  /**
+   * "Selección recomendada": intenta ubicar al usuario y elegir la sede
+   * más cercana por distancia real (Haversine, `findNearestBranch`). Si
+   * no hay permiso, falla el GPS, o ninguna sede del árbol tiene
+   * lat/lng, cae al fallback de siempre (`selectDefaultBranch`, la
+   * marcada `is_default`) — nunca deja al usuario sin sede por un
+   * problema de ubicación.
+   */
+  async function selectRecommended() {
+    if (isLocating) return;
+    setIsLocating(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === Location.PermissionStatus.GRANTED) {
+        const position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        const nearest = findNearestBranch(
+          branchTree,
+          position.coords.latitude,
+          position.coords.longitude
+        );
+        if (nearest) {
+          setSelectedBranch(nearest);
+          onClose();
+          return;
+        }
+      } else {
+        Alert.alert(
+          'Ubicación no disponible',
+          'No pudimos acceder a tu ubicación. Te asignamos la sede recomendada por defecto.'
+        );
+      }
+    } catch (err) {
+      // GPS/servicios de ubicación apagados o sin fix disponible (común
+      // en emuladores sin mock location) — un caso esperado, no un bug:
+      // console.warn en vez de console.error para no disparar el LogBox
+      // en rojo de RN en dev. Ya cae al fallback de sede por defecto.
+      console.warn('[BranchSelectorModal] No se pudo obtener la ubicación:', err);
+      Alert.alert(
+        'Ubicación no disponible',
+        'No pudimos obtener tu ubicación en este momento. Te asignamos la sede recomendada por defecto.'
+      );
+    } finally {
+      setIsLocating(false);
+    }
+
+    const fallback = selectDefaultBranch({ branchTree });
+    if (fallback) setSelectedBranch(fallback);
     onClose();
   }
 
@@ -168,6 +219,7 @@ export function BranchSelectorModal({
         >
           <Pressable
             onPress={selectRecommended}
+            disabled={isLocating}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
@@ -176,13 +228,18 @@ export function BranchSelectorModal({
               backgroundColor: colors.primary,
               borderRadius: 14,
               paddingVertical: 14,
+              opacity: isLocating ? 0.7 : 1,
             }}
             accessibilityRole="button"
             accessibilityLabel="Selección recomendada"
           >
-            <Navigation size={18} color={colors.onPrimary} />
+            {isLocating ? (
+              <ActivityIndicator size="small" color={colors.onPrimary} />
+            ) : (
+              <Navigation size={18} color={colors.onPrimary} />
+            )}
             <Text style={{ fontSize: 15, fontWeight: '700', color: colors.onPrimary }}>
-              Selección recomendada
+              {isLocating ? 'Buscando tu ubicación…' : 'Selección recomendada'}
             </Text>
           </Pressable>
 
@@ -287,9 +344,9 @@ function BranchGroupRow({
                     )}
                   </View>
 
-                  {item.lat != null && item.lng != null && (
+                  {hasValidCoordinates(item) && (
                     <Pressable
-                      onPress={() => openInMaps(item.lat as number, item.lng as number, item.tx_alias ?? item.nb_branch)}
+                      onPress={() => openInMaps(item.lat, item.lng, item.tx_alias ?? item.nb_branch)}
                       style={{
                         width: 34,
                         height: 34,
