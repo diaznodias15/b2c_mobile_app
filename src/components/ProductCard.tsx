@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { Plus } from 'lucide-react-native';
+import { Check, Plus } from 'lucide-react-native';
 
-import { useConfigStore } from '@/store/config.store';
-import { useCurrencyStore } from '@/store/currency.store';
+import { DiscountBadge } from '@/components/DiscountBadge';
+import { useAddToCartFlight } from '@/hooks/useAddToCartFlight';
+import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { formatDisplayPrice } from '@/utils/currency';
+import { getProductPricing } from '@/utils/pricing';
 import type { ThemeColors } from '@/theme/colors';
 import type { Product } from '@/types/whitelabel';
 
@@ -28,15 +30,20 @@ export function ProductCard({
   onPress: () => void;
   onAddToCart: () => void;
 }) {
-  const finalPrice = Number(product.pri_product_final_price);
-  const basePrice = Number(product.pri_product_price);
-  const hasDiscount = Boolean(product.qty_discount) && basePrice > finalPrice;
-
-  const displayCurrency = useCurrencyStore((s) => s.displayCurrency);
-  const exchangeRate = useConfigStore((s) => s.appConfig?.amt_exchange_rate);
+  const { basePrice, finalPrice, hasDiscount } = getProductPricing(product);
+  const { displayCurrency, exchangeRate } = useDisplayCurrency();
 
   const [imageFailed, setImageFailed] = useState(false);
   const showPlaceholder = !product.tx_img_url || imageFailed;
+
+  const { imageRef, isAdding, trigger } = useAddToCartFlight();
+
+  const handleAddToCart = () => {
+    const started = trigger(
+      showPlaceholder ? PLACEHOLDER_IMAGE : { uri: product.tx_img_url as string }
+    );
+    if (started) onAddToCart();
+  };
 
   return (
     <Pressable
@@ -55,6 +62,7 @@ export function ProductCard({
       accessibilityLabel={product.nb_product}
     >
       <View
+        ref={imageRef}
         style={{
           width: '100%',
           height: PRODUCT_CARD_WIDTH - 20,
@@ -72,20 +80,8 @@ export function ProductCard({
         />
 
         {hasDiscount && (
-          <View
-            style={{
-              position: 'absolute',
-              top: 6,
-              left: 6,
-              backgroundColor: colors.danger,
-              borderRadius: 6,
-              paddingHorizontal: 6,
-              paddingVertical: 2,
-            }}
-          >
-            <Text style={{ fontSize: 10, fontWeight: '700', color: '#FFFFFF' }}>
-              -{product.qty_discount}%
-            </Text>
+          <View style={{ position: 'absolute', top: 6, left: 6 }}>
+            <DiscountBadge percent={product.qty_discount as number | string} colors={colors} size="sm" />
           </View>
         )}
       </View>
@@ -138,7 +134,8 @@ export function ProductCard({
         </View>
 
         <Pressable
-          onPress={onAddToCart}
+          onPress={handleAddToCart}
+          disabled={isAdding}
           style={{
             width: 28,
             height: 28,
@@ -146,11 +143,16 @@ export function ProductCard({
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: colors.primary,
+            opacity: isAdding ? 0.7 : 1,
           }}
           accessibilityRole="button"
           accessibilityLabel={`Agregar ${product.nb_product} al carrito`}
         >
-          <Plus size={16} color={colors.onPrimary} strokeWidth={2.5} />
+          {isAdding ? (
+            <Check size={16} color={colors.onPrimary} strokeWidth={2.5} />
+          ) : (
+            <Plus size={16} color={colors.onPrimary} strokeWidth={2.5} />
+          )}
         </Pressable>
       </View>
     </Pressable>

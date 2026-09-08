@@ -220,6 +220,95 @@ tamaño/peso en todos lados. Si se agrega una sección nueva al Home,
 reusar `SectionHeader` en vez de armar un título a mano — fue pedido
 explícito del usuario para mantener consistencia.
 
+## Detalle de producto (`src/app/product/[slug].tsx`) y carrito
+
+Ruta dinámica de Expo Router, alcanzada con `router.push(`/product/${tx_slug}`)`
+desde `TopProducts`, `ProductListItem` (Buscar) y donde sea que se
+liste un `Product`. MVP deliberado — **quedaron afuera a propósito**:
+el modal de mapa ("Ver en mapa", requeriría `react-native-maps` →
+rebuild nativo) y el bloque de breakdown de IVA de la web de referencia
+(`PRODUCT-DETAIL-VIEW.md`) porque la API real hoy **no** devuelve
+`pri_product_price_with_tax`/`qty_tax_amount` — solo `qty_tax`/
+`qty_discount`. No los agregues sin confirmar antes que el backend ya
+los manda.
+
+Bloques que sí están: carrusel de imágenes (fallback a
+`unavailable-product-image.webp` si `product_img` viene vacío/null),
+disponibilidad de la sede activa (`STOCK_META`, `src/utils/stock.ts`),
+precio con descuento, stepper de cantidad + agregar al carrito,
+características (`product_features`), **inventario por sede**
+(`BranchInventoryList.tsx` — tocar una card cambia la sede activa vía
+`setSelectedBranch`, y el detalle re-fetchea solo porque su query key
+incluye `branchId`) y **relacionados** (`TopProducts` reusado con
+`brand`/`title`/`subtitle`/`excludeSlug` opcionales, en vez de duplicar
+el componente para el Home vs. el detalle).
+
+### "Flying to cart" + toast + rebote del ícono del carrito
+
+Al agregar un producto pasan 3 cosas, coordinadas por 2 stores nuevos
+sin contexto ni prop drilling:
+
+1. **La imagen "vuela" hacia el ícono del carrito** en `BottomTabs`.
+   `useFlyingCartStore` (`src/store/flyingCart.store.ts`) guarda
+   `cartIconPosition` (que `BottomTabs` mide una vez con
+   `measureInWindow` en su `onLayout`) y `flight` (origen + imagen).
+   `FlyingCartOverlay.tsx`, montado una sola vez en `Providers.tsx`,
+   es el único que lee ese estado y anima `translateX/Y` + `scale` +
+   `opacity` con Reanimated desde el origen hasta el ícono.
+   **`product/[slug].tsx` no renderiza `BottomTabs`** (no es una tab),
+   así que ahí la animación vuela hacia la última posición conocida del
+   ícono (la de la última pantalla con tabs que se visitó) — es una
+   aproximación correcta porque la barra de tabs siempre queda en el
+   mismo lugar en las pantallas que sí la tienen.
+2. **El ícono del carrito rebota** al aterrizar: `clearFly()` incrementa
+   `bounceSignal` (un contador, no un booleano — así siempre dispara el
+   efecto sin tener que resetearlo a mano), y `BottomTabs` anima un
+   `scale` con `withSequence` al verlo cambiar.
+3. **Toast de confirmación** ("Producto agregado al carrito"):
+   `useToastStore` + `Toast.tsx` (mismo criterio de un store mínimo +
+   componente montado una vez en `Providers.tsx`).
+
+**La lógica de disparar la animación (medir la imagen, `startFly`,
+deshabilitar el botón ~650ms para evitar doble-tap) está en un único
+hook, `useAddToCartFlight()` (`src/hooks/useAddToCartFlight.ts`)** —
+usado por `ProductCard`, `ProductListItem` y `product/[slug].tsx`. El
+JSX de esos 3 lugares NO se puede unificar (son layouts genuinamente
+distintos: card vertical de descubrimiento, fila horizontal de
+búsqueda, pantalla completa con carrusel grande) — pero la lógica que
+sí era idéntica ya no está copiada 3 veces.
+
+## Reutilización: lógica compartida sí, JSX forzado no
+
+Regla general del proyecto (surgió al notar que la lógica de
+"agregar al carrito" se había copiado 3 veces en vez de compartirse):
+cuando el mismo dato se necesita en varios componentes con **layouts
+distintos**, no fuerces un único componente — extraé la lógica pura a
+un hook/util y dejá que cada componente arme su propio JSX. Ejemplos
+ya establecidos:
+
+- `useAddToCartFlight()` (arriba) — la lógica del flying-to-cart.
+- `getProductPricing(product)` (`src/utils/pricing.ts`) — deriva
+  `{ basePrice, finalPrice, hasDiscount }` de un `Product`/`ProductDetail`.
+  Se repetía literal en `ProductCard`, `ProductListItem` y
+  `product/[slug].tsx`.
+- `useDisplayCurrency()` (`src/hooks/useDisplayCurrency.ts`) —
+  `{ displayCurrency, exchangeRate }`, el par que necesita cualquier
+  lugar que llame `formatDisplayPrice`. Devuelve un objeto nuevo cada
+  render, pero eso es seguro porque es un hook de React normal, no un
+  selector de Zustand — el anti-patrón de "selector que arma un objeto"
+  (ver más abajo) aplica adentro de `create()`, no a hooks que combinan
+  selectores primitivos y devuelven el resultado.
+- `<DiscountBadge percent={...} colors={colors} size="sm"|"lg" suffix?={...} />`
+  (`src/components/DiscountBadge.tsx`) — el pill "-N%" sí es el mismo
+  JSX en los 3 lugares (solo cambiaba el tamaño de fuente y el
+  posicionamiento del wrapper), así que ahí sí se compartió el
+  componente completo.
+
+Cuando dudes si extraer: si el JSX que envuelve la lógica es
+sustancialmente distinto entre los call sites, extraé solo la lógica
+(hook/util). Si el JSX también es igual (o casi), extraé el componente
+completo.
+
 ## Bugs de datos ya resueltos (no reintroducir)
 
 - **`getTopProducts` armaba `${TOP_PRODUCTS}?${toQueryString(params)}`** —

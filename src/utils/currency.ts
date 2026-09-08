@@ -53,33 +53,6 @@ export function formatPrice(amount: number, currencyLabel: string): string {
   return `${currencyLabel} ${formatted}`;
 }
 
-/** Formato compacto sin decimales para badges (e.g. "Bs. 4.205"). */
-export function formatPriceCompact(amount: number, currencyLabel: string): string {
-  const formatted = roundTo(amount).toLocaleString('es-VE', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
-  return `${currencyLabel} ${formatted}`;
-}
-
-/**
- * Devuelve Bs. y USD a partir de un precio en Bs. (la base real que
- * manda el backend, ver el comentario de `formatDisplayPrice`) y la
- * tasa. Si no hay rate (>0) o el precio es 0, devuelve la conversion
- * como `null` para que el caller oculte la linea secundaria.
- */
-export function formatDualCurrency(
-  bsAmount: number,
-  exchangeRate: number | null | undefined
-): { bs: string; usd: string | null } {
-  const bs = formatPrice(bsAmount, 'Bs.');
-  if (!exchangeRate || exchangeRate <= 0 || bsAmount <= 0) {
-    return { bs, usd: null };
-  }
-  const usdAmount = convertPrice(bsAmount, 'Bs.', 'USD', exchangeRate);
-  return { bs, usd: formatPriceCompact(usdAmount, 'USD') };
-}
-
 /**
  * Precio formateado según la preferencia de moneda del usuario
  * (`useCurrencyStore`). `baseAmount` siempre es el precio base en Bs.

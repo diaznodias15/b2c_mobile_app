@@ -2,9 +2,9 @@ import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomTabs } from '@/components/bottom-tabs';
-import { useConfigStore, useThemeColors } from '@/store/config.store';
+import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { useThemeColors } from '@/store/config.store';
 import { useCartStore, selectCartCount, selectCartTotal } from '@/store/cart.store';
-import { useCurrencyStore } from '@/store/currency.store';
 import { formatDisplayPrice } from '@/utils/currency';
 
 export default function CartScreen() {
@@ -12,8 +12,7 @@ export default function CartScreen() {
   const colors = useThemeColors();
   const cartCount = useCartStore(selectCartCount);
   const cartTotal = useCartStore(selectCartTotal);
-  const displayCurrency = useCurrencyStore((s) => s.displayCurrency);
-  const exchangeRate = useConfigStore((s) => s.appConfig?.amt_exchange_rate);
+  const { displayCurrency, exchangeRate } = useDisplayCurrency();
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>

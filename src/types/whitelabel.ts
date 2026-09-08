@@ -100,9 +100,10 @@ export type Product = {
   nb_product: string;
   is_regulado?: number;
   tx_slug: string;
-  qty_product: number;
-  qty_discount?: number;
-  qty_tax?: number;
+  /** String en la práctica ("96642.00") a pesar del nombre — igual que `qty_discount`/`qty_tax`. */
+  qty_product: number | string;
+  qty_discount?: number | string;
+  qty_tax?: number | string;
   tx_img_url?: string | null;
   /**
    * Precio base en Bs. (string porque así viene del backend) —

@@ -6,18 +6,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useSharedValue } from 'react-native-reanimated';
 import { Carousel, Pagination } from 'react-native-reanimated-carousel';
-import { ChevronLeft, Minus, Plus } from 'lucide-react-native';
+import { Check, ChevronLeft, Minus, Plus } from 'lucide-react-native';
 
 import { BranchInventoryList } from '@/components/BranchInventoryList';
+import { DiscountBadge } from '@/components/DiscountBadge';
 import { ProductDetailSkeleton } from '@/components/ProductDetailSkeleton';
 import { TopProducts } from '@/components/TopProducts';
 import { getProductDetail } from '@/api/services/products.services';
+import { useAddToCartFlight } from '@/hooks/useAddToCartFlight';
+import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
-import { useConfigStore, useThemeColors } from '@/store/config.store';
-import { useCurrencyStore } from '@/store/currency.store';
+import { useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
 import { formatDisplayPrice } from '@/utils/currency';
+import { getProductPricing } from '@/utils/pricing';
 import { STOCK_META } from '@/utils/stock';
 import type { ThemeColors } from '@/theme/colors';
 
@@ -46,10 +49,10 @@ export default function ProductDetailScreen() {
   const branchId = useBranchStore(selectEffectiveBranchId);
   const addProduct = useCartStore((s) => s.addProduct);
   const showToast = useToastStore((s) => s.show);
-  const displayCurrency = useCurrencyStore((s) => s.displayCurrency);
-  const exchangeRate = useConfigStore((s) => s.appConfig?.amt_exchange_rate);
+  const { displayCurrency, exchangeRate } = useDisplayCurrency();
 
   const [quantity, setQuantity] = useState(1);
+  const { imageRef, isAdding, trigger } = useAddToCartFlight();
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product-detail', slug, branchId],
@@ -69,15 +72,16 @@ export default function ProductDetailScreen() {
   }
 
   const images = product.product_img?.map((img) => img.tx_img_url) ?? [];
-  const finalPrice = Number(product.pri_product_final_price);
-  const basePrice = Number(product.pri_product_price);
-  const hasDiscount = Boolean(product.qty_discount) && basePrice > finalPrice;
+  const { basePrice, finalPrice, hasDiscount } = getProductPricing(product);
   const maxQty = Math.max(1, Number(product.qty_product) || 1);
   const canAddToCart = finalPrice > 0 && Number(product.qty_product) > 0;
   const availability = STOCK_META[product.availability_indicator];
 
   const handleAddToCart = () => {
     if (branchId === null || !canAddToCart) return;
+    const started = trigger(images.length > 0 ? { uri: images[0] } : PLACEHOLDER_IMAGE);
+    if (!started) return;
+
     addProduct({
       tx_slug: product.tx_slug,
       product_id: product.id,
@@ -95,7 +99,10 @@ export default function ProductDetailScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={{ width: SCREEN_WIDTH, height: IMAGE_HEIGHT, backgroundColor: colors.section }}>
+        <View
+          ref={imageRef}
+          style={{ width: SCREEN_WIDTH, height: IMAGE_HEIGHT, backgroundColor: colors.section }}
+        >
           {images.length > 0 ? (
             <>
               <Carousel
@@ -140,19 +147,13 @@ export default function ProductDetailScreen() {
 
         <View style={{ paddingHorizontal: 24, paddingTop: 20 }}>
           {hasDiscount && (
-            <View
-              style={{
-                alignSelf: 'flex-start',
-                backgroundColor: colors.danger,
-                borderRadius: 8,
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                marginBottom: 12,
-              }}
-            >
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>
-                -{product.qty_discount}% de descuento
-              </Text>
+            <View style={{ marginBottom: 12 }}>
+              <DiscountBadge
+                percent={product.qty_discount as number | string}
+                colors={colors}
+                size="lg"
+                suffix="% de descuento"
+              />
             </View>
           )}
 
@@ -208,18 +209,22 @@ export default function ProductDetailScreen() {
             />
             <Pressable
               onPress={handleAddToCart}
-              disabled={!canAddToCart}
+              disabled={!canAddToCart || isAdding}
               style={{
                 flex: 1,
                 height: 46,
                 borderRadius: 12,
+                flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
+                gap: 8,
                 backgroundColor: canAddToCart ? colors.primary : colors.border,
+                opacity: isAdding ? 0.7 : 1,
               }}
               accessibilityRole="button"
               accessibilityLabel="Agregar al carrito"
             >
+              {isAdding && <Check size={16} color={colors.onPrimary} strokeWidth={2.5} />}
               <Text
                 style={{
                   fontSize: 15,
@@ -227,7 +232,7 @@ export default function ProductDetailScreen() {
                   color: canAddToCart ? colors.onPrimary : colors.muted,
                 }}
               >
-                {canAddToCart ? 'Agregar al carrito' : 'Sin stock'}
+                {!canAddToCart ? 'Sin stock' : isAdding ? 'Agregado' : 'Agregar al carrito'}
               </Text>
             </Pressable>
           </View>
