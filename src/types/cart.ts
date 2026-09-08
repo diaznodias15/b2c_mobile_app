@@ -19,7 +19,7 @@ export type CartItem = {
   nb_product: string;
   nb_brand: string;
   tx_img_url?: string | null;
-  /** Precio unitario FINAL (con impuestos) en USD, como string. */
+  /** Precio unitario FINAL (con impuestos) en Bs., como string — ver `Product.pri_product_price`. */
   pri_product_final_price: string;
   qty: number;
   /** Timestamp del último add, para que el item más reciente quede arriba. */

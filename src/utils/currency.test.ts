@@ -64,25 +64,28 @@ describe('formatPrice', () => {
 });
 
 describe('formatDisplayPrice', () => {
+  // pri_product_price/pri_product_final_price del backend vienen en
+  // Bs. (confirmado contra la API real) — NO en USD a pesar del nombre
+  // del campo. formatDisplayPrice recibe siempre ese valor base en Bs.
   const rate = 36.5;
 
-  it('converts to Bs. when displayCurrency is Bs. and there is a valid rate', () => {
-    const result = formatDisplayPrice(10, rate, 'Bs.');
+  it('shows the base amount as Bs. when displayCurrency is Bs. (sin convertir)', () => {
+    const result = formatDisplayPrice(365, rate, 'Bs.');
     expect(result).toMatch(/^Bs\.\s*365,00/);
   });
 
-  it('falls back to REF when displayCurrency is Bs. but there is no rate yet', () => {
-    const result = formatDisplayPrice(10, null, 'Bs.');
+  it('converts to REF (USD) dividiendo por la tasa cuando displayCurrency es REF', () => {
+    const result = formatDisplayPrice(365, rate, 'REF');
     expect(result).toMatch(/^REF\s*10,00/);
   });
 
-  it('falls back to REF when the rate is 0 or negative', () => {
-    expect(formatDisplayPrice(10, 0, 'Bs.')).toMatch(/^REF/);
-    expect(formatDisplayPrice(10, -5, 'Bs.')).toMatch(/^REF/);
+  it('falls back to Bs. when displayCurrency is REF but there is no rate yet', () => {
+    const result = formatDisplayPrice(365, null, 'REF');
+    expect(result).toMatch(/^Bs\.\s*365,00/);
   });
 
-  it('shows REF (usdAmount as-is) when displayCurrency is REF, even with a valid rate', () => {
-    const result = formatDisplayPrice(10, rate, 'REF');
-    expect(result).toMatch(/^REF\s*10,00/);
+  it('falls back to Bs. when the rate is 0 or negative', () => {
+    expect(formatDisplayPrice(365, 0, 'REF')).toMatch(/^Bs\./);
+    expect(formatDisplayPrice(365, -5, 'REF')).toMatch(/^Bs\./);
   });
 });

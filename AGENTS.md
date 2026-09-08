@@ -230,6 +230,20 @@ explícito del usuario para mantener consistencia.
   `getProductSearch`, `getProductDetail`) ya lo hacían bien. Hay test de
   regresión (`not.toContain('??')`) en `products.services.test.ts`.
 
+- **Los precios de producto (`pri_product_price`/`pri_product_final_price`)
+  vienen en Bs., NO en USD** — a pesar de que el campo no lo aclara y de
+  que el tipo `Product` originalmente los documentaba como USD. Se
+  detectó porque `formatDisplayPrice` (`src/utils/currency.ts`) hacía la
+  conversión al revés (multiplicaba por `amt_exchange_rate` en vez de
+  dividir), mostrando precios "extremadamente inflados" — confirmado
+  contra la API real: un precio como `"5499.160"` solo tiene sentido como
+  Bs. (÷814.69 ≈ $6.75; como USD sería absurdo para un cartón de huevos).
+  `formatDisplayPrice` ahora trata el monto base como Bs. siempre, y solo
+  convierte a `REF` (el precio referencial en USD) dividiendo por la tasa
+  cuando el usuario elige esa moneda en el selector de "Ver Más"
+  (`useCurrencyStore`). Si se agrega código nuevo que toque precios, no
+  asumir USD — la base es Bs.
+
 ## Mapa de rutas y BottomTabs (`src/components/bottom-tabs.tsx`)
 
 5 tabs: **Inicio** (`/`), **Departamentos** (`/departments`), **Buscar**

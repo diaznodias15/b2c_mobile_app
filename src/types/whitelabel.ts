@@ -104,9 +104,15 @@ export type Product = {
   qty_discount?: number;
   qty_tax?: number;
   tx_img_url?: string | null;
-  /** Precio base en USD (string porque así viene del backend). */
+  /**
+   * Precio base en Bs. (string porque así viene del backend) —
+   * a pesar del nombre del campo, NO es USD. Confirmado contra la API
+   * real: valores como "5499.160" solo tienen sentido como Bs. con la
+   * tasa actual (`amt_exchange_rate` ~814). Ver `formatDisplayPrice`
+   * en `src/utils/currency.ts`.
+   */
   pri_product_price: string;
-  /** Precio final con impuestos en USD (string). */
+  /** Precio final con impuestos en Bs. (string). Ver `pri_product_price`. */
   pri_product_final_price: string;
 };
 

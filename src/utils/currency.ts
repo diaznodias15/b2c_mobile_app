@@ -63,37 +63,42 @@ export function formatPriceCompact(amount: number, currencyLabel: string): strin
 }
 
 /**
- * Devuelve Bs. y USD a partir de un precio en USD y la tasa.
- * Si no hay rate (>0) o el precio es 0, devuelve la conversion como `null`
- * para que el caller oculte la linea secundaria.
+ * Devuelve Bs. y USD a partir de un precio en Bs. (la base real que
+ * manda el backend, ver el comentario de `formatDisplayPrice`) y la
+ * tasa. Si no hay rate (>0) o el precio es 0, devuelve la conversion
+ * como `null` para que el caller oculte la linea secundaria.
  */
 export function formatDualCurrency(
-  usdAmount: number,
+  bsAmount: number,
   exchangeRate: number | null | undefined
-): { usd: string; bs: string | null } {
-  const usd = formatPrice(usdAmount, 'USD');
-  if (!exchangeRate || exchangeRate <= 0 || usdAmount <= 0) {
-    return { usd, bs: null };
+): { bs: string; usd: string | null } {
+  const bs = formatPrice(bsAmount, 'Bs.');
+  if (!exchangeRate || exchangeRate <= 0 || bsAmount <= 0) {
+    return { bs, usd: null };
   }
-  const bsAmount = convertPrice(usdAmount, 'USD', 'Bs.', exchangeRate);
-  return { usd, bs: formatPriceCompact(bsAmount, 'Bs.') };
+  const usdAmount = convertPrice(bsAmount, 'Bs.', 'USD', exchangeRate);
+  return { bs, usd: formatPriceCompact(usdAmount, 'USD') };
 }
 
 /**
  * Precio formateado según la preferencia de moneda del usuario
- * (`useCurrencyStore`). `usdAmount` siempre es el precio base en USD
+ * (`useCurrencyStore`). `baseAmount` siempre es el precio base en Bs.
  * (así vienen `pri_product_price`/`pri_product_final_price` del
- * backend). Si el usuario eligió `Bs.` pero no hay `exchangeRate` válido
- * todavía (config aún cargando), cae a `REF` — nunca muestra un
- * "Bs. 0.00" engañoso por falta de tasa.
+ * backend — a pesar de lo que sugiere el nombre del campo o el tipo
+ * `Product`, NO son USD; confirmado contra la API real: un precio como
+ * "5499.160" solo tiene sentido como Bs. — /814.69 ≈ $6.75, un huevo
+ * a $5499 USD sería absurdo). `REF` es el precio referencial en USD,
+ * calculado DIVIDIENDO por la tasa. Si el usuario eligió `REF` pero no
+ * hay `exchangeRate` válido todavía (config aún cargando), cae a `Bs.`
+ * — nunca muestra un "REF 0.00" engañoso por falta de tasa.
  */
 export function formatDisplayPrice(
-  usdAmount: number,
+  baseAmount: number,
   exchangeRate: number | null | undefined,
   displayCurrency: DisplayCurrency
 ): string {
-  if (displayCurrency === 'Bs.' && exchangeRate && exchangeRate > 0) {
-    return formatPrice(convertPrice(usdAmount, 'USD', 'Bs.', exchangeRate), 'Bs.');
+  if (displayCurrency === 'REF' && exchangeRate && exchangeRate > 0) {
+    return formatPrice(convertPrice(baseAmount, 'Bs.', 'USD', exchangeRate), 'REF');
   }
-  return formatPrice(usdAmount, 'REF');
+  return formatPrice(baseAmount, 'Bs.');
 }
