@@ -38,6 +38,20 @@ describe('useCheckoutStore', () => {
     expect(useCheckoutStore.getState().deliveryAddress).toEqual({ tx_address: 'Calle 1' });
   });
 
+  it('setFulfillment PICKUP limpia el deliveryFee cotizado', () => {
+    useCheckoutStore.getState().setDeliveryFee(50);
+    useCheckoutStore.getState().setFulfillment('PICKUP');
+    expect(useCheckoutStore.getState().deliveryFee).toBeNull();
+  });
+
+  it('setDeliveryFee y setIsCalculatingDeliveryFee', () => {
+    useCheckoutStore.getState().setIsCalculatingDeliveryFee(true);
+    useCheckoutStore.getState().setDeliveryFee(42.5);
+    const s = useCheckoutStore.getState();
+    expect(s.isCalculatingDeliveryFee).toBe(true);
+    expect(s.deliveryFee).toBe(42.5);
+  });
+
   it('setPaymentMethod guarda el método', () => {
     useCheckoutStore.getState().setPaymentMethod(pm);
     expect(useCheckoutStore.getState().paymentMethod).toEqual(pm);

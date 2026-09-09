@@ -45,6 +45,14 @@ type CheckoutState = {
   payerPhone: string;
   comments: string;
   contact: ContactInfo | null;
+  /**
+   * Costo de envío calculado vía `calculate-delivery` (distancia real) —
+   * `null` significa "no se pudo cotizar" (sede sin regla configurada,
+   * sin coordenadas, o error de red), NO "envío gratis". El checkout
+   * debe mostrar "se coordina por WhatsApp" en ese caso, nunca asumir 0.
+   */
+  deliveryFee: number | null;
+  isCalculatingDeliveryFee: boolean;
 
   setFulfillment: (f: FulfillmentType) => void;
   setDeliveryAddress: (a: DeliveryAddress) => void;
@@ -59,6 +67,8 @@ type CheckoutState = {
   setPayerPhone: (phone: string) => void;
   setComments: (c: string) => void;
   setContact: (c: ContactInfo) => void;
+  setDeliveryFee: (fee: number | null) => void;
+  setIsCalculatingDeliveryFee: (loading: boolean) => void;
   reset: () => void;
 };
 
@@ -77,6 +87,8 @@ const initialState: Omit<
   | 'setPayerPhone'
   | 'setComments'
   | 'setContact'
+  | 'setDeliveryFee'
+  | 'setIsCalculatingDeliveryFee'
   | 'reset'
 > = {
   fulfillment: null,
@@ -92,6 +104,8 @@ const initialState: Omit<
   payerPhone: '',
   comments: '',
   contact: null,
+  deliveryFee: null,
+  isCalculatingDeliveryFee: false,
 };
 
 export const useCheckoutStore = create<CheckoutState>()((set) => ({
@@ -103,6 +117,7 @@ export const useCheckoutStore = create<CheckoutState>()((set) => ({
       // se conserva lo que el usuario ya haya cargado (antes se pisaba
       // con `undefined` sin motivo).
       deliveryAddress: f === 'PICKUP' ? null : state.deliveryAddress,
+      deliveryFee: f === 'PICKUP' ? null : state.deliveryFee,
     })),
   setDeliveryAddress: (a) => set({ deliveryAddress: a }),
   setRecipientName: (name) => set({ recipientName: name }),
@@ -116,5 +131,7 @@ export const useCheckoutStore = create<CheckoutState>()((set) => ({
   setPayerPhone: (phone) => set({ payerPhone: phone }),
   setComments: (c) => set({ comments: c }),
   setContact: (c) => set({ contact: c }),
+  setDeliveryFee: (fee) => set({ deliveryFee: fee }),
+  setIsCalculatingDeliveryFee: (loading) => set({ isCalculatingDeliveryFee: loading }),
   reset: () => set(initialState),
 }));

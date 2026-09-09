@@ -69,6 +69,7 @@ export function CheckoutPagoStep({
   const setDepositorName = useCheckoutStore((s) => s.setDepositorName);
   const payerPhone = useCheckoutStore((s) => s.payerPhone);
   const setPayerPhone = useCheckoutStore((s) => s.setPayerPhone);
+  const deliveryFee = useCheckoutStore((s) => s.deliveryFee);
 
   const { data: methodsConfig, isLoading: isLoadingMethods } = useQuery({
     queryKey: ['payment-methods'],
@@ -346,6 +347,7 @@ export function CheckoutPagoStep({
           exchangeRate={exchangeRate}
           displayCurrency={displayCurrency}
           colors={colors}
+          deliveryFee={fulfillment === 'DELIVERY' ? deliveryFee : undefined}
         >
           {error && <Text style={{ fontSize: 13, color: colors.danger }}>{error}</Text>}
           <Pressable

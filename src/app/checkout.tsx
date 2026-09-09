@@ -60,6 +60,7 @@ export default function CheckoutScreen() {
   const bankOrigin = useCheckoutStore((s) => s.bankOrigin);
   const depositorName = useCheckoutStore((s) => s.depositorName);
   const payerPhone = useCheckoutStore((s) => s.payerPhone);
+  const deliveryFee = useCheckoutStore((s) => s.deliveryFee);
 
   const [fullStep, setFullStep] = useState<'entrega' | 'pago'>('entrega');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -123,7 +124,10 @@ export default function CheckoutScreen() {
         fulfillment_type: fulfillment,
         tx_delivery_mode: 'EXPRESS',
         tx_payment_method: paymentMethod,
-        qty_delivery_amount: 0,
+        // `deliveryFee` es null cuando no se pudo cotizar (sede sin regla
+        // de envío, sin coords, error de red) — se manda 0 y el costo
+        // real se coordina por WhatsApp, nunca se bloquea el pedido por esto.
+        qty_delivery_amount: isDelivery ? (deliveryFee ?? 0) : 0,
         tx_currency_code: paymentCurrency,
         tx_payment_reference: paymentReference.trim() || undefined,
         dt_payment_date: new Date().toISOString().slice(0, 10),
@@ -219,7 +223,7 @@ export default function CheckoutScreen() {
 
         <Pressable
           onPress={() => setAcceptContact((v) => !v)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: acceptContact }}
           accessibilityLabel="Acepto que la tienda me contactará para coordinar el pago y la entrega"
@@ -242,46 +246,55 @@ export default function CheckoutScreen() {
             Acepto que la tienda me contactará para coordinar el pago y la entrega.
           </Text>
         </Pressable>
-
-        <View style={{ marginTop: 12, marginBottom: 12 }}>
-          <CartSummaryCard
-            summary={cartSummary}
-            exchangeRate={exchangeRate}
-            displayCurrency={displayCurrency}
-            colors={colors}
-          >
-            {error && <Text style={{ fontSize: 13, color: colors.danger }}>{error}</Text>}
-
-            <Pressable
-              onPress={handleSubmitLite}
-              disabled={!liteCanSubmit}
-              style={{
-                height: 50,
-                borderRadius: 12,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: liteCanSubmit ? colors.primary : colors.border,
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Confirmar pedido"
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color={colors.onPrimary} />
-              ) : (
-                <Text
-                  style={{
-                    fontSize: 15,
-                    fontWeight: '700',
-                    color: liteCanSubmit ? colors.onPrimary : colors.muted,
-                  }}
-                >
-                  Confirmar pedido
-                </Text>
-              )}
-            </Pressable>
-          </CartSummaryCard>
-        </View>
       </KeyboardAwareScrollView>
+
+      <View
+        style={{
+          paddingHorizontal: 24,
+          paddingTop: 12,
+          paddingBottom: insets.bottom + 16,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          backgroundColor: colors.background,
+        }}
+      >
+        <CartSummaryCard
+          summary={cartSummary}
+          exchangeRate={exchangeRate}
+          displayCurrency={displayCurrency}
+          colors={colors}
+        >
+          {error && <Text style={{ fontSize: 13, color: colors.danger }}>{error}</Text>}
+
+          <Pressable
+            onPress={handleSubmitLite}
+            disabled={!liteCanSubmit}
+            style={{
+              height: 50,
+              borderRadius: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: liteCanSubmit ? colors.primary : colors.border,
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Confirmar pedido"
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color={colors.onPrimary} />
+            ) : (
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: '700',
+                  color: liteCanSubmit ? colors.onPrimary : colors.muted,
+                }}
+              >
+                Confirmar pedido
+              </Text>
+            )}
+          </Pressable>
+        </CartSummaryCard>
+      </View>
     </View>
   );
 }

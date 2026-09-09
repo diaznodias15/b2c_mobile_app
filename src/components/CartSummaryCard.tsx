@@ -20,13 +20,23 @@ export function CartSummaryCard({
   displayCurrency,
   colors,
   children,
+  deliveryFee,
 }: {
   summary: CartSummary;
   exchangeRate: number | null | undefined;
   displayCurrency: DisplayCurrency;
   colors: ThemeColors;
   children?: ReactNode;
+  /**
+   * Costo de envío (CHECKOUT-API.md §6.2) — `undefined` cuando no aplica
+   * (PICKUP), `null` cuando aplica pero no se pudo cotizar (se muestra
+   * "Se coordina por WhatsApp" en vez de un monto), `number` cuando ya
+   * se calculó. Se suma a `summary.total` para el Total mostrado.
+   */
+  deliveryFee?: number | null;
 }) {
+  const total = summary.total + (deliveryFee ?? 0);
+
   return (
     <View style={{ gap: 6 }}>
       <SummaryRow
@@ -48,11 +58,24 @@ export function CartSummaryCard({
         value={formatDisplayPrice(summary.taxTotal, exchangeRate, displayCurrency)}
         colors={colors}
       />
+      {deliveryFee !== undefined && (
+        <SummaryRow
+          label="Envío"
+          value={
+            deliveryFee === null
+              ? 'Se coordina por WhatsApp'
+              : deliveryFee > 0
+                ? formatDisplayPrice(deliveryFee, exchangeRate, displayCurrency)
+                : 'Gratis'
+          }
+          colors={colors}
+        />
+      )}
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
         <Text style={{ fontSize: 15, color: colors.muted }}>Total</Text>
         <Text style={{ fontSize: 20, fontWeight: '700', color: colors.foreground }}>
-          {formatDisplayPrice(summary.total, exchangeRate, displayCurrency)}
+          {formatDisplayPrice(total, exchangeRate, displayCurrency)}
         </Text>
       </View>
 
