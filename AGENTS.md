@@ -351,3 +351,26 @@ patrón.
 
 `app-tabs.tsx`, `app-tabs.web.tsx` (intento con `NativeTabs`) y
 `AppShell.tsx` fueron código muerto de intentos previos y se eliminaron.
+
+## Formularios con teclado: `KeyboardAwareScrollView`, no `KeyboardAvoidingView` + `ScrollView`
+
+`login.tsx`/`register.tsx` originalmente usaban `KeyboardAvoidingView`
+(con `behavior={Platform.OS === 'ios' ? 'padding' : undefined}` — es
+decir, **sin comportamiento en Android**) envolviendo un `ScrollView`
+normal. Bug real reportado: al enfocar un input que queda por debajo de
+la línea del teclado (ej. "Contraseña" en un form largo), el teclado lo
+tapaba y no había forma de verlo sin cerrar el teclado a mano — porque
+`ScrollView` de RN solo hace auto-scroll al input enfocado en iOS; en
+Android es responsabilidad de la app.
+
+**Solución adoptada (2026-09-09):** `react-native-keyboard-controller`
+(paquete con parte nativa — instalarlo/actualizarlo requiere rebuild
+nativo, ver "Entorno de build local" arriba). Se envuelve la raíz con
+`<KeyboardProvider>` en `Providers.tsx` (tiene que ser el wrapper más
+externo). Cada pantalla con formulario usa `KeyboardAwareScrollView` de
+esa librería en vez de `KeyboardAvoidingView` + `ScrollView` — es un
+reemplazo directo de `ScrollView` (mismos props: `contentContainerStyle`,
+`keyboardShouldPersistTaps`, etc.) que además hace scroll automático al
+input enfocado en ambas plataformas. **Cualquier pantalla nueva con
+`TextInput`s dentro de un scroll debe usar este componente desde el
+principio**, no `ScrollView` a secas.
