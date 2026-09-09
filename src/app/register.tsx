@@ -72,6 +72,7 @@ export default function RegisterScreen() {
   const [isRegistered, setIsRegistered] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [isDocTypeModalOpen, setIsDocTypeModalOpen] = useState(false);
+  const [isAreaCodeModalOpen, setIsAreaCodeModalOpen] = useState(false);
 
   const canSubmit =
     isEmailValid(email) &&
@@ -374,19 +375,25 @@ export default function RegisterScreen() {
             <View style={[inputStyle(colors), { width: 56, alignItems: 'center' }]}>
               <Text style={{ fontSize: 15, color: colors.foreground }}>+58</Text>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxWidth: 150 }}>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
-                {AREA_CODES.map((code) => (
-                  <Chip
-                    key={code}
-                    label={code}
-                    active={areaCode === code}
-                    onPress={() => setAreaCode(code)}
-                    colors={colors}
-                  />
-                ))}
-              </View>
-            </ScrollView>
+            <Pressable
+              onPress={() => setIsAreaCodeModalOpen(true)}
+              style={[
+                inputStyle(colors),
+                {
+                  width: 92,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Código de área"
+            >
+              <Text style={{ fontSize: 15, color: colors.foreground, fontWeight: '600' }}>
+                {areaCode}
+              </Text>
+              <ChevronDown size={16} color={colors.muted} />
+            </Pressable>
             <TextInput
               value={phoneNumber}
               onChangeText={setPhoneNumber}
@@ -398,6 +405,58 @@ export default function RegisterScreen() {
             />
           </View>
         </Field>
+
+        <Modal
+          visible={isAreaCodeModalOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setIsAreaCodeModalOpen(false)}
+        >
+          <Pressable
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              justifyContent: 'center',
+              paddingHorizontal: 32,
+            }}
+            onPress={() => setIsAreaCodeModalOpen(false)}
+          >
+            <Pressable
+              style={{ backgroundColor: colors.background, borderRadius: 16, paddingVertical: 8 }}
+              onPress={() => {}}
+            >
+              {AREA_CODES.map((code) => (
+                <Pressable
+                  key={code}
+                  onPress={() => {
+                    setAreaCode(code);
+                    setIsAreaCodeModalOpen(false);
+                  }}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingVertical: 14,
+                    paddingHorizontal: 18,
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={code}
+                >
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      color: colors.foreground,
+                      fontWeight: areaCode === code ? '700' : '400',
+                    }}
+                  >
+                    {code}
+                  </Text>
+                  {areaCode === code && <Check size={18} color={colors.primary} />}
+                </Pressable>
+              ))}
+            </Pressable>
+          </Pressable>
+        </Modal>
 
         <Field label="Contraseña" colors={colors}>
           <TextInput
