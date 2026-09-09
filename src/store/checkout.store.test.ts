@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCheckoutStore } from './checkout.store';
-import type { PaymentMethod } from '@/types/cart';
+import type { PaymentMethodCode } from '@/types/orders';
 
-const pm: PaymentMethod = { id: 1, nb_payment_method: 'Transfer' };
+const pm: PaymentMethodCode = 'TRANSFERENCIA';
 
 describe('useCheckoutStore', () => {
   beforeEach(() => {
@@ -32,9 +32,30 @@ describe('useCheckoutStore', () => {
     expect(useCheckoutStore.getState().deliveryAddress).toBeNull();
   });
 
+  it('setFulfillment DELIVERY conserva la delivery address existente (antes la pisaba con undefined)', () => {
+    useCheckoutStore.getState().setDeliveryAddress({ tx_address: 'Calle 1' });
+    useCheckoutStore.getState().setFulfillment('DELIVERY');
+    expect(useCheckoutStore.getState().deliveryAddress).toEqual({ tx_address: 'Calle 1' });
+  });
+
   it('setPaymentMethod guarda el método', () => {
     useCheckoutStore.getState().setPaymentMethod(pm);
     expect(useCheckoutStore.getState().paymentMethod).toEqual(pm);
+  });
+
+  it('setPaymentAmount, setPaymentCurrency, setBankOrigin, setDepositorName, setPayerPhone', () => {
+    const s = useCheckoutStore.getState();
+    s.setPaymentAmount(150.5);
+    s.setPaymentCurrency('USD.');
+    s.setBankOrigin('0102');
+    s.setDepositorName('Maria Lopez');
+    s.setPayerPhone('0414-1234567');
+    const updated = useCheckoutStore.getState();
+    expect(updated.paymentAmount).toBe(150.5);
+    expect(updated.paymentCurrency).toBe('USD.');
+    expect(updated.bankOrigin).toBe('0102');
+    expect(updated.depositorName).toBe('Maria Lopez');
+    expect(updated.payerPhone).toBe('0414-1234567');
   });
 
   it('setPaymentReference y setComments', () => {

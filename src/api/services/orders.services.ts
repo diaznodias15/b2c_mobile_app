@@ -1,6 +1,6 @@
 import { axiosRequest } from '../axiosRequest';
 import type { FulfillmentType } from '@/types/cart';
-import type { Order, OrderDetail } from '@/types/orders';
+import type { Order, OrderDetail, PaymentMethodCode } from '@/types/orders';
 import type { Envelope, Pagination } from '@/types/whitelabel';
 import { toQueryString } from '@/utils/queryParams';
 
@@ -8,31 +8,55 @@ const CREATE = '/api/orders/create';
 const MY_ORDERS = (branch: number) => `/api/orders/my-orders/branch/${branch}`;
 const DETAIL = (txOrderNumber: string) => `/api/orders/detail/${txOrderNumber}`;
 
+/**
+ * Shape real de `POST /api/orders/create` (CHECKOUT-FLOW.md §8.1) — la
+ * versión anterior de este type (`payment_method_id`, `address`,
+ * `contact`) era una suposición hecha antes de tener este documento y
+ * NO coincide con los nombres de campo reales del backend. Se corrige
+ * acá antes de que el checkout Full dependiera de ella.
+ *
+ * `is_lite`/`tx_payment_method: 'EXPRESS'`/`fulfillment_type: 'PICKUP'`
+ * fijos es el payload MÍNIMO real del modo Lite (§12.2) — no pide
+ * nombre/teléfono/dirección en el submit (eso ya lo tiene el backend
+ * del usuario autenticado). Los campos de pago y de destinatario son
+ * opcionales acá porque solo aplican en modo Full.
+ */
 export type CreateOrderPayload = {
   branch_id: number;
   fulfillment_type: FulfillmentType;
-  /** Requerido si fulfillment_type === 'DELIVERY'. */
-  address?: string;
-  /** Requerido si fulfillment_type === 'DELIVERY' (lat/lng del punto). */
-  lat?: number;
-  lng?: number;
-  /** ID de método de pago (requerido en modo Full, opcional en Lite). */
-  payment_method_id?: number;
-  /** Referencia del pago (transfer, Zelle, etc). */
-  payment_reference?: string;
-  /** Comentarios adicionales del cliente. */
-  comments?: string;
-  /** ID de location guardada (si el delivery viene de /locations). */
-  location_id?: number;
+  tx_delivery_mode: 'EXPRESS';
+  tx_payment_method: PaymentMethodCode;
+  /** 0 si PICKUP o si el subtotal supera `qty_free_delivery_threshold`. */
+  qty_delivery_amount: number;
+  tx_currency_code: 'Bs.' | 'USD.';
+  /** 1 en el checkout Lite, ausente/0 en Full. */
+  is_lite?: 0 | 1;
+
+  // Datos del método de pago — solo Full, varían según `tx_payment_method` (§6.1).
+  tx_country_code?: '+58';
+  tx_area_code?: string;
+  /** Teléfono del PAGADOR (PAGOMOVIL) — no confundir con el del destinatario. */
+  tx_phone_number?: string;
+  tx_payment_reference?: string;
+  /** "YYYY-MM-DD". */
+  dt_payment_date?: string;
+  /** Solo ZELLE. */
+  tx_depositor_name?: string;
+  amt_payment_amount?: number;
+  /** Solo PAGOMOVIL/TRANSFERENCIA. */
+  cod_bank_origin?: string;
+
+  // Datos del destinatario — solo si fulfillment_type === 'DELIVERY' (§7).
+  dt_delivery_date?: string;
+  tx_recipient_name?: string;
+  tx_recipient_address?: string;
+  tx_recipient_aditional_info?: string;
+  tx_recipient_country_code?: '+58';
+  tx_recipient_area_code?: string;
+  tx_recipient_phone_number?: string;
+
   /** Productos: mínimo 1. */
   products: Array<{ tx_slug: string; qty_product: number }>;
-  /** Datos de contacto (modo Lite los pide en pantalla). */
-  contact?: {
-    tx_name: string;
-    tx_phone: string;
-    tx_email?: string;
-    tx_id_number?: string;
-  };
 };
 
 /** Respuesta del backend al crear una orden. */

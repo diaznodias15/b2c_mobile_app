@@ -57,15 +57,6 @@ export type ContactInfo = {
   tx_id_number?: string;
 };
 
-/** Método de pago elegido. */
-export type PaymentMethod = {
-  id: number;
-  nb_payment_method: string;
-  /** Algunos métodos requieren referencia (transfer, zelle). */
-  requires_reference?: number | boolean;
-  tx_logo_url?: string | null;
-};
-
 export type CartServiceResponse<T> = Envelope<T> & {
   data: T;
   pagination?: never;

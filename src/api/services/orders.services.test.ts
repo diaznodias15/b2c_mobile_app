@@ -13,7 +13,7 @@ const mockAxios = vi.mocked(axiosRequest);
 describe('orders.services', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('createOrder: POST con payload y devuelve data', async () => {
+  it('createOrder: POST con el payload real (tx_payment_method, no payment_method_id) y devuelve data', async () => {
     mockAxios.mockResolvedValueOnce({
       status: 'OK',
       data: { tx_order_number: 'ORD-12345', total: 1500 },
@@ -21,7 +21,10 @@ describe('orders.services', () => {
     const r = await createOrder({
       branch_id: 1,
       fulfillment_type: 'PICKUP',
-      payment_method_id: 2,
+      tx_delivery_mode: 'EXPRESS',
+      tx_payment_method: 'PUNTODEVENTA',
+      qty_delivery_amount: 0,
+      tx_currency_code: 'Bs.',
       products: [{ tx_slug: 'a', qty_product: 1 }],
     });
     expect(r.tx_order_number).toBe('ORD-12345');
@@ -29,11 +32,30 @@ describe('orders.services', () => {
     expect(mockAxios.mock.calls[0][0].url).toBe('/api/orders/create');
   });
 
+  it('createOrder: payload mínimo real del modo Lite (CHECKOUT-FLOW.md §12.2)', async () => {
+    mockAxios.mockResolvedValueOnce({ status: 'OK', data: { tx_order_number: 'ORD-1' } });
+    await createOrder({
+      branch_id: 3,
+      fulfillment_type: 'PICKUP',
+      tx_delivery_mode: 'EXPRESS',
+      tx_payment_method: 'EXPRESS',
+      qty_delivery_amount: 0,
+      tx_currency_code: 'Bs.',
+      is_lite: 1,
+      products: [{ tx_slug: 'a', qty_product: 1 }],
+    });
+    expect(mockAxios.mock.calls[0][0].data).toMatchObject({ is_lite: 1, tx_payment_method: 'EXPRESS' });
+  });
+
   it('createOrder: fallback a {tx_order_number: ""} si data es null', async () => {
     mockAxios.mockResolvedValueOnce({ status: 'OK', data: null });
     const r = await createOrder({
       branch_id: 1,
       fulfillment_type: 'PICKUP',
+      tx_delivery_mode: 'EXPRESS',
+      tx_payment_method: 'PUNTODEVENTA',
+      qty_delivery_amount: 0,
+      tx_currency_code: 'Bs.',
       products: [{ tx_slug: 'a', qty_product: 1 }],
     });
     expect(r.tx_order_number).toBe('');
