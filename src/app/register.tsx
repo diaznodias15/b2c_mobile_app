@@ -32,11 +32,19 @@ import type { ThemeColors } from '@/theme/colors';
 
 const AREA_CODES = ['0412', '0414', '0416', '0422', '0424', '0426'];
 const DOC_TYPE_LABELS: Record<DocType, string> = {
-  V: 'V',
-  E: 'E',
+  V: 'Venezolano',
+  E: 'Extranjero',
   P: 'Pasaporte',
   J: 'Jurídico',
   G: 'Gubernamental',
+};
+/** Letra que se muestra en el select cerrado; el nombre completo va en la lista del modal. */
+const DOC_TYPE_SHORT_LABELS: Record<DocType, string> = {
+  V: 'V',
+  E: 'E',
+  P: 'P',
+  J: 'J',
+  G: 'G',
 };
 
 export default function RegisterScreen() {
@@ -280,7 +288,7 @@ export default function RegisterScreen() {
               accessibilityLabel="Tipo de documento"
             >
               <Text style={{ fontSize: 15, color: colors.foreground, fontWeight: '600' }}>
-                {DOC_TYPE_LABELS[documentType]}
+                {DOC_TYPE_SHORT_LABELS[documentType]}
               </Text>
               <ChevronDown size={16} color={colors.muted} />
             </Pressable>
