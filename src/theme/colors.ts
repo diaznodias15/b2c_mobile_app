@@ -164,7 +164,7 @@ export const SOFT_COLORS: ThemeColors = {
  * Convierte un hex `#RRGGBB` a `rgba(r, g, b, alpha)`. Si el input
  * no es hex valido, devuelve el input original.
  */
-function hexToRgba(hex: string | undefined, alpha: number): string {
+export function hexToRgba(hex: string | undefined, alpha: number): string {
   if (!hex || !hex.startsWith('#') || hex.length < 7) {
     return hex ?? 'transparent';
   }

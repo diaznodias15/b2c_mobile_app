@@ -10,6 +10,20 @@ export function isEmailValid(value: string): boolean {
 }
 
 /**
+ * Los 4 requisitos de fuerza que exige el backend, además del largo
+ * (8-40 caracteres). Se exportan como lista (no solo como regex sueltas
+ * dentro de `isPasswordValid`) para que un medidor de fuerza en pantalla
+ * (registro, cambio de contraseña) pueda iterarlos y mostrar cada uno
+ * como cumplido/pendiente sin duplicar los regex.
+ */
+export const PASSWORD_REQUIREMENTS: Array<{ re: RegExp; label: string }> = [
+  { re: /[0-9]/, label: 'Un número' },
+  { re: /[a-z]/, label: 'Una minúscula' },
+  { re: /[A-Z]/, label: 'Una mayúscula' },
+  { re: /[$&+,:;=?@#<>.^*()%!-]/, label: 'Un símbolo' },
+];
+
+/**
  * Política real del backend (AUTH_WEB_FLOWS.md): 8-40 caracteres,
  * mínimo 1 minúscula + 1 mayúscula + 1 número + 1 carácter especial.
  * `requireStrong = false` es para el login (no tiene sentido re-validar
@@ -18,12 +32,7 @@ export function isEmailValid(value: string): boolean {
 export function isPasswordValid(value: string, requireStrong = true): boolean {
   if (value.length < 8 || value.length > 40) return false;
   if (!requireStrong) return true;
-  return (
-    /[a-z]/.test(value) &&
-    /[A-Z]/.test(value) &&
-    /[0-9]/.test(value) &&
-    /[$&+,:;=?@#<>.^*()%!-]/.test(value)
-  );
+  return PASSWORD_REQUIREMENTS.every((r) => r.re.test(value));
 }
 
 export function isConfirmPasswordValid(pwd: string, confirm: string): boolean {

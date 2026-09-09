@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check, ChevronDown, ChevronLeft, Mail, Send, UserPlus } from 'lucide-react-native';
 
 import { register, sendEmailVerification } from '@/api/services/auth.services';
+import { PasswordStrengthMeter } from '@/components/PasswordStrengthMeter';
 import { useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
 import {
@@ -467,6 +468,11 @@ export default function RegisterScreen() {
             secureTextEntry
             autoCapitalize="none"
           />
+          {password.length > 0 && (
+            <View style={{ marginTop: 8 }}>
+              <PasswordStrengthMeter password={password} colors={colors} />
+            </View>
+          )}
         </Field>
 
         <Field label="Confirmar contraseña" colors={colors}>
