@@ -1,18 +1,13 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CircleCheck, MessageCircle, MapPin, Store } from 'lucide-react-native';
+import { Check, CircleCheck, Info, MessageCircle } from 'lucide-react-native';
 
 import { createOrder } from '@/api/services/orders.services';
 import { CartSummaryCard } from '@/components/CartSummaryCard';
-import {
-  CheckoutBackButton,
-  CheckoutField,
-  CheckoutOptionCard,
-  checkoutInputStyle,
-} from '@/components/CheckoutPrimitives';
+import { CheckoutBackButton } from '@/components/CheckoutPrimitives';
 import { CheckoutEntregaStep } from '@/components/CheckoutEntregaStep';
 import { CheckoutPagoStep } from '@/components/CheckoutPagoStep';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
@@ -20,11 +15,8 @@ import { selectEffectiveBranchId, useBranchStore } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
 import { useCheckoutStore } from '@/store/checkout.store';
 import { isConfigFlagTrue, useConfigStore, useThemeColors } from '@/store/config.store';
-import { useUserStore } from '@/store/user.store';
-import { isEmailValid, isNameValid } from '@/utils/validations';
+import { hexToRgba, type ThemeColors } from '@/theme/colors';
 import { getCartSummary } from '@/utils/pricing';
-import type { ThemeColors } from '@/theme/colors';
-import type { FulfillmentType } from '@/types/cart';
 
 /**
  * Orquesta los dos modos del checkout (CHECKOUT-FLOW.md), gateado en
@@ -45,7 +37,6 @@ export default function CheckoutScreen() {
   const colors = useThemeColors();
   const appConfig = useConfigStore((s) => s.appConfig);
   const branchId = useBranchStore(selectEffectiveBranchId);
-  const user = useUserStore((s) => s.user);
 
   const items = useCartStore((s) => s.items);
   const removeProduct = useCartStore((s) => s.removeProduct);
@@ -75,13 +66,10 @@ export default function CheckoutScreen() {
   const [error, setError] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
 
-  // Campos del form de contacto del modo Lite (no viven en el store de
-  // checkout Full — es un flujo aparte, más simple).
-  const [liteName, setLiteName] = useState(user?.name ?? '');
-  const [litePhone, setLitePhone] = useState(user?.tx_phone ?? '');
-  const [liteEmail, setLiteEmail] = useState(user?.email ?? '');
-  const [liteFulfillment, setLiteFulfillment] = useState<FulfillmentType>('PICKUP');
-  const [liteAddress, setLiteAddress] = useState('');
+  // Modo Lite: no se elige entrega ni se piden datos — el backend ya
+  // conoce al usuario autenticado. Solo se pide aceptar que la tienda
+  // va a contactarlo para coordinar pago y entrega (CHECKOUT-FLOW.md §12).
+  const [acceptContact, setAcceptContact] = useState(false);
 
   const isLite = isConfigFlagTrue(appConfig?.is_lite_mode);
 
@@ -99,12 +87,7 @@ export default function CheckoutScreen() {
     setOrderNumber(result.tx_order_number);
   };
 
-  const liteCanSubmit =
-    (liteFulfillment === 'PICKUP' || liteAddress.trim().length > 5) &&
-    isNameValid(liteName) &&
-    litePhone.trim().length >= 7 &&
-    (liteEmail.trim().length === 0 || isEmailValid(liteEmail)) &&
-    !isSubmitting;
+  const liteCanSubmit = acceptContact && !isSubmitting;
 
   const handleSubmitLite = async () => {
     if (!liteCanSubmit || branchId === null) return;
@@ -213,93 +196,52 @@ export default function CheckoutScreen() {
         contentContainerStyle={{ padding: 24, paddingTop: insets.top + 60, gap: 4 }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '700', color: colors.foreground, marginBottom: 6 }}>
+        <Text style={{ fontSize: 24, fontWeight: '700', color: colors.foreground, marginBottom: 16 }}>
           Confirmar pedido
         </Text>
-        <Text style={{ fontSize: 14, color: colors.muted, marginBottom: 20 }}>
-          Completá tus datos para finalizar la compra.
-        </Text>
-
-        <CheckoutField label="Tipo de entrega" colors={colors}>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <CheckoutOptionCard
-              label="Retiro en tienda"
-              icon={Store}
-              active={liteFulfillment === 'PICKUP'}
-              onPress={() => setLiteFulfillment('PICKUP')}
-              colors={colors}
-            />
-            <CheckoutOptionCard
-              label="Delivery"
-              icon={MapPin}
-              active={liteFulfillment === 'DELIVERY'}
-              onPress={() => setLiteFulfillment('DELIVERY')}
-              colors={colors}
-            />
-          </View>
-        </CheckoutField>
-
-        {liteFulfillment === 'DELIVERY' && (
-          <CheckoutField label="Dirección de entrega" colors={colors}>
-            <TextInput
-              value={liteAddress}
-              onChangeText={setLiteAddress}
-              placeholder="Calle, edificio, referencia"
-              placeholderTextColor={colors.muted}
-              style={checkoutInputStyle(colors)}
-              multiline
-            />
-          </CheckoutField>
-        )}
-
-        <CheckoutField label="Nombre completo" colors={colors}>
-          <TextInput
-            value={liteName}
-            onChangeText={setLiteName}
-            placeholder="Tu nombre y apellido"
-            placeholderTextColor={colors.muted}
-            style={checkoutInputStyle(colors)}
-          />
-        </CheckoutField>
-
-        <CheckoutField label="Teléfono" colors={colors}>
-          <TextInput
-            value={litePhone}
-            onChangeText={setLitePhone}
-            placeholder="+58 0414-1234567"
-            placeholderTextColor={colors.muted}
-            style={checkoutInputStyle(colors)}
-            keyboardType="phone-pad"
-          />
-        </CheckoutField>
-
-        <CheckoutField label="Email (opcional)" colors={colors}>
-          <TextInput
-            value={liteEmail}
-            onChangeText={setLiteEmail}
-            placeholder="tucorreo@ejemplo.com"
-            placeholderTextColor={colors.muted}
-            style={checkoutInputStyle(colors)}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-        </CheckoutField>
 
         <View
           style={{
             flexDirection: 'row',
-            gap: 8,
-            backgroundColor: colors.primaryOverlaySoft,
+            gap: 10,
+            backgroundColor: hexToRgba(colors.warning, 0.12),
             borderRadius: 12,
-            padding: 12,
-            marginBottom: 4,
+            padding: 14,
+            marginBottom: 16,
           }}
         >
-          <Text style={{ fontSize: 12, color: colors.foreground, flex: 1 }}>
-            Un representante de la tienda te va a contactar por WhatsApp para coordinar el pago y la entrega. No
-            se requiere pago en línea en este momento.
+          <Info size={16} color={colors.warning} style={{ marginTop: 1 }} />
+          <Text style={{ fontSize: 13, color: colors.foreground, flex: 1, lineHeight: 18 }}>
+            Al registrar tu pedido, un representante de la tienda te contactará para coordinar el método de pago y
+            la entrega. No se requiere pago en línea ni datos de despacho en este momento.
           </Text>
         </View>
+
+        <Pressable
+          onPress={() => setAcceptContact((v) => !v)}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: acceptContact }}
+          accessibilityLabel="Acepto que la tienda me contactará para coordinar el pago y la entrega"
+        >
+          <View
+            style={{
+              width: 22,
+              height: 22,
+              borderRadius: 6,
+              borderWidth: 1.5,
+              borderColor: acceptContact ? colors.primary : colors.border,
+              backgroundColor: acceptContact ? colors.primary : 'transparent',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {acceptContact && <Check size={14} color={colors.onPrimary} strokeWidth={3} />}
+          </View>
+          <Text style={{ fontSize: 13, color: colors.foreground, flex: 1 }}>
+            Acepto que la tienda me contactará para coordinar el pago y la entrega.
+          </Text>
+        </Pressable>
 
         <View style={{ marginTop: 12, marginBottom: 12 }}>
           <CartSummaryCard
