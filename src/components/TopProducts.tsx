@@ -53,6 +53,9 @@ export function TopProducts({
       nb_brand: product.nb_brand,
       tx_img_url: product.tx_img_url,
       pri_product_final_price: product.pri_product_final_price,
+      pri_product_price: product.pri_product_price,
+      qty_discount: product.qty_discount,
+      qty_tax: product.qty_tax,
       qty: 1,
     });
     showToast('Producto agregado al carrito');

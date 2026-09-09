@@ -6,13 +6,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ShoppingCart, Trash2 } from 'lucide-react-native';
 
 import { BottomTabs } from '@/components/bottom-tabs';
+import { CartSummaryCard } from '@/components/CartSummaryCard';
 import { QuantityStepper } from '@/components/QuantityStepper';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
-import { useCartStore, selectCartTotal } from '@/store/cart.store';
+import { useCartStore } from '@/store/cart.store';
 import { useThemeColors } from '@/store/config.store';
-import { useToastStore } from '@/store/toast.store';
 import { formatDisplayPrice } from '@/utils/currency';
+import { getCartSummary } from '@/utils/pricing';
 import type { ThemeColors } from '@/theme/colors';
 import type { CartItem } from '@/types/cart';
 
@@ -24,7 +25,6 @@ export default function CartScreen() {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const branchId = useBranchStore(selectEffectiveBranchId);
-  const showToast = useToastStore((s) => s.show);
 
   // Carrito acotado a la sede activa: los precios/stock son por sede,
   // así que mezclar items de sedes distintas en un mismo total no
@@ -37,7 +37,7 @@ export default function CartScreen() {
     () => items.filter((item) => item.branch_id === branchId),
     [items, branchId]
   );
-  const cartTotal = useMemo(() => selectCartTotal({ items: cartItems }), [cartItems]);
+  const cartSummary = useMemo(() => getCartSummary(cartItems), [cartItems]);
 
   const { displayCurrency, exchangeRate } = useDisplayCurrency();
 
@@ -133,32 +133,31 @@ export default function CartScreen() {
           borderTopWidth: 1,
           borderTopColor: colors.border,
           backgroundColor: colors.background,
-          gap: 12,
         }}
       >
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={{ fontSize: 15, color: colors.muted }}>Total</Text>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: colors.foreground }}>
-            {formatDisplayPrice(cartTotal, exchangeRate, displayCurrency)}
-          </Text>
-        </View>
-
-        <Pressable
-          onPress={() => showToast('El pago todavía no está disponible')}
-          style={{
-            height: 48,
-            borderRadius: 12,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.primary,
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Proceder al pago"
+        <CartSummaryCard
+          summary={cartSummary}
+          exchangeRate={exchangeRate}
+          displayCurrency={displayCurrency}
+          colors={colors}
         >
-          <Text style={{ fontSize: 15, fontWeight: '700', color: colors.onPrimary }}>
-            Proceder al pago
-          </Text>
-        </Pressable>
+          <Pressable
+            onPress={() => router.push('/checkout')}
+            style={{
+              height: 48,
+              borderRadius: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.primary,
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Proceder al pago"
+          >
+            <Text style={{ fontSize: 15, fontWeight: '700', color: colors.onPrimary }}>
+              Proceder al pago
+            </Text>
+          </Pressable>
+        </CartSummaryCard>
       </View>
 
       <BottomTabs />

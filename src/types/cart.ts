@@ -19,8 +19,19 @@ export type CartItem = {
   nb_product: string;
   nb_brand: string;
   tx_img_url?: string | null;
-  /** Precio unitario FINAL (con impuestos) en Bs., como string — ver `Product.pri_product_price`. */
+  /** Precio unitario FINAL (con impuestos y descuento aplicados) en Bs. — ver `Product.pri_product_price`. */
   pri_product_final_price: string;
+  /**
+   * Precio unitario BASE (sin descuento ni IVA) y los % de descuento/IVA
+   * — opcionales porque los carritos persistidos ANTES de este campo no
+   * lo tienen (AsyncStorage). Sin esto, `getCartSummary()` no puede
+   * desglosar Subtotal/Descuento/IVA para ese item y cae a 0 (ver
+   * `utils/pricing.ts`). Mismos campos que `Product.pri_product_price`/
+   * `qty_discount`/`qty_tax` — ver PRODUCTS-CALCULATIONS.md.
+   */
+  pri_product_price?: string;
+  qty_discount?: number | string;
+  qty_tax?: number | string;
   qty: number;
   /** Timestamp del último add, para que el item más reciente quede arriba. */
   added_at: number;

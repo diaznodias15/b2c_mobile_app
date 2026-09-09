@@ -36,6 +36,18 @@ export type AppConfig = {
   // … el resto se completa en fases siguientes
 };
 
+/**
+ * Los flags `is_*` del backend llegan como `boolean | string` ("1"/"0",
+ * a veces `true`/`false` real) — nunca compararlos con `=== true`
+ * directo. Usar este helper en cualquier gate nuevo (`is_lite_mode`,
+ * `is_allow_delivery`, etc).
+ */
+export function isConfigFlagTrue(value: boolean | string | number | undefined): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value === 1;
+  return value === '1' || value === 'true';
+}
+
 type ConfigState = {
   appConfig: AppConfig | null;
   isLoading: boolean;
