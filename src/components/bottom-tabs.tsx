@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ReanimatedAnimated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import {
   CircleQuestionMark,
-  ClipboardList,
   Ellipsis,
   House,
   LayoutGrid,
@@ -26,9 +25,13 @@ const NAV_TABS = [
   { label: 'Carrito', href: '/cart', icon: ShoppingCart },
 ] as const;
 
+/**
+ * "Pedidos" (`/orders`) NO vive acá a propósito — se accede solo desde
+ * el perfil (`ProfileActionCard` "Mis órdenes"), con push + swipe-back
+ * (ver `_layout.tsx`), no como un destino más del menú "Ver más".
+ */
 const MORE_MENU = [
   { label: 'Perfil', href: '/profile', icon: UserRound },
-  { label: 'Pedidos', href: '/orders', icon: ClipboardList },
   { label: 'Ayuda', href: '/help', icon: CircleQuestionMark },
 ] as const;
 

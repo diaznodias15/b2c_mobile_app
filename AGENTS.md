@@ -338,11 +338,24 @@ completo.
 5 tabs: **Inicio** (`/`), **Departamentos** (`/departments`), **Buscar**
 (`/search`), **Carrito** (`/cart`, con badge de `selectCartCount`) y
 **Ver Más** (abre un `<Modal>` nativo de RN, no navega directo) con
-**Perfil** (`/profile`), **Pedidos** (`/orders`) y **Ayuda** (`/help`).
+**Perfil** (`/profile`) y **Ayuda** (`/help`).
 
-`orders.tsx` y `help.tsx` son placeholders (mismo patrón que las demás
+**`/orders` ("Pedidos") NO está en el menú "Ver más" a propósito** —
+pedido explícito del usuario: se accede solo desde `ProfileActionCard`
+"Mis órdenes" (`profile.tsx`) con `router.push`, no `router.replace`.
+Es una ruta NO-tab, igual que `product/[slug]`/`login`/`register`: no
+renderiza `<BottomTabs />`, tiene su propio botón de volver
+(`ChevronLeft` + `colors.section`, mismo estilo que `login.tsx`), y
+está en la lista de `Stack.Screen` con `animation: 'slide_from_right'`
++ `gestureEnabled: true` en `_layout.tsx` para que el swipe-back
+funcione (ver el comentario ahí sobre por qué el default global es
+`animation: 'none'`).
+
+`help.tsx` sigue siendo un placeholder tab (mismo patrón que las demás
 screens: `<Text className="text-2xl font-bold text-foreground">` +
-`<BottomTabs />`) — faltan implementar de verdad.
+`<BottomTabs />`) — falta implementar de verdad. `orders.tsx` también
+es un placeholder de contenido (solo el título "Pedidos"), pero su
+navegación ya está resuelta como se describe arriba.
 
 Cada screen del tab bar repite el mismo layout (`View flex-1 bg-background`
 → contenido → `<BottomTabs />` como hermano). Es un patrón manual, no un

@@ -38,6 +38,10 @@ export default function RootLayout() {
           name="register"
           options={{ animation: 'slide_from_right', gestureEnabled: true, gestureDirection: 'horizontal' }}
         />
+        <Stack.Screen
+          name="orders"
+          options={{ animation: 'slide_from_right', gestureEnabled: true, gestureDirection: 'horizontal' }}
+        />
       </Stack>
     </Providers>
   );
