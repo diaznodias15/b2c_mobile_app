@@ -1,8 +1,12 @@
 import { axiosRequest } from '../axiosRequest';
 import type { FulfillmentType } from '@/types/cart';
-import type { Envelope } from '@/types/whitelabel';
+import type { Order, OrderDetail } from '@/types/orders';
+import type { Envelope, Pagination } from '@/types/whitelabel';
+import { toQueryString } from '@/utils/queryParams';
 
 const CREATE = '/api/orders/create';
+const MY_ORDERS = (branch: number) => `/api/orders/my-orders/branch/${branch}`;
+const DETAIL = (txOrderNumber: string) => `/api/orders/detail/${txOrderNumber}`;
 
 export type CreateOrderPayload = {
   branch_id: number;
@@ -55,4 +59,56 @@ export async function createOrder(
       tx_order_number: '',
     }
   );
+}
+
+/* ============================================================
+ * "Mis órdenes" (MY-ORDERS-MODULE.md)
+ * ============================================================ */
+
+export type GetMyOrdersParams = {
+  branch: number;
+  page?: number;
+  signal?: AbortSignal;
+};
+
+export type PaginatedOrders = {
+  items: Order[];
+  pagination: Pagination;
+};
+
+/**
+ * GET /api/orders/my-orders/branch/:branch?page=N
+ * Lista paginada de órdenes del usuario logueado en esa sede.
+ */
+export async function getMyOrders(
+  params: GetMyOrdersParams
+): Promise<PaginatedOrders> {
+  const qs: Record<string, string | number> = { page: params.page ?? 1 };
+  const envelope = await axiosRequest<
+    Envelope<Order[]> & { pagination?: Pagination }
+  >({
+    method: 'GET',
+    url: `${MY_ORDERS(params.branch)}${toQueryString(qs)}`,
+    signal: params.signal,
+  });
+  return {
+    items: envelope.data ?? [],
+    pagination: envelope.pagination ?? {},
+  };
+}
+
+/**
+ * GET /api/orders/detail/:txOrderNumber
+ * Detalle completo de una orden (productos, totales, stepper).
+ */
+export async function getOrderDetail(
+  txOrderNumber: string,
+  signal?: AbortSignal
+): Promise<OrderDetail> {
+  const envelope = await axiosRequest<Envelope<OrderDetail>>({
+    method: 'GET',
+    url: DETAIL(txOrderNumber),
+    signal,
+  });
+  return envelope.data;
 }

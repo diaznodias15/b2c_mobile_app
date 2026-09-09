@@ -311,6 +311,25 @@ completo.
 
 ## Bugs de datos ya resueltos (no reintroducir)
 
+- **`login()`/`register()` no desenvolvían el envelope de la API** —
+  `axiosRequest` devuelve el body HTTP completo (`{status, message,
+  data}`), pero ambas funciones estaban tipadas y devueltas como si YA
+  fuera el `data` desenvuelto. Confirmado con la app real: `user.name`/
+  `user.email` quedaban vacíos porque el store guardaba el envelope
+  entero como `user`. Fix: `const res = await axiosRequest<Envelope>(...);
+  return res.data;` — mismo patrón que `me()`. Si se agrega un endpoint
+  nuevo a `auth.services.ts`, verificar contra un login real (no solo
+  contra la doc) qué forma tiene la respuesta.
+
+- **`order.dt_created_at` (`GET /api/orders/my-orders/branch/:branch`)
+  viene CRUDO** (`"YYYY-MM-DD HH:mm:ss"`), no pre-formateado
+  `"DD/MM/YYYY"` como sugiere MY-ORDERS-MODULE.md (ahí lo formatea el
+  `ordersAdapter` de la web con dayjs, que no existe en mobile).
+  `formatOrderListDate()` (`src/utils/orderStatus.ts`) lo parsea a mano
+  con un regex — no asumir que un campo de fecha ya viene formateado
+  solo porque la doc de referencia (basada en el adapter de la web) lo
+  documenta así.
+
 - **`getTopProducts` armaba `${TOP_PRODUCTS}?${toQueryString(params)}`** —
   `toQueryString()` ya devuelve el string CON el `?` inicial, así que
   quedaba `??branch=1` y el backend respondía `"La sucursal es
@@ -353,9 +372,26 @@ funcione (ver el comentario ahí sobre por qué el default global es
 
 `help.tsx` sigue siendo un placeholder tab (mismo patrón que las demás
 screens: `<Text className="text-2xl font-bold text-foreground">` +
-`<BottomTabs />`) — falta implementar de verdad. `orders.tsx` también
-es un placeholder de contenido (solo el título "Pedidos"), pero su
-navegación ya está resuelta como se describe arriba.
+`<BottomTabs />`) — falta implementar de verdad.
+
+## "Mis órdenes" (`src/app/orders.tsx`) — basado en MY-ORDERS-MODULE.md
+
+Lista paginada (`getMyOrders`, paginación local con `useState`, no
+URL-driven — este app no tiene URLs) + modal full-screen de detalle al
+tocar una `OrderRow` (`getOrderDetail`). Componentes en
+`src/components/`: `OrderRow`/`OrderRowSkeleton` (filas striped —
+`index % 2` alterna `colors.section`/`colors.background`),
+`OrderStatusBadge` (pill de la lista), `OrderStatusStepper` (timeline
+de 5 pasos, no se muestra si `tx_status === 'CANCELED'`),
+`DualCurrencyText` (Bs. + REF lado a lado, usa la tasa **de la orden**
+— `amt_exchange_rate` — no la tasa live del config, porque una orden
+vieja debe reflejar la tasa vigente cuando se compró), `ModalOrderDetail`
+(con `OrderProductsList`/`OrderTotals` inline, colapsables vía
+`LayoutAnimation`, mismo patrón que `BranchSelectorModal`). Labels de
+status/pago/fulfillment centralizados en `src/utils/orderStatus.ts`.
+
+Bug de la doc de referencia ya corregido acá: ver "Bugs de datos ya
+resueltos" arriba sobre `dt_created_at` viniendo crudo.
 
 Cada screen del tab bar repite el mismo layout (`View flex-1 bg-background`
 → contenido → `<BottomTabs />` como hermano). Es un patrón manual, no un
