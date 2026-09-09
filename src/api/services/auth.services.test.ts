@@ -22,14 +22,15 @@ describe('auth.services', () => {
   });
 
   describe('login', () => {
-    it('returns the flat user+token shape on success (no user/token nesting)', async () => {
-      // La respuesta real del backend es plana (AUTH_WEB_FLOWS.md §1):
-      // el user y el token viven en el mismo nivel de `data`.
+    it('unwraps the envelope and returns user+token from `data`', async () => {
+      // `axiosRequest` devuelve el envelope COMPLETO `{status, message,
+      // data}` — confirmado contra la API real (no la forma plana que
+      // describía AUTH_WEB_FLOWS.md). `login()` tiene que desenvolver
+      // `.data`, igual que `me()`.
       mockedRequest.mockResolvedValueOnce({
-        id: 'u1',
-        name: 'Ana',
-        email: 'a@b.com',
-        token: 'jwt-123',
+        status: 'OK',
+        message: 'OK',
+        data: { id: 'u1', name: 'Ana', email: 'a@b.com', token: 'jwt-123' },
       });
       const result = await authService.login({
         email: 'a@b.com',
@@ -94,8 +95,9 @@ describe('auth.services', () => {
   describe('register', () => {
     it('posts to /api/users/register with the real backend field names', async () => {
       // El registro no devuelve user ni token (AUTH_WEB_FLOWS.md §2) —
-      // el email todavía no está verificado.
-      mockedRequest.mockResolvedValueOnce(null);
+      // el email todavía no está verificado. Envelope completo, igual
+      // que `login` — `register()` desenvuelve `.data`.
+      mockedRequest.mockResolvedValueOnce({ status: 'OK', message: 'OK', data: null });
       const payload = {
         document_type: 'V' as const,
         document_id: 12345678,

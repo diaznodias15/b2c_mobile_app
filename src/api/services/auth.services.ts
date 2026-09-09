@@ -111,12 +111,17 @@ function cleanError(err: unknown, fallback: string): Error {
 
 export async function login(payload: LoginPayload): Promise<LoginResponse['data']> {
   try {
-    return await axiosRequest<LoginResponse['data']>({
+    // A diferencia de lo documentado en AUTH_WEB_FLOWS.md, `axiosRequest`
+    // devuelve el envelope completo `{status, message, data}` (no ya
+    // desenvuelto) — confirmado contra la API real: sin este `.data`, el
+    // envelope entero terminaba guardado como `user` en el store.
+    const res = await axiosRequest<LoginResponse>({
       method: 'POST',
       url: '/api/auth/login',
       data: payload,
       dedup: false,
     });
+    return res.data;
   } catch (err) {
     throw cleanError(err, 'No se pudo iniciar sesión');
   }
@@ -146,12 +151,14 @@ export async function me(): Promise<User> {
 
 export async function register(payload: RegisterPayload): Promise<RegisterResponse['data']> {
   try {
-    return await axiosRequest<RegisterResponse['data']>({
+    // Mismo envelope que `login` — ver comentario ahí.
+    const res = await axiosRequest<RegisterResponse>({
       method: 'POST',
       url: '/api/users/register',
       data: payload,
       dedup: false,
     });
+    return res.data;
   } catch (err) {
     throw cleanError(err, 'No se pudo crear la cuenta');
   }
