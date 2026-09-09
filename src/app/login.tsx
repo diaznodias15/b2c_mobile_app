@@ -1,15 +1,8 @@
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft, Eye, EyeOff, Lock, LogIn, Mail, Send } from 'lucide-react-native';
 
@@ -18,7 +11,10 @@ import { useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
 import { useUserStore } from '@/store/user.store';
 import { isEmailValid } from '@/utils/validations';
-import type { ThemeColors } from '@/theme/colors';
+import { isLightColor, type ThemeColors } from '@/theme/colors';
+
+const LOGO_LIGHT = require('../../assets/images/logo-light.webp');
+const LOGO_DARK = require('../../assets/images/logo-dark.webp');
 
 /**
  * Mensaje EXACTO que devuelve el backend cuando el email no está
@@ -84,10 +80,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Pressable
         onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
         style={{
@@ -109,7 +102,8 @@ export default function LoginScreen() {
         <ChevronLeft size={22} color={colors.foreground} />
       </Pressable>
 
-      <ScrollView
+      <KeyboardAwareScrollView
+        bottomOffset={24}
         contentContainerStyle={{
           flexGrow: 1,
           justifyContent: 'center',
@@ -119,6 +113,12 @@ export default function LoginScreen() {
         }}
         keyboardShouldPersistTaps="handled"
       >
+        <Image
+          source={isLightColor(colors.background) ? LOGO_LIGHT : LOGO_DARK}
+          style={{ width: 140, height: 42, alignSelf: 'center', marginBottom: 28 }}
+          contentFit="contain"
+        />
+
         <Text style={{ fontSize: 26, fontWeight: '700', color: colors.foreground, marginBottom: 6 }}>
           Iniciar sesión
         </Text>
@@ -247,8 +247,8 @@ export default function LoginScreen() {
             <Text style={{ color: colors.primary, fontWeight: '700' }}>Registrate</Text>
           </Text>
         </Pressable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
+    </View>
   );
 }
 

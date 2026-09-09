@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { Dimensions, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -54,21 +55,23 @@ export function Providers({ children }: { children: ReactNode }) {
   );
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <View style={[{ flex: 1 }, cssVars as object]} className="bg-background">
-            {isBooting ? <HomeSkeleton /> : children}
-            {!isBooting && (
-              <>
-                <FlyingCartOverlay />
-                <Toast />
-              </>
-            )}
-          </View>
-        </QueryClientProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <KeyboardProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <QueryClientProvider client={queryClient}>
+            <View style={[{ flex: 1 }, cssVars as object]} className="bg-background">
+              {isBooting ? <HomeSkeleton /> : children}
+              {!isBooting && (
+                <>
+                  <FlyingCartOverlay />
+                  <Toast />
+                </>
+              )}
+            </View>
+          </QueryClientProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </KeyboardProvider>
   );
 }
 

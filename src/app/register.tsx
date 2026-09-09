@@ -1,16 +1,8 @@
 import { useState, type ReactNode } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check, ChevronDown, ChevronLeft, Mail, Send, UserPlus } from 'lucide-react-native';
 
@@ -28,7 +20,10 @@ import {
   type DocType,
   type GenderValue,
 } from '@/utils/validations';
-import type { ThemeColors } from '@/theme/colors';
+import { isLightColor, type ThemeColors } from '@/theme/colors';
+
+const LOGO_LIGHT = require('../../assets/images/logo-light.webp');
+const LOGO_DARK = require('../../assets/images/logo-dark.webp');
 
 const AREA_CODES = ['0412', '0414', '0416', '0422', '0424', '0426'];
 const DOC_TYPE_LABELS: Record<DocType, string> = {
@@ -209,10 +204,7 @@ export default function RegisterScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Pressable
         onPress={() => (router.canGoBack() ? router.back() : router.replace('/login'))}
         style={{
@@ -234,7 +226,8 @@ export default function RegisterScreen() {
         <ChevronLeft size={22} color={colors.foreground} />
       </Pressable>
 
-      <ScrollView
+      <KeyboardAwareScrollView
+        bottomOffset={24}
         contentContainerStyle={{
           paddingTop: insets.top + 60,
           paddingHorizontal: 24,
@@ -242,6 +235,12 @@ export default function RegisterScreen() {
         }}
         keyboardShouldPersistTaps="handled"
       >
+        <Image
+          source={isLightColor(colors.background) ? LOGO_LIGHT : LOGO_DARK}
+          style={{ width: 120, height: 36, alignSelf: 'center', marginBottom: 20 }}
+          contentFit="contain"
+        />
+
         <Text style={{ fontSize: 26, fontWeight: '700', color: colors.foreground, marginBottom: 6 }}>
           Crear cuenta
         </Text>
@@ -554,8 +553,8 @@ export default function RegisterScreen() {
             ¿Ya tenés cuenta? <Text style={{ color: colors.primary, fontWeight: '700' }}>Iniciá sesión</Text>
           </Text>
         </Pressable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
+    </View>
   );
 }
 
