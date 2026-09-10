@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { axiosRequest, setToken, getToken, axiosInstance } from './axiosRequest';
+import { axiosRequest, setToken, getToken, axiosInstance, onUnauthorized } from './axiosRequest';
 
 // Mock de axios para no hacer requests reales.
 // Devolvemos un objeto con `create()` que retorna una "instance" mockeada.
@@ -126,6 +126,56 @@ describe('axiosRequest', () => {
     expect(b).toEqual({ url: '/api/b' });
     expect(c).toEqual({ url: '/api/c' });
     expect(axiosInstance.request).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('onUnauthorized', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    await setToken(null);
+  });
+
+  it('notifica a los suscriptores cuando un request devuelve 401', async () => {
+    const listener = vi.fn();
+    const unsubscribe = onUnauthorized(listener);
+    vi.mocked(axiosInstance.request).mockRejectedValueOnce({
+      response: { status: 401, data: { message: 'Usuario no autorizado' } },
+    });
+
+    await expect(axiosRequest({ method: 'GET', url: '/api/protected' })).rejects.toThrow(
+      'Usuario no autorizado'
+    );
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    unsubscribe();
+  });
+
+  it('no notifica en errores que no son 401', async () => {
+    const listener = vi.fn();
+    const unsubscribe = onUnauthorized(listener);
+    vi.mocked(axiosInstance.request).mockRejectedValueOnce({
+      response: { status: 500, data: { message: 'Error de servidor' } },
+    });
+
+    await expect(axiosRequest({ method: 'GET', url: '/api/x' })).rejects.toThrow(
+      'Error de servidor'
+    );
+
+    expect(listener).not.toHaveBeenCalled();
+    unsubscribe();
+  });
+
+  it('unsubscribe detiene las notificaciones futuras', async () => {
+    const listener = vi.fn();
+    const unsubscribe = onUnauthorized(listener);
+    unsubscribe();
+
+    vi.mocked(axiosInstance.request).mockRejectedValueOnce({
+      response: { status: 401, data: { message: 'Usuario no autorizado' } },
+    });
+    await expect(axiosRequest({ method: 'GET', url: '/api/y' })).rejects.toThrow();
+
+    expect(listener).not.toHaveBeenCalled();
   });
 });
 

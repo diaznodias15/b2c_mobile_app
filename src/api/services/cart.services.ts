@@ -1,6 +1,6 @@
 import { axiosRequest } from '../axiosRequest';
 import type { CartServiceResponse } from '@/types/cart';
-import type { Envelope, Product } from '@/types/whitelabel';
+import type { Envelope } from '@/types/whitelabel';
 import { toQueryString } from '@/utils/queryParams';
 
 const ITEMS = (branch: number) => `/api/cart/items/branch/${branch}`;
@@ -24,9 +24,30 @@ export type UpdateQuantityPayload = {
   qty_product: number;
 };
 
-/** Items del carrito en el backend (shape que devuelve `items/branch/:id`). */
-export type CartItemFromBackend = Product & {
-  qty: number;
+/**
+ * Items del carrito en el backend (shape real de `items/branch/:id`,
+ * verificado contra CHECKOUT-API.md §4.1) — NO es `Product & {qty}`
+ * como estaba antes: acá la cantidad en el carrito es `qty_product`
+ * (un número real), mientras que en `Product` ese mismo nombre de campo
+ * significa otra cosa (ver el comentario en `types/whitelabel.ts`). Son
+ * dos shapes distintos que comparten nombre de campo con significado
+ * distinto — no unificar.
+ */
+export type CartItemFromBackend = {
+  id: number;
+  nb_brand: string;
+  cod_barcode: string;
+  nb_product: string;
+  is_regulado?: number;
+  tx_slug: string;
+  /** Cantidad en el carrito (no confundir con `qty_availability`). */
+  qty_product: number;
+  qty_availability?: number;
+  qty_discount?: number | string;
+  qty_tax?: number | string;
+  tx_img_url?: string | null;
+  pri_product_price: string;
+  pri_product_final_price: string;
 };
 
 /** Indicador resumido del carrito. */

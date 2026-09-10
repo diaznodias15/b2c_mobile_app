@@ -1,6 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from '@/utils/secureStorage';
+
+vi.mock('@/api/services/cart.services', () => ({
+  addProduct: vi.fn().mockResolvedValue(undefined),
+  updateQuantity: vi.fn().mockResolvedValue(undefined),
+  removeProduct: vi.fn().mockResolvedValue(undefined),
+  mergeLocalCart: vi.fn().mockResolvedValue(undefined),
+  getCartItems: vi.fn().mockResolvedValue([]),
+}));
+
+// eslint-disable-next-line import/first
+import { useCartStore } from '@/store/cart.store';
+// eslint-disable-next-line import/first
 import { useUserStore } from './user.store';
 
 vi.mocked(SecureStore.getItemAsync).mockResolvedValue(null);
@@ -11,6 +23,7 @@ describe('useUserStore', () => {
   beforeEach(async () => {
     await AsyncStorage.clear();
     useUserStore.getState().reset();
+    useCartStore.getState().reset();
     vi.mocked(SecureStore.getItemAsync).mockResolvedValue(null);
   });
 
@@ -57,6 +70,36 @@ describe('useUserStore', () => {
     expect(s.user).toBeNull();
     expect(s.isAuthenticated).toBe(false);
     expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('auth_token');
+  });
+
+  it('signIn prende el sync del carrito y dispara syncOnLogin', async () => {
+    await useUserStore.getState().signIn(
+      { id: 'u1', email: 'test@example.com', name: 'Test' },
+      'jwt-token-123'
+    );
+    expect(useCartStore.getState().isSyncEnabled).toBe(true);
+  });
+
+  it('signOut apaga el sync del carrito', async () => {
+    await useUserStore.getState().signIn(
+      { id: 'u1', email: 'test@example.com', name: 'Test' },
+      'jwt-token-123'
+    );
+    await useUserStore.getState().signOut();
+    expect(useCartStore.getState().isSyncEnabled).toBe(false);
+  });
+
+  it('rehydrateAuth con token prende el sync sin re-mergear', async () => {
+    vi.mocked(SecureStore.getItemAsync).mockResolvedValueOnce('existing-token');
+    await useUserStore.getState().rehydrateAuth();
+    expect(useCartStore.getState().isSyncEnabled).toBe(true);
+  });
+
+  it('rehydrateAuth sin token apaga el sync', async () => {
+    vi.mocked(SecureStore.getItemAsync).mockResolvedValueOnce(null);
+    useCartStore.getState().setSyncEnabled(true);
+    await useUserStore.getState().rehydrateAuth();
+    expect(useCartStore.getState().isSyncEnabled).toBe(false);
   });
 
   it('rehydrateAuth returns true if token exists', async () => {

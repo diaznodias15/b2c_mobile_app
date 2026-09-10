@@ -1,11 +1,26 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('@/api/services/cart.services', () => ({
+  addProduct: vi.fn().mockResolvedValue(undefined),
+  updateQuantity: vi.fn().mockResolvedValue(undefined),
+  removeProduct: vi.fn().mockResolvedValue(undefined),
+  mergeLocalCart: vi.fn().mockResolvedValue(undefined),
+  getCartItems: vi.fn().mockResolvedValue([]),
+}));
+
+// eslint-disable-next-line import/first
+import * as cartApi from '@/api/services/cart.services';
+// eslint-disable-next-line import/first
 import {
   useCartStore,
   selectCartCount,
   selectItemsByBranch,
   selectCartTotal,
 } from './cart.store';
+// eslint-disable-next-line import/first
 import type { CartItem } from '@/types/cart';
+
+const mockedCartApi = vi.mocked(cartApi);
 
 const item = (over: Partial<CartItem> = {}): CartItem => ({
   tx_slug: 'a',
@@ -23,6 +38,7 @@ const item = (over: Partial<CartItem> = {}): CartItem => ({
 describe('useCartStore', () => {
   beforeEach(() => {
     useCartStore.getState().reset();
+    vi.clearAllMocks();
   });
 
   it('starts empty', () => {
@@ -82,6 +98,89 @@ describe('useCartStore', () => {
     useCartStore.getState().setRemoteCart([item({ tx_slug: 'remote' })]);
     expect(useCartStore.getState().items).toHaveLength(1);
     expect(useCartStore.getState().items[0].tx_slug).toBe('remote');
+  });
+
+  it('sin sesión (isSyncEnabled=false): las mutaciones NO llaman al backend', () => {
+    useCartStore.getState().addProduct(item());
+    useCartStore.getState().updateQuantity('a', 1, 3);
+    useCartStore.getState().removeProduct('a', 1);
+    expect(mockedCartApi.addProduct).not.toHaveBeenCalled();
+    expect(mockedCartApi.updateQuantity).not.toHaveBeenCalled();
+    expect(mockedCartApi.removeProduct).not.toHaveBeenCalled();
+  });
+
+  it('con sesión (isSyncEnabled=true): addProduct también sincroniza al backend', () => {
+    useCartStore.getState().setSyncEnabled(true);
+    useCartStore.getState().addProduct(item({ qty: 2 }));
+    expect(mockedCartApi.addProduct).toHaveBeenCalledWith({
+      branch_id: 1,
+      tx_slug: 'a',
+      qty_product: 2,
+    });
+  });
+
+  it('con sesión: addProduct que suma qty a un item existente manda la qty total', () => {
+    useCartStore.getState().setSyncEnabled(true);
+    useCartStore.getState().addProduct(item({ qty: 1 }));
+    useCartStore.getState().addProduct(item({ qty: 2 }));
+    expect(mockedCartApi.addProduct).toHaveBeenLastCalledWith({
+      branch_id: 1,
+      tx_slug: 'a',
+      qty_product: 3,
+    });
+  });
+
+  it('con sesión: updateQuantity y removeProduct sincronizan al backend', () => {
+    useCartStore.getState().setSyncEnabled(true);
+    useCartStore.getState().addProduct(item());
+    useCartStore.getState().updateQuantity('a', 1, 5);
+    expect(mockedCartApi.updateQuantity).toHaveBeenCalledWith({
+      branch_id: 1,
+      tx_slug: 'a',
+      qty_product: 5,
+    });
+    useCartStore.getState().removeProduct('a', 1);
+    expect(mockedCartApi.removeProduct).toHaveBeenCalledWith('a', 1);
+  });
+
+  it('syncOnLogin: mergea por sede y reemplaza con la respuesta del backend', async () => {
+    useCartStore.getState().addProduct(item({ tx_slug: 'a', branch_id: 1, qty: 2 }));
+    useCartStore.getState().addProduct(item({ tx_slug: 'b', branch_id: 2, qty: 1 }));
+    mockedCartApi.getCartItems.mockImplementation(async (branchId: number) =>
+      branchId === 1
+        ? [
+            {
+              id: 10,
+              nb_brand: 'X',
+              cod_barcode: '123',
+              nb_product: 'A remoto',
+              tx_slug: 'a',
+              qty_product: 4,
+              pri_product_price: '50',
+              pri_product_final_price: '45',
+            },
+          ]
+        : []
+    );
+
+    await useCartStore.getState().syncOnLogin();
+
+    expect(mockedCartApi.mergeLocalCart).toHaveBeenCalledWith(1, [{ tx_slug: 'a', qty_product: 2 }]);
+    expect(mockedCartApi.mergeLocalCart).toHaveBeenCalledWith(2, [{ tx_slug: 'b', qty_product: 1 }]);
+
+    const items = useCartStore.getState().items;
+    const branch1Item = items.find((i) => i.branch_id === 1);
+    expect(branch1Item?.qty).toBe(4);
+    expect(branch1Item?.nb_product).toBe('A remoto');
+    // La sede 2 no tenía respuesta remota — sus items quedan vacíos tras el merge.
+    expect(items.filter((i) => i.branch_id === 2)).toHaveLength(0);
+  });
+
+  it('syncOnLogin: si mergeLocalCart falla para una sede, no rompe y sigue con las demás', async () => {
+    useCartStore.getState().addProduct(item({ tx_slug: 'a', branch_id: 1 }));
+    mockedCartApi.mergeLocalCart.mockRejectedValueOnce(new Error('network error'));
+
+    await expect(useCartStore.getState().syncOnLogin()).resolves.toBeUndefined();
   });
 });
 

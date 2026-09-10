@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from '@/utils/secureStorage';
 import { setToken, getToken } from '@/api/axiosRequest';
+import { useCartStore } from '@/store/cart.store';
 
 /**
  * Perfil del usuario autenticado. Forma real de `data` en
@@ -53,10 +54,16 @@ export const useUserStore = create<UserState>()(
       signIn: async (user, token) => {
         await setToken(token);
         set({ user, isAuthenticated: true, isLoading: false });
+        // Sube el carrito local a la nube y lo reemplaza por la versión
+        // autoritativa del backend — fire-and-forget, no bloquea el
+        // login si falla (el carrito local sigue sirviendo mientras tanto).
+        useCartStore.getState().setSyncEnabled(true);
+        void useCartStore.getState().syncOnLogin();
       },
       signOut: async () => {
         await setToken(null);
         set({ user: null, isAuthenticated: false, isLoading: false });
+        useCartStore.getState().setSyncEnabled(false);
       },
       rehydrateAuth: async () => {
         // Leemos directamente de SecureStore para no depender del
@@ -70,8 +77,14 @@ export const useUserStore = create<UserState>()(
         }
         if (!token) {
           set({ user: null, isAuthenticated: false });
+          useCartStore.getState().setSyncEnabled(false);
           return false;
         }
+        // Sesión restaurada (no un login nuevo): prende el sync para
+        // mutaciones futuras, pero NO vuelve a mergear — el carrito
+        // local ya persiste entre reinicios y ya se sincronizó cuando
+        // se creó.
+        useCartStore.getState().setSyncEnabled(true);
         return true;
       },
       reset: () => set(initialState),

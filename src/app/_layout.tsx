@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 
+import { onUnauthorized } from '@/api/axiosRequest';
 import { Providers, bootstrapConfig } from '@/components/Providers';
+import { useToastStore } from '@/store/toast.store';
 import { useUserStore } from '@/store/user.store';
 
 export default function RootLayout() {
@@ -12,6 +14,20 @@ export default function RootLayout() {
     // haya quedado persistido en Zustand — sin esto, la UI podría
     // mostrar al usuario como logueado sin tener token real.
     void useUserStore.getState().rehydrateAuth();
+
+    // Un 401 de CUALQUIER endpoint significa token inválido/expirado —
+    // `axiosRequest` ya lo detecta pero nadie escuchaba `onUnauthorized`
+    // (quedó definido pero sin suscriptor). Sin esto, la app seguía
+    // "logueada" en el store mientras cada request fallaba en silencio
+    // (ver los `console.warn` de `cart.store`). El guard de
+    // `isAuthenticated` evita desloguear/mostrar el toast más de una vez
+    // si varios requests en paralelo devuelven 401 al mismo tiempo.
+    const unsubscribeUnauthorized = onUnauthorized(() => {
+      if (!useUserStore.getState().isAuthenticated) return;
+      void useUserStore.getState().signOut();
+      useToastStore.getState().show('Tu sesión expiró. Iniciá sesión de nuevo.');
+    });
+    return unsubscribeUnauthorized;
   }, []);
 
   return (
