@@ -7,7 +7,7 @@
     "base": {
       "node": "22.11.0",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api-farmasaman.icommerce360.com"
+        "EXPO_PUBLIC_API_URL": "https://api-maraplus.icommerce360.com"
       }
     },
     "development": {
