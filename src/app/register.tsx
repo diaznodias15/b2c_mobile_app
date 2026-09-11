@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { ActivityIndicator, Modal, Pressable, Text, TextInput, View } from 'react-native';
-import { Image } from 'expo-image';
+import { ActivityIndicator, Image, Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,9 +21,10 @@ import {
   type GenderValue,
 } from '@/utils/validations';
 import { isLightColor, type ThemeColors } from '@/theme/colors';
+import { LOGO_DARK as LOGO_DARK_URI, LOGO_LIGHT as LOGO_LIGHT_URI } from '@/utils/localImages.generated';
 
-const LOGO_LIGHT = require('../../assets/images/logo-light.webp');
-const LOGO_DARK = require('../../assets/images/logo-dark.webp');
+const LOGO_LIGHT = { uri: LOGO_LIGHT_URI };
+const LOGO_DARK = { uri: LOGO_DARK_URI };
 
 const AREA_CODES = ['0412', '0414', '0416', '0422', '0424', '0426'];
 const DOC_TYPE_LABELS: Record<DocType, string> = {
@@ -239,7 +239,7 @@ export default function RegisterScreen() {
         <Image
           source={isLightColor(colors.background) ? LOGO_LIGHT : LOGO_DARK}
           style={{ width: 120, height: 36, alignSelf: 'center', marginBottom: 20 }}
-          contentFit="contain"
+          resizeMode="contain"
         />
 
         <Text style={{ fontSize: 26, fontWeight: '700', color: colors.foreground, marginBottom: 6 }}>

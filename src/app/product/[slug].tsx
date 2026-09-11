@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dimensions, Pressable, ScrollView, Text, View } from 'react-native';
+import { Dimensions, Image as RNImage, Pressable, ScrollView, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,13 +23,17 @@ import { useToastStore } from '@/store/toast.store';
 import { formatDisplayPrice } from '@/utils/currency';
 import { getProductPricing } from '@/utils/pricing';
 import { STOCK_META } from '@/utils/stock';
+import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
 import type { ThemeColors } from '@/theme/colors';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const IMAGE_HEIGHT = SCREEN_WIDTH;
 
-/** Mismo fallback que `ProductCard`/`ProductListItem`. */
-const PLACEHOLDER_IMAGE = require('../../../assets/images/unavailable-product-image.webp');
+/**
+ * Mismo fallback que `ProductCard`/`ProductListItem`. Data URI base64
+ * embebido (ver el comentario largo en `ProductCard.tsx`).
+ */
+const PLACEHOLDER_IMAGE = { uri: UNAVAILABLE_PRODUCT_IMAGE };
 
 /**
  * `qty_tax`/`qty_discount` son los únicos campos de impuesto que
@@ -141,10 +145,10 @@ export default function ProductDetailScreen() {
               )}
             </>
           ) : (
-            <Image
+            <RNImage
               source={PLACEHOLDER_IMAGE}
               style={{ width: '100%', height: '100%' }}
-              contentFit="contain"
+              resizeMode="contain"
             />
           )}
         </View>

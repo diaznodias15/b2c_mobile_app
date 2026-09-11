@@ -1,0 +1,26 @@
+diff --git a/node_modules/@react-native/assets-registry/path-support.js b/node_modules/@react-native/assets-registry/path-support.js
+index c73a2e2..2dd2b92 100644
+--- a/node_modules/@react-native/assets-registry/path-support.js
++++ b/node_modules/@react-native/assets-registry/path-support.js
+@@ -80,8 +80,19 @@ function getAndroidResourceIdentifier(
+   return (getBasePath(asset) + '/' + asset.name)
+     .toLowerCase()
+     .replace(/\//g, '_') // Encode folder structure in file name
+-    .replace(/([^a-z0-9_])/g, '') // Remove illegal chars
+-    .replace(/^(?:assets|assetsunstable_path)_/, ''); // Remove "assets_" or "assetsunstable_path_" prefix
++    .replace(/([^a-z0-9_])/g, ''); // Remove illegal chars
++  // NOTE (parche local, ver patches/@react-native+assets-registry+*.patch): NO
++  // quitamos el prefijo "assets_" acá. La tarea de Gradle de Expo que genera
++  // los drawables reales en release (`generateAssetsForReactNative` /
++  // `createBundleReleaseJsAndAssets`) los nombra CON ese prefijo
++  // (`assets_images_unavailableproductimage`), pero la versión original de
++  // esta función lo quitaba (`images_unavailableproductimage`) para el
++  // lookup en runtime vía `Resources.getIdentifier()`. Ese desacuerdo hace
++  // que el recurso nunca se encuentre y la imagen quede en blanco en
++  // release de Android — silencioso, sin ningún error en logcat — para
++  // CUALQUIER `<Image>` (RN nativo o expo-image) que reciba un `require()`
++  // local sin envolver. Confirmado con `aapt2 dump resources` sobre el APK
++  // real de este proyecto.
+ }
+ 
+ function getBasePath(asset /*: PackagerAsset */) /*: string */ {

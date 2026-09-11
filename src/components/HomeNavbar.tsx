@@ -1,15 +1,15 @@
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { Image } from 'expo-image';
+import { Image, Pressable, Text, View } from 'react-native';
 import { ChevronDown } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BranchSelectorModal } from '@/components/BranchSelectorModal';
 import { selectEffectiveBranch, useBranchStore } from '@/store/branch.store';
 import { isLightColor, type ThemeColors } from '@/theme/colors';
+import { LOGO_DARK as LOGO_DARK_URI, LOGO_LIGHT as LOGO_LIGHT_URI } from '@/utils/localImages.generated';
 
-const LOGO_LIGHT = require('../../assets/images/logo-light.webp');
-const LOGO_DARK = require('../../assets/images/logo-dark.webp');
+const LOGO_LIGHT = { uri: LOGO_LIGHT_URI };
+const LOGO_DARK = { uri: LOGO_DARK_URI };
 
 /**
  * Navbar fija arriba del Home: logo + nombre de la sede seleccionada +
@@ -46,7 +46,7 @@ export function HomeNavbar({ colors }: { colors: ThemeColors }) {
       <Image
         source={logoSource}
         style={{ width: 120, height: 36 }}
-        contentFit="contain"
+        resizeMode="contain"
       />
 
       {branch && (

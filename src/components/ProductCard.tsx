@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { memo, useState } from 'react';
+import { Image as RNImage, Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Check, Plus } from 'lucide-react-native';
 
@@ -8,6 +8,7 @@ import { useAddToCartFlight } from '@/hooks/useAddToCartFlight';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { formatDisplayPrice } from '@/utils/currency';
 import { getProductPricing } from '@/utils/pricing';
+import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
 import type { ThemeColors } from '@/theme/colors';
 import type { Product } from '@/types/whitelabel';
 
@@ -15,11 +16,26 @@ export const PRODUCT_CARD_WIDTH = 148;
 
 /**
  * Fallback cuando `tx_img_url` viene null/vacío O la URL está rota (404,
- * timeout, etc. — capturado vía onError).
+ * timeout, etc. — capturado vía onError). Es un data URI base64 embebido
+ * (ver `src/utils/localImages.generated.ts`): ni `expo-image` ni el
+ * `<Image>` nativo de RN lograban cargar este asset local en release de
+ * Android por múltiples bugs apilados en la resolución de recursos
+ * (ver el historial de investigación en `AGENTS.md`) — un data URI evita
+ * el problema de raíz al no depender de ninguna resolución nativa.
  */
-const PLACEHOLDER_IMAGE = require('../../assets/images/unavailable-product-image.webp');
+const PLACEHOLDER_IMAGE = { uri: UNAVAILABLE_PRODUCT_IMAGE };
 
-export function ProductCard({
+/**
+ * `React.memo` acá importa: en listas (`TopProducts`, `search.tsx`) el
+ * padre puede re-renderizar por razones ajenas a este producto puntual
+ * (ej. tipear en el buscador) — sin memo, cada card visible se vuelve a
+ * renderizar aunque `product`/`colors` no cambiaron. Para que sirva de
+ * algo, `onPress`/`onAddToCart` reciben el `product` como argumento en
+ * vez de venir ya atados a uno — así el padre pasa UNA función estable
+ * (con `useCallback`) para toda la lista, no un arrow function nuevo por
+ * card en cada render.
+ */
+export const ProductCard = memo(function ProductCard({
   product,
   colors,
   onPress,
@@ -27,8 +43,8 @@ export function ProductCard({
 }: {
   product: Product;
   colors: ThemeColors;
-  onPress: () => void;
-  onAddToCart: () => void;
+  onPress: (product: Product) => void;
+  onAddToCart: (product: Product) => void;
 }) {
   const { basePrice, finalPrice, hasDiscount } = getProductPricing(product);
   const { displayCurrency, exchangeRate } = useDisplayCurrency();
@@ -42,12 +58,12 @@ export function ProductCard({
     const started = trigger(
       showPlaceholder ? PLACEHOLDER_IMAGE : { uri: product.tx_img_url as string }
     );
-    if (started) onAddToCart();
+    if (started) onAddToCart(product);
   };
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => onPress(product)}
       style={{
         width: PRODUCT_CARD_WIDTH,
         backgroundColor: colors.productCard,
@@ -72,12 +88,20 @@ export function ProductCard({
           marginBottom: 8,
         }}
       >
-        <Image
-          source={showPlaceholder ? PLACEHOLDER_IMAGE : { uri: product.tx_img_url }}
-          style={{ width: '100%', height: '100%' }}
-          contentFit="contain"
-          onError={() => setImageFailed(true)}
-        />
+        {showPlaceholder ? (
+          <RNImage
+            source={PLACEHOLDER_IMAGE}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="contain"
+          />
+        ) : (
+          <Image
+            source={{ uri: product.tx_img_url ?? undefined }}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="contain"
+            onError={() => setImageFailed(true)}
+          />
+        )}
 
         {hasDiscount && (
           <View style={{ position: 'absolute', top: 6, left: 6 }}>
@@ -157,4 +181,4 @@ export function ProductCard({
       </View>
     </Pressable>
   );
-}
+});

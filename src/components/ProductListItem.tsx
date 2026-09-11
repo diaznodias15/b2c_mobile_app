@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { memo, useState } from 'react';
+import { Image as RNImage, Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Check, Plus } from 'lucide-react-native';
 
@@ -8,13 +8,17 @@ import { useAddToCartFlight } from '@/hooks/useAddToCartFlight';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { formatDisplayPrice } from '@/utils/currency';
 import { getProductPricing } from '@/utils/pricing';
+import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
 import type { ThemeColors } from '@/theme/colors';
 import type { Product } from '@/types/whitelabel';
 
 export const PRODUCT_LIST_ITEM_IMAGE_SIZE = 72;
 
-/** Mismo fallback que `ProductCard` — imagen rota o `tx_img_url` vacío. */
-const PLACEHOLDER_IMAGE = require('../../assets/images/unavailable-product-image.webp');
+/**
+ * Mismo fallback que `ProductCard` — imagen rota o `tx_img_url` vacío.
+ * Data URI base64 embebido (ver el comentario largo en `ProductCard.tsx`).
+ */
+const PLACEHOLDER_IMAGE = { uri: UNAVAILABLE_PRODUCT_IMAGE };
 
 /**
  * Fila horizontal para listas de resultados (Buscar): imagen a la
@@ -22,8 +26,15 @@ const PLACEHOLDER_IMAGE = require('../../assets/images/unavailable-product-image
  * para escanear texto rápido — a diferencia de `ProductCard` (vertical,
  * más visual), que se usa en el Home/TopProducts donde el layout es en
  * fila horizontal de scroll o grid de descubrimiento.
+ *
+ * `React.memo`: el caso de uso real es `search.tsx`, donde tipear en el
+ * buscador re-renderiza la pantalla en cada tecla — sin memo, cada fila
+ * visible de resultados se re-renderiza aunque su `product` no cambió.
+ * `onPress`/`onAddToCart` reciben el `product` como argumento (en vez de
+ * venir ya atados a uno) para que el padre pueda pasar UNA función
+ * estable con `useCallback` para toda la lista.
  */
-export function ProductListItem({
+export const ProductListItem = memo(function ProductListItem({
   product,
   colors,
   onPress,
@@ -31,8 +42,8 @@ export function ProductListItem({
 }: {
   product: Product;
   colors: ThemeColors;
-  onPress: () => void;
-  onAddToCart: () => void;
+  onPress: (product: Product) => void;
+  onAddToCart: (product: Product) => void;
 }) {
   const { basePrice, finalPrice, hasDiscount } = getProductPricing(product);
   const { displayCurrency, exchangeRate } = useDisplayCurrency();
@@ -46,12 +57,12 @@ export function ProductListItem({
     const started = trigger(
       showPlaceholder ? PLACEHOLDER_IMAGE : { uri: product.tx_img_url as string }
     );
-    if (started) onAddToCart();
+    if (started) onAddToCart(product);
   };
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => onPress(product)}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -77,12 +88,20 @@ export function ProductListItem({
           backgroundColor: colors.section,
         }}
       >
-        <Image
-          source={showPlaceholder ? PLACEHOLDER_IMAGE : { uri: product.tx_img_url }}
-          style={{ width: '100%', height: '100%' }}
-          contentFit="contain"
-          onError={() => setImageFailed(true)}
-        />
+        {showPlaceholder ? (
+          <RNImage
+            source={PLACEHOLDER_IMAGE}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="contain"
+          />
+        ) : (
+          <Image
+            source={{ uri: product.tx_img_url ?? undefined }}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="contain"
+            onError={() => setImageFailed(true)}
+          />
+        )}
       </View>
 
       <View style={{ flex: 1 }}>
@@ -143,4 +162,4 @@ export function ProductListItem({
       </Pressable>
     </Pressable>
   );
-}
+});

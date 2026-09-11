@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Image as RNImage, Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,11 +14,13 @@ import { useCartStore } from '@/store/cart.store';
 import { useThemeColors } from '@/store/config.store';
 import { formatDisplayPrice } from '@/utils/currency';
 import { getCartSummary } from '@/utils/pricing';
+import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
 import type { ThemeColors } from '@/theme/colors';
 import type { CartItem } from '@/types/cart';
 
 const MAX_QTY = 99;
-const PLACEHOLDER_IMAGE = require('../../assets/images/unavailable-product-image.webp');
+/** Data URI base64 embebido (ver el comentario largo en `ProductCard.tsx`). */
+const PLACEHOLDER_IMAGE = { uri: UNAVAILABLE_PRODUCT_IMAGE };
 
 export default function CartScreen() {
   const router = useRouter();
@@ -201,12 +203,20 @@ function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeColors })
           backgroundColor: colors.section,
         }}
       >
-        <Image
-          source={showPlaceholder ? PLACEHOLDER_IMAGE : { uri: item.tx_img_url }}
-          style={{ width: '100%', height: '100%' }}
-          contentFit="contain"
-          onError={() => setImageFailed(true)}
-        />
+        {showPlaceholder ? (
+          <RNImage
+            source={PLACEHOLDER_IMAGE}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="contain"
+          />
+        ) : (
+          <Image
+            source={{ uri: item.tx_img_url ?? undefined }}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="contain"
+            onError={() => setImageFailed(true)}
+          />
+        )}
       </View>
 
       <View style={{ flex: 1, justifyContent: 'space-between' }}>

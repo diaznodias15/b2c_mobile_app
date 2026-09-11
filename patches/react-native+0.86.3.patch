@@ -1,0 +1,30 @@
+diff --git a/node_modules/react-native/Libraries/Image/resolveAssetSource.js b/node_modules/react-native/Libraries/Image/resolveAssetSource.js
+index e08a6c8..cb0be5a 100644
+--- a/node_modules/react-native/Libraries/Image/resolveAssetSource.js
++++ b/node_modules/react-native/Libraries/Image/resolveAssetSource.js
+@@ -127,10 +127,24 @@ function resolveAssetSource(source: ?ImageSource): ?ResolvedAssetSource {
+   );
+ 
+   // Apply (chained) custom source transformers, if any
++  //
++  // PARCHE LOCAL (ver patches/react-native+*.patch): `expo-asset` registra
++  // acá un transformer (`expoAssetTransformer`, `Asset.fx.ts`) pensado para
++  // resolver assets locales vía `expo-updates` (OTA). Este proyecto NO usa
++  // `expo-updates`, así que ese transformer siempre cae en su fallback
++  // documentado y devuelve `{ uri: '' }` — la imagen local (logo, navbar,
++  // placeholders de producto) queda en blanco en release de Android, sin
++  // ningún error en logcat. Confirmado con `console.warn` de diagnóstico:
++  // `_customSourceTransformers.length` era 2 y el resultado transformado
++  // tenía `uri: ""` incluso con el nombre de recurso Android correcto.
++  // Fix: si el transformer devuelve una uri vacía, ignorarlo y usar la
++  // resolución default de RN (`resourceIdentifierWithoutScale`), que sí
++  // funciona porque el nombre de recurso ya está alineado con el que
++  // genera Gradle (ver el otro parche en @react-native/assets-registry).
+   if (_customSourceTransformers) {
+     for (const customSourceTransformer of _customSourceTransformers) {
+       const transformedSource = customSourceTransformer(resolver);
+-      if (transformedSource != null) {
++      if (transformedSource != null && transformedSource.uri !== '') {
+         return transformedSource;
+       }
+     }

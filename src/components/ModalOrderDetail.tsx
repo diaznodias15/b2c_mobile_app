@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Image as RNImage,
   LayoutAnimation,
   Modal,
   Platform,
@@ -26,6 +27,7 @@ import { getOrderDetail } from '@/api/services/orders.services';
 import { hexToRgba, type ThemeColors } from '@/theme/colors';
 import { formatPrice } from '@/utils/currency';
 import { FULFILLMENT_LABELS, PAYMENT_METHOD_LABELS } from '@/utils/orderStatus';
+import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
 import type { OrderDetail, OrderProductItem } from '@/types/orders';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -37,7 +39,8 @@ const COLLAPSE_ANIMATION = LayoutAnimation.create(
   LayoutAnimation.Properties.opacity
 );
 
-const PLACEHOLDER_IMAGE = require('../../assets/images/unavailable-product-image.webp');
+/** Data URI base64 embebido (ver el comentario largo en `ProductCard.tsx`). */
+const PLACEHOLDER_IMAGE = { uri: UNAVAILABLE_PRODUCT_IMAGE };
 
 const LINE_ITEMS: Array<{ key: keyof OrderDetail; label: string }> = [
   { key: 'qty_subtotal_amount', label: 'Subtotal' },
@@ -230,12 +233,20 @@ function OrderProductRow({ item, colors }: { item: OrderProductItem; colors: The
 
   return (
     <View style={{ flexDirection: 'row', gap: 10 }}>
-      <Image
-        source={!item.tx_img_url || imageFailed ? PLACEHOLDER_IMAGE : { uri: item.tx_img_url }}
-        onError={() => setImageFailed(true)}
-        style={{ width: 48, height: 48, borderRadius: 8, backgroundColor: colors.background }}
-        contentFit="contain"
-      />
+      {!item.tx_img_url || imageFailed ? (
+        <RNImage
+          source={PLACEHOLDER_IMAGE}
+          style={{ width: 48, height: 48, borderRadius: 8, backgroundColor: colors.background }}
+          resizeMode="contain"
+        />
+      ) : (
+        <Image
+          source={{ uri: item.tx_img_url }}
+          onError={() => setImageFailed(true)}
+          style={{ width: 48, height: 48, borderRadius: 8, backgroundColor: colors.background }}
+          contentFit="contain"
+        />
+      )}
       <View style={{ flex: 1, minWidth: 0 }}>
         {item.nb_brand && (
           <Text style={{ fontSize: 10, color: colors.muted, textTransform: 'uppercase' }} numberOfLines={1}>
