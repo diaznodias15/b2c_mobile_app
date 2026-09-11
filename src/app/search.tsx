@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -51,23 +51,48 @@ export default function SearchScreen() {
   const products = data?.pages.flatMap((page) => page.items) ?? [];
   const showSkeleton = isQueryValid && isLoading;
 
-  const handleAddToCart = (product: Product) => {
-    if (branchId === null) return;
-    addProduct({
-      tx_slug: product.tx_slug,
-      product_id: product.id,
-      branch_id: branchId,
-      nb_product: product.nb_product,
-      nb_brand: product.nb_brand,
-      tx_img_url: product.tx_img_url,
-      pri_product_final_price: product.pri_product_final_price,
-      pri_product_price: product.pri_product_price,
-      qty_discount: product.qty_discount,
-      qty_tax: product.qty_tax,
-      qty: 1,
-    });
-    showToast('Producto agregado al carrito');
-  };
+  // `useCallback` acá no es cosmético: esta función se pasa como prop
+  // estable a `ProductListItem` (memoizado) para toda la lista. Si fuera
+  // un arrow function normal, cambiaría de referencia en cada render de
+  // `SearchScreen` (ej. cada tecla tipeada en el buscador) y anularía el
+  // memo de todas las filas visibles.
+  const handleAddToCart = useCallback(
+    (product: Product) => {
+      if (branchId === null) return;
+      addProduct({
+        tx_slug: product.tx_slug,
+        product_id: product.id,
+        branch_id: branchId,
+        nb_product: product.nb_product,
+        nb_brand: product.nb_brand,
+        tx_img_url: product.tx_img_url,
+        pri_product_final_price: product.pri_product_final_price,
+        pri_product_price: product.pri_product_price,
+        qty_discount: product.qty_discount,
+        qty_tax: product.qty_tax,
+        qty: 1,
+      });
+      showToast('Producto agregado al carrito');
+    },
+    [branchId, addProduct, showToast]
+  );
+
+  const handlePressProduct = useCallback(
+    (product: Product) => router.push(`/product/${product.tx_slug}`),
+    [router]
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: Product }) => (
+      <ProductListItem
+        product={item}
+        colors={colors}
+        onPress={handlePressProduct}
+        onAddToCart={handleAddToCart}
+      />
+    ),
+    [colors, handlePressProduct, handleAddToCart]
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -117,14 +142,7 @@ export default function SearchScreen() {
         onEndReached={() => {
           if (hasNextPage && !isFetchingNextPage) fetchNextPage();
         }}
-        renderItem={({ item }) => (
-          <ProductListItem
-            product={item}
-            colors={colors}
-            onPress={() => router.push(`/product/${item.tx_slug}`)}
-            onAddToCart={() => handleAddToCart(item)}
-          />
-        )}
+        renderItem={renderItem}
         ListEmptyComponent={
           showSkeleton ? (
             <View style={{ gap: 10 }}>

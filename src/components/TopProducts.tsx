@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -41,25 +42,39 @@ export function TopProducts({
 
   const products = data?.filter((p) => p.tx_slug !== excludeSlug);
 
+  // Estables con `useCallback`: se pasan a `ProductCard` (memoizado) para
+  // todo el carrusel — si fueran arrow functions nuevas en cada render de
+  // `TopProducts`, el memo de cada card no serviría de nada. Van ANTES de
+  // los `return null` de abajo — los hooks no pueden llamarse condicional
+  // ni después de un return temprano (reglas de hooks de React).
+  const handleAddToCart = useCallback(
+    (product: Product) => {
+      if (branchId === null) return;
+      addProduct({
+        tx_slug: product.tx_slug,
+        product_id: product.id,
+        branch_id: branchId,
+        nb_product: product.nb_product,
+        nb_brand: product.nb_brand,
+        tx_img_url: product.tx_img_url,
+        pri_product_final_price: product.pri_product_final_price,
+        pri_product_price: product.pri_product_price,
+        qty_discount: product.qty_discount,
+        qty_tax: product.qty_tax,
+        qty: 1,
+      });
+      showToast('Producto agregado al carrito');
+    },
+    [addProduct, branchId, showToast]
+  );
+
+  const handlePressProduct = useCallback(
+    (product: Product) => router.push(`/product/${product.tx_slug}`),
+    [router]
+  );
+
   if (branchId === null) return null;
   if (!isLoading && (!products || products.length === 0)) return null;
-
-  const handleAddToCart = (product: Product) => {
-    addProduct({
-      tx_slug: product.tx_slug,
-      product_id: product.id,
-      branch_id: branchId,
-      nb_product: product.nb_product,
-      nb_brand: product.nb_brand,
-      tx_img_url: product.tx_img_url,
-      pri_product_final_price: product.pri_product_final_price,
-      pri_product_price: product.pri_product_price,
-      qty_discount: product.qty_discount,
-      qty_tax: product.qty_tax,
-      qty: 1,
-    });
-    showToast('Producto agregado al carrito');
-  };
 
   return (
     <View style={{ marginTop: 24 }}>
@@ -89,8 +104,8 @@ export function TopProducts({
               key={product.id}
               product={product}
               colors={colors}
-              onPress={() => router.push(`/product/${product.tx_slug}`)}
-              onAddToCart={() => handleAddToCart(product)}
+              onPress={handlePressProduct}
+              onAddToCart={handleAddToCart}
             />
           ))}
         </ScrollView>
