@@ -6,11 +6,11 @@
  * para tener un solo punto de cambio.
  *
  * En dev, podés setearlas en `.env` (prefijo EXPO_PUBLIC_):
- *   EXPO_PUBLIC_API_URL=https://api-farmasaman.icommerce360.com
+ *   EXPO_PUBLIC_API_URL=https://api-maraplus.icommerce360.com
  *   EXPO_PUBLIC_API_TIMEOUT=60000
  */
 
-const fallbackBaseUrl = 'https://api-farmasaman.icommerce360.com';
+const fallbackBaseUrl = 'https://api-maraplus.icommerce360.com';
 const fallbackTimeout = 60_000;
 
 function readEnv(name: string, fallback: string): string {
