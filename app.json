@@ -9,14 +9,12 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "newArchEnabled": false,
-      "bundleIdentifier": "y",
+      "bundleIdentifier": "com.diaznodias.b2c_mobile_app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "newArchEnabled": false,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

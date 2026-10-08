@@ -6,7 +6,7 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before 
 rebrandeó a **"Grupo Maraplus"** — si aparece la marca vieja en un archivo
 nuevo o copiado de otro lado, corregirla.
 
-# Arquitectura actual (2026-09-08)
+# Arquitectura actual (actualizado 2026-10-08)
 
 ## Providers (`src/app/_layout.tsx` + `src/components/Providers.tsx`)
 
@@ -224,13 +224,18 @@ explícito del usuario para mantener consistencia.
 
 Ruta dinámica de Expo Router, alcanzada con `router.push(`/product/${tx_slug}`)`
 desde `TopProducts`, `ProductListItem` (Buscar) y donde sea que se
-liste un `Product`. MVP deliberado — **quedaron afuera a propósito**:
-el modal de mapa ("Ver en mapa", requeriría `react-native-maps` →
-rebuild nativo) y el bloque de breakdown de IVA de la web de referencia
+liste un `Product`. MVP deliberado — **quedó afuera a propósito**:
+el bloque de breakdown de IVA de la web de referencia
 (`PRODUCT-DETAIL-VIEW.md`) porque la API real hoy **no** devuelve
 `pri_product_price_with_tax`/`qty_tax_amount` — solo `qty_tax`/
 `qty_discount`. No los agregues sin confirmar antes que el backend ya
 los manda.
+
+El "Ver en mapa" de sedes SÍ existe: `BranchMapModal.tsx` usa Leaflet +
+tiles de OpenStreetMap dentro de un `react-native-webview` (misma
+solución que la web, sin API key de Google). `react-native-maps` está en
+`package.json` pero no se importa en ningún lado (ver "Dependencias sin
+uso").
 
 Bloques que sí están: carrusel de imágenes (fallback a
 `unavailable-product-image.webp` si `product_img` viene vacío/null),
@@ -423,3 +428,56 @@ reemplazo directo de `ScrollView` (mismos props: `contentContainerStyle`,
 input enfocado en ambas plataformas. **Cualquier pantalla nueva con
 `TextInput`s dentro de un scroll debe usar este componente desde el
 principio**, no `ScrollView` a secas.
+
+## Carrito y checkout (`cart.tsx`, `checkout.tsx`) — basado en CHECKOUT-FLOW.md
+
+**Carrito (`cart.store.ts`)**: offline-first. Persiste en AsyncStorage y
+cada ítem lleva su `branch_id` (las pantallas filtran por la sede activa).
+Con sesión (`isSyncEnabled`, lo prende `user.store` en
+`signIn`/`signOut`/`rehydrateAuth`) cada mutación además pega a
+`/api/cart/*` fire-and-forget, sin rollback (solo `console.warn`).
+`syncOnLogin()` sube el carrito local (`mergeLocalCart`) y después el
+backend pasa a ser la fuente de verdad. `cart.store` NO importa
+`user.store` (evita el ciclo); es `user.store` quien llama a `cart.store`.
+
+**Checkout (`checkout.tsx`)** tiene dos modos, elegidos en runtime por
+`appConfig.is_lite_mode` (`isConfigFlagTrue`):
+
+- **Lite**: un paso. Payload mínimo (`fulfillment_type: PICKUP`,
+  `tx_payment_method: EXPRESS`, `is_lite: 1`); la tienda contacta al
+  cliente por WhatsApp para coordinar pago y entrega.
+- **Full**: dos pasos locales, `CheckoutEntregaStep` → `CheckoutPagoStep`,
+  con estado compartido en `useCheckoutStore` (no persiste: si se cierra
+  la app se reinicia). Entrega = `DELIVERY` o `PICKUP`; en delivery se
+  elige dirección con `DeliveryMapModal` (WebView + Leaflet, buscador vía
+  `getLocations`, GPS vía `expo-location`) y se cotiza el envío con
+  `calculateDeliveryFee`.
+
+Reglas a respetar:
+
+- `deliveryFee: null` significa "no se pudo cotizar", **no** "envío
+  gratis": mostrar "se coordina por WhatsApp", nunca asumir 0.
+- `paymentMethod` es el **código** (`PaymentMethodCode`), no un objeto.
+- Los campos de pago varían por método (PAGOMOVIL → banco origen +
+  teléfono pagador; ZELLE → titular; etc.). El monto se autocalcula pero
+  es editable; el IGTF (`utils/igtf.ts`, 3 %) aplica a pagos en divisas.
+- No avanzar a la pantalla de éxito si `createOrder` falla (bug §20.7 de
+  la web, ya corregido acá).
+- `checkout` es ruta del stack (no tab): sin `<BottomTabs />`.
+
+## Dependencias sin uso (candidatas a limpiar)
+
+En `package.json` pero sin ningún import en `src/` (verificado
+2026-10-08): `react-native-maps`, `@gorhom/bottom-sheet`, `@expo/ui`,
+`expo-glass-effect`, `expo-symbols`, `expo-image-picker`,
+`react-native-mask-input`, `tailwind-merge`, `tailwind-variants`. Varias
+son nativas: quitarlas obliga a rebuild (`npx expo run:android`), así que
+hacerlo en un commit aparte y probando en dispositivo real.
+
+## Configuración de `app.json`
+
+Con RN 0.86 la new architecture es obligatoria (y Reanimated 4 la
+requiere), por eso `app.json` ya **no** define `newArchEnabled`. El
+`ios.bundleIdentifier` es `com.diaznodias.b2c_mobile_app` (igual al
+package de Android); es provisional — definir el definitivo antes de
+publicar en iOS.
