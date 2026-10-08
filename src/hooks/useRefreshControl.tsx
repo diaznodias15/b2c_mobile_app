@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { bootstrapConfig } from '@/components/Providers';
 import { useThemeColors } from '@/store/config.store';
+import { useToastStore } from '@/store/toast.store';
 
 /**
  * Pull-to-refresh compartido por todas las pantallas con scroll vertical.
@@ -29,6 +30,7 @@ export function useRefreshControl(): ReactElement<RefreshControlProps> {
     setRefreshing(true);
     try {
       await Promise.all([bootstrapConfig(), queryClient.invalidateQueries()]);
+      useToastStore.getState().show('Datos actualizados');
     } finally {
       setRefreshing(false);
     }

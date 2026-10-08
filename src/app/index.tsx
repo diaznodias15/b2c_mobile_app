@@ -81,6 +81,13 @@ export default function HomeScreen() {
               loop={advertising.length > 1}
               autoplay={advertising.length > 1}
               autoplayInterval={4500}
+              // El carrusel cubre casi toda la primera pantalla: sin esto su
+              // Pan captura también los arrastres verticales y el
+              // pull-to-refresh del ScrollView nunca arranca si el dedo
+              // empieza sobre el banner. Solo se activa con gestos horizontales.
+              onConfigurePanGesture={(gesture) => {
+                gesture.activeOffsetX([-10, 10]).failOffsetY([-10, 10]);
+              }}
               onProgressChange={(p) => {
                 carouselProgress.value = p;
               }}
