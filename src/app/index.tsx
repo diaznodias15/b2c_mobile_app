@@ -15,6 +15,7 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { Skeleton } from '@/components/Skeleton';
 import { TopProducts } from '@/components/TopProducts';
 import { WhyChooseUs } from '@/components/WhyChooseUs';
+import { useRefreshControl } from '@/hooks/useRefreshControl';
 import { useThemeColors } from '@/store/config.store';
 import { useAdvertisingStore } from '@/store/advertising.store';
 import { useDepartmentStore } from '@/store/department.store';
@@ -61,6 +62,7 @@ export default function HomeScreen() {
   const departments = useDepartmentStore((s) => s.departments);
   const router = useRouter();
   const carouselProgress = useSharedValue(0);
+  const refreshControl = useRefreshControl();
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -69,6 +71,7 @@ export default function HomeScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingTop: 8, paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={refreshControl}
       >
         {advertising.length > 0 && (
           <View style={{ alignItems: 'center' }}>

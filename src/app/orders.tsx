@@ -10,6 +10,7 @@ import { ModalOrderDetail } from '@/components/ModalOrderDetail';
 import { OrderRow } from '@/components/OrderRow';
 import { OrderRowSkeleton } from '@/components/OrderRowSkeleton';
 import { OrdersPagination } from '@/components/OrdersPagination';
+import { useRefreshControl } from '@/hooks/useRefreshControl';
 import { selectEffectiveBranchId, useBranchStore } from '@/store/branch.store';
 import { useThemeColors } from '@/store/config.store';
 import { hexToRgba } from '@/theme/colors';
@@ -30,6 +31,7 @@ export default function OrdersScreen() {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const branchId = useBranchStore(selectEffectiveBranchId);
+  const refreshControl = useRefreshControl();
 
   const [page, setPage] = useState(1);
   const [openOrderNumber, setOpenOrderNumber] = useState<string | null>(null);
@@ -67,7 +69,10 @@ export default function OrdersScreen() {
         <ChevronLeft size={22} color={colors.foreground} />
       </Pressable>
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: insets.top + 60 }}>
+      <ScrollView
+        refreshControl={refreshControl}
+        contentContainerStyle={{ padding: 16, paddingTop: insets.top + 60 }}
+      >
         <View
           style={{
             backgroundColor: colors.section,

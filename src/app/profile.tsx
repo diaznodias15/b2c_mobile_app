@@ -10,6 +10,7 @@ import { ModalLogout } from '@/components/ModalLogout';
 import { ModalResetPassword } from '@/components/ModalResetPassword';
 import { ProfileActionCard } from '@/components/ProfileActionCard';
 import { ProfileHeader } from '@/components/ProfileHeader';
+import { useRefreshControl } from '@/hooks/useRefreshControl';
 import { useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
 import { useUserStore } from '@/store/user.store';
@@ -19,6 +20,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
+  const refreshControl = useRefreshControl();
   const showToast = useToastStore((s) => s.show);
   const user = useUserStore((s) => s.user);
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
@@ -49,6 +51,7 @@ export default function ProfileScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
+        refreshControl={refreshControl}
         contentContainerStyle={{ padding: 16, paddingTop: insets.top + 16, gap: 16, paddingBottom: 32 }}
       >
         <ProfileHeader user={user} colors={colors} />

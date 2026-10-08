@@ -16,6 +16,7 @@ import { TopProducts } from '@/components/TopProducts';
 import { getProductDetail } from '@/api/services/products.services';
 import { useAddToCartFlight } from '@/hooks/useAddToCartFlight';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { useRefreshControl } from '@/hooks/useRefreshControl';
 import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
 import { useThemeColors } from '@/store/config.store';
@@ -55,6 +56,7 @@ export default function ProductDetailScreen() {
   const addProduct = useCartStore((s) => s.addProduct);
   const showToast = useToastStore((s) => s.show);
   const { displayCurrency, exchangeRate } = useDisplayCurrency();
+  const refreshControl = useRefreshControl();
 
   const [quantity, setQuantity] = useState(1);
   const { imageRef, isAdding, trigger } = useAddToCartFlight();
@@ -106,7 +108,7 @@ export default function ProductDetailScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} refreshControl={refreshControl}>
         <View
           ref={imageRef}
           style={{ width: SCREEN_WIDTH, height: IMAGE_HEIGHT, backgroundColor: colors.section }}

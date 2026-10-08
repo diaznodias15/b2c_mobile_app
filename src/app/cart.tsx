@@ -9,6 +9,7 @@ import { BottomTabs } from '@/components/bottom-tabs';
 import { CartSummaryCard } from '@/components/CartSummaryCard';
 import { QuantityStepper } from '@/components/QuantityStepper';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { useRefreshControl } from '@/hooks/useRefreshControl';
 import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
 import { useThemeColors } from '@/store/config.store';
@@ -27,6 +28,7 @@ export default function CartScreen() {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const branchId = useBranchStore(selectEffectiveBranchId);
+  const refreshControl = useRefreshControl();
 
   // Carrito acotado a la sede activa: los precios/stock son por sede,
   // así que mezclar items de sedes distintas en un mismo total no
@@ -123,6 +125,7 @@ export default function CartScreen() {
       <FlatList
         data={cartItems}
         keyExtractor={(item) => `${item.tx_slug}-${item.branch_id}`}
+        refreshControl={refreshControl}
         contentContainerStyle={{ paddingHorizontal: 24, gap: 10, paddingBottom: 16 }}
         renderItem={({ item }) => <CartLineItem item={item} colors={colors} />}
       />

@@ -8,6 +8,7 @@ import { BottomTabs } from '@/components/bottom-tabs';
 import { DepartmentCard, DEPARTMENT_CARD_HEIGHT, DEPARTMENT_CARD_WIDTH } from '@/components/DepartmentCard';
 import { bootstrapConfig } from '@/components/Providers';
 import { Skeleton } from '@/components/Skeleton';
+import { useRefreshControl } from '@/hooks/useRefreshControl';
 import { useThemeColors } from '@/store/config.store';
 import { useDepartmentStore } from '@/store/department.store';
 import type { Department } from '@/types/whitelabel';
@@ -17,6 +18,7 @@ export default function DepartmentsScreen() {
   const colors = useThemeColors();
   const departments = useDepartmentStore((s) => s.departments);
   const router = useRouter();
+  const refreshControl = useRefreshControl();
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -25,6 +27,7 @@ export default function DepartmentsScreen() {
         keyExtractor={(item) => String(item.id)}
         numColumns={2}
         style={{ flex: 1 }}
+        refreshControl={refreshControl}
         contentContainerStyle={{
           paddingTop: insets.top,
           paddingHorizontal: 24,

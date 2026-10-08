@@ -10,6 +10,7 @@ import { ProductListItem } from '@/components/ProductListItem';
 import { ProductListItemSkeleton } from '@/components/ProductListItemSkeleton';
 import { getProductSearch } from '@/api/services/products.services';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useRefreshControl } from '@/hooks/useRefreshControl';
 import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
 import { useThemeColors } from '@/store/config.store';
@@ -28,6 +29,7 @@ export default function SearchScreen() {
   const branchId = useBranchStore(selectEffectiveBranchId);
   const addProduct = useCartStore((s) => s.addProduct);
   const showToast = useToastStore((s) => s.show);
+  const refreshControl = useRefreshControl();
 
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query.trim(), DEBOUNCE_MS);
@@ -136,6 +138,7 @@ export default function SearchScreen() {
         data={showSkeleton ? [] : products}
         keyExtractor={(item) => String(item.id)}
         style={{ flex: 1 }}
+        refreshControl={refreshControl}
         contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24, gap: 10, flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
         onEndReachedThreshold={0.5}
