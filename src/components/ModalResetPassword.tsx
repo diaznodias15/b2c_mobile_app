@@ -72,8 +72,19 @@ export function ModalResetPassword({
     }
   };
 
+  // `statusBarTranslucent` + `navigationBarTranslucent`: sin ellos, en Android
+  // el Modal vive en una ventana aparte y `react-native-keyboard-controller`
+  // no recibe los eventos del teclado, así que `KeyboardAwareScrollView` de
+  // adentro no desplaza los inputs y el teclado los tapa.
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
+    <Modal
+      visible={visible}
+      transparent
+      statusBarTranslucent
+      navigationBarTranslucent
+      animationType="fade"
+      onRequestClose={handleClose}
+    >
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', paddingHorizontal: 20 }}>
         <View
           style={{
