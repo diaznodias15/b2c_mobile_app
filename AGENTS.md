@@ -465,14 +465,17 @@ Reglas a respetar:
   la web, ya corregido acá).
 - `checkout` es ruta del stack (no tab): sin `<BottomTabs />`.
 
-## Dependencias sin uso (candidatas a limpiar)
+## Dependencias removidas y las que NO se pueden quitar
 
-En `package.json` pero sin ningún import en `src/` (verificado
-2026-10-08): `react-native-maps`, `@gorhom/bottom-sheet`, `@expo/ui`,
-`expo-glass-effect`, `expo-symbols`, `expo-image-picker`,
-`react-native-mask-input`, `tailwind-merge`, `tailwind-variants`. Varias
-son nativas: quitarlas obliga a rebuild (`npx expo run:android`), así que
-hacerlo en un commit aparte y probando en dispositivo real.
+Se quitaron (2026-10-08) por no tener ningún import: `react-native-maps`,
+`@gorhom/bottom-sheet`, `expo-image-picker`, `react-native-mask-input`,
+`tailwind-merge` y `tailwind-variants`. Si se necesita alguna, reinstalar con
+`npx expo install <paquete>` (las nativas piden rebuild).
+
+**`@expo/ui`, `expo-glass-effect` y `expo-symbols` se quedan en
+`package.json` aunque no se importen**: son `dependencies` directas de
+`expo-router`, se instalan y enlazan igual, así que quitarlas no reduce el
+APK. Todas las demás dependencias del proyecto sí se usan.
 
 ## Configuración de `app.json`
 
@@ -490,6 +493,11 @@ infla el APK universal (~114 MB) son las **4 ABIs de CPU**
 (`armeabi-v7a, arm64-v8a, x86, x86_64`): ~88 MB de `.so` (cada ABI pesa
 16–25 MB). Release = `arm64-v8a,armeabi-v7a` (~64 MB) con
 `npm run build:apk` / perfil EAS `preview`. Desarrollo = todas (el AVD es
-`x86_64`). Otras palancas pendientes, sin aplicar: activar minify +
-shrinkResources en release (el dex pesa ~16 MB sin minificar) y quitar las
-dependencias sin uso (ver sección arriba, sobre todo `react-native-maps`).
+`x86_64`). Además, `app.json` activa `enableMinifyInReleaseBuilds` y
+`enableShrinkResourcesInReleaseBuilds` (vía `expo-build-properties`) para
+achicar el dex (~16 MB sin minificar). **Solo afectan al build de release**
+y, como `android/` es generado, hay que aplicarlos con
+`npx expo prebuild --platform android` antes de `npm run build:apk`. Si el
+release minificado crashea al abrir o pierde una librería por reflexión,
+probar primero con `enableMinifyInReleaseBuilds: false` y agregar
+`extraProguardRules` en vez de apagarlo del todo.

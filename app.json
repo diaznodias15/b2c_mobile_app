@@ -35,7 +35,9 @@
         {
           "android": {
             "usesCleartextTraffic": true,
-            "enablePngCrunchInReleaseBuilds": false
+            "enablePngCrunchInReleaseBuilds": false,
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
           }
         }
       ],
