@@ -481,3 +481,15 @@ requiere), por eso `app.json` ya **no** define `newArchEnabled`. El
 `ios.bundleIdentifier` es `com.diaznodias.b2c_mobile_app` (igual al
 package de Android); es provisional — definir el definitivo antes de
 publicar en iOS.
+
+## Tamaño del APK y arquitecturas (2026-10-08)
+
+La app **no tiene soporte ni código de TV** (verificado: sin `leanback`,
+`isTV`, `hasTVPreferredFocus` ni dependencias `tv*`; es solo móvil). Lo que
+infla el APK universal (~114 MB) son las **4 ABIs de CPU**
+(`armeabi-v7a, arm64-v8a, x86, x86_64`): ~88 MB de `.so` (cada ABI pesa
+16–25 MB). Release = `arm64-v8a,armeabi-v7a` (~64 MB) con
+`npm run build:apk` / perfil EAS `preview`. Desarrollo = todas (el AVD es
+`x86_64`). Otras palancas pendientes, sin aplicar: activar minify +
+shrinkResources en release (el dex pesa ~16 MB sin minificar) y quitar las
+dependencias sin uso (ver sección arriba, sobre todo `react-native-maps`).

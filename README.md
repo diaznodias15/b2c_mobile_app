@@ -132,6 +132,22 @@ npx eas-cli build --profile development --platform android
 
 Instalá el APK/AAB resultante y conectalo a Metro (`npm start`).
 
+### APK de release liviano
+
+El APK universal (4 arquitecturas de CPU) pesa ~114 MB, de los cuales ~88 MB
+son librerías nativas duplicadas por arquitectura. Para el release se
+compila solo `arm64-v8a` + `armeabi-v7a` (todos los celulares Android,
+incluidos los viejos de 32 bits; `x86`/`x86_64` son solo emuladores):
+
+```bash
+npm run build:apk     # desde C:dev2c_mobile_app, en tu propia terminal
+```
+
+Sale en `android/app/build/outputs/apk/release/` (~64 MB). En EAS, el
+perfil `preview` ya aplica lo mismo vía `gradleCommand`. **No restrinjas
+las arquitecturas en `android/gradle.properties`**: el emulador es
+`x86_64` y el build de desarrollo (`npx expo run:android`) las necesita.
+
 ### Web e iOS
 
 `npm run web` abre la versión web (útil para iterar layout; algunas pantallas
