@@ -567,7 +567,7 @@ Auditoría (2026-10-09): el resto de paquetes que no se importan directamente
 `expo-dev-client`, `react-native-screens`, `react-native-svg`,
 `react-native-worklets`, `react-dom`/`react-native-web`…) los exigen Expo
 Router, Reanimated, `lucide-react-native` o el dev-client: **no los quites**.
-`src/constants/theme.ts` es un resto de la plantilla de Expo que nadie importa.
+`src/constants/theme.ts` (resto de la plantilla de Expo que nadie importaba) se borró el 2026-10-09.
 
 ## Configuración de `app.json`
 

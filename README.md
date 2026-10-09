@@ -265,7 +265,6 @@ src/
 │                         # passwordChange, productDetailState, refreshGuard,
 │                         # navigation, validations, queryParams,
 │                         # secureStorage (.native / .web)
-├── constants/            # theme.ts de la plantilla de Expo (sin uso; se puede borrar)
 ├── types/                # cart, checkout, orders, whitelabel
 ├── test/setup.ts         # setup de Vitest
 └── global.css            # tokens de Uniwind (@theme)
