@@ -556,7 +556,17 @@ Se quitaron (2026-10-08) por no tener ningún import: `react-native-maps`,
 **`@expo/ui`, `expo-glass-effect` y `expo-symbols` se quedan en
 `package.json` aunque no se importen**: son `dependencies` directas de
 `expo-router`, se instalan y enlazan igual, así que quitarlas no reduce el
-APK. Todas las demás dependencias del proyecto sí se usan.
+APK.
+
+Auditoría (2026-10-09): **`zod`, `react-hook-form` y `@hookform/resolvers`
+tampoco se usan** (los formularios usan estado local + validadores propios en
+`utils/validations.ts`; solo un comentario los menciona). Son JS puro: se pueden
+quitar sin rebuild nativo. El resto de paquetes que no se importan directamente
+(`expo-constants`, `expo-linking`, `expo-status-bar`, `expo-system-ui`,
+`expo-dev-client`, `react-native-screens`, `react-native-svg`,
+`react-native-worklets`, `react-dom`/`react-native-web`…) los exigen Expo
+Router, Reanimated, `lucide-react-native` o el dev-client: **no los quites**.
+`src/constants/theme.ts` es un resto de la plantilla de Expo que nadie importa.
 
 ## Configuración de `app.json`
 
