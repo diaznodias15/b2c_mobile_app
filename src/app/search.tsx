@@ -17,6 +17,7 @@ import { useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
 import type { ThemeColors } from '@/theme/colors';
 import type { Product } from '@/types/whitelabel';
+import { toAvailability } from '@/utils/cartStock';
 
 /** Mínimo de caracteres para disparar la búsqueda (mismo mínimo que valida `getProductSearch`). */
 const MIN_QUERY_LENGTH = 3;
@@ -72,6 +73,7 @@ export default function SearchScreen() {
         pri_product_price: product.pri_product_price,
         qty_discount: product.qty_discount,
         qty_tax: product.qty_tax,
+        qty_availability: toAvailability(product.qty_product),
         qty: 1,
       });
       showToast('Producto agregado al carrito');

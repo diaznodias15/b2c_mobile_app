@@ -3,6 +3,8 @@ import { RefreshControl, type RefreshControlProps } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { bootstrapConfig } from '@/components/Providers';
+import { selectEffectiveBranchId, useBranchStore } from '@/store/branch.store';
+import { useCartStore } from '@/store/cart.store';
 import { useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
 
@@ -12,6 +14,7 @@ import { useToastStore } from '@/store/toast.store';
  * Un solo gesto refresca las dos fuentes de datos de la app:
  *  - el config/whitelabel (`bootstrapConfig`: colores, tasa, sedes,
  *    departamentos, publicidad, marcas — todo vive en stores de Zustand);
+ *  - el carrito del servidor (precios, stock y cantidades; solo con sesión);
  *  - las queries de TanStack Query activas (`invalidateQueries` re-pide
  *    solo las que están montadas, o sea "lo correspondiente a la vista
  *    en donde estoy": más vendidos, órdenes, detalle de producto, etc.).
@@ -29,7 +32,13 @@ export function useRefreshControl(): ReactElement<RefreshControlProps> {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([bootstrapConfig(), queryClient.invalidateQueries()]);
+      const branchId = selectEffectiveBranchId(useBranchStore.getState());
+      await Promise.all([
+        bootstrapConfig(),
+        queryClient.invalidateQueries(),
+        // El carrito no es una query: vive en Zustand. Con sesión se repone del servidor.
+        branchId === null ? Promise.resolve() : useCartStore.getState().refreshFromServer(branchId),
+      ]);
       useToastStore.getState().show('Datos actualizados');
     } finally {
       setRefreshing(false);

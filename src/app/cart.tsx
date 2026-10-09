@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Image as RNImage, Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ShoppingCart, Trash2 } from 'lucide-react-native';
+import { Info, ShoppingCart, Trash2 } from 'lucide-react-native';
 
 import { useSafePush } from '@/hooks/useSafePush';
 import { BottomTabs } from '@/components/bottom-tabs';
@@ -14,9 +14,11 @@ import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
 import { useThemeColors } from '@/store/config.store';
 import { useUserStore } from '@/store/user.store';
+import { getAvailableUnits, getMaxQuantity, hasStockIssue } from '@/utils/cartStock';
 import { formatDisplayPrice } from '@/utils/currency';
 import { getCartSummary } from '@/utils/pricing';
 import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
+import { hexToRgba } from '@/theme/colors';
 import type { ThemeColors } from '@/theme/colors';
 import type { CartItem } from '@/types/cart';
 
@@ -46,6 +48,18 @@ export default function CartScreen() {
   const cartSummary = useMemo(() => getCartSummary(cartItems), [cartItems]);
 
   const { displayCurrency, exchangeRate } = useDisplayCurrency();
+  const refreshFromServer = useCartStore((s) => s.refreshFromServer);
+
+  // Con sesión el backend arma la orden con SU carrito, no con el local: al
+  // entrar (y al cambiar de sede) se repone desde el servidor para ver precios,
+  // stock y cantidades reales.
+  useEffect(() => {
+    if (isAuthenticated && branchId !== null) void refreshFromServer(branchId);
+  }, [isAuthenticated, branchId, refreshFromServer]);
+
+  // Hay productos con más unidades que el stock: no se puede pagar así.
+  const hasStockProblem = cartItems.some(hasStockIssue);
+  const checkoutBlocked = isAuthenticated && hasStockProblem;
 
   if (cartItems.length === 0) {
     return (
@@ -129,7 +143,13 @@ export default function CartScreen() {
         keyExtractor={(item) => `${item.tx_slug}-${item.branch_id}`}
         refreshControl={refreshControl}
         contentContainerStyle={{ paddingHorizontal: 24, gap: 10, paddingBottom: 16 }}
-        renderItem={({ item }) => <CartLineItem item={item} colors={colors} />}
+        renderItem={({ item }) => (
+          // La alerta va FUERA de la card (hermana) para no deformar su alto.
+          <View style={{ gap: 6 }}>
+            <CartLineItem item={item} colors={colors} />
+            {hasStockIssue(item) && <StockAlert item={item} colors={colors} />}
+          </View>
+        )}
       />
 
       <View
@@ -148,6 +168,11 @@ export default function CartScreen() {
           displayCurrency={displayCurrency}
           colors={colors}
         >
+          {checkoutBlocked && (
+            <Text style={{ fontSize: 13, color: colors.danger, textAlign: 'center' }}>
+              Ajusta las cantidades marcadas para continuar.
+            </Text>
+          )}
           {!isAuthenticated && (
             <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
               Inicia sesión para continuar con tu compra. Tu carrito se conserva.
@@ -158,17 +183,20 @@ export default function CartScreen() {
             // token, igual que la web): se manda a /login, que al terminar
             // hace router.back() y regresa acá con el carrito ya sincronizado.
             onPress={() => push(isAuthenticated ? '/checkout' : '/login')}
+            disabled={checkoutBlocked}
             style={{
               height: 48,
               borderRadius: 12,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: colors.primary,
+              backgroundColor: checkoutBlocked ? colors.border : colors.primary,
             }}
             accessibilityRole="button"
             accessibilityLabel={isAuthenticated ? 'Proceder al pago' : 'Iniciar sesión para continuar'}
           >
-            <Text style={{ fontSize: 15, fontWeight: '700', color: colors.onPrimary }}>
+            <Text
+              style={{ fontSize: 15, fontWeight: '700', color: checkoutBlocked ? colors.muted : colors.onPrimary }}
+            >
               {isAuthenticated ? 'Proceder al pago' : 'Iniciar sesión para continuar'}
             </Text>
           </Pressable>
@@ -263,11 +291,44 @@ function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeColors })
         </Pressable>
         <QuantityStepper
           value={item.qty}
-          max={MAX_QTY}
+          max={getMaxQuantity(item, MAX_QTY)}
           onChange={(qty) => updateQuantity(item.tx_slug, item.branch_id, qty)}
           colors={colors}
         />
       </View>
     </Pressable>
+  );
+}
+
+/** Aviso bajo la card cuando se pidió más de lo disponible (igual que `AvailabilityAlert` de la web). */
+function StockAlert({ item, colors }: { item: CartItem; colors: ThemeColors }) {
+  const available = getAvailableUnits(item) ?? 0;
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        gap: 8,
+        backgroundColor: hexToRgba(colors.danger, 0.1),
+        borderRadius: 10,
+        padding: 10,
+      }}
+      accessibilityRole="alert"
+    >
+      <Info size={16} color={colors.danger} style={{ marginTop: 1 }} />
+      <Text style={{ flex: 1, fontSize: 12, lineHeight: 17, color: colors.foreground }}>
+        {available === 0 ? (
+          <>
+            <Text style={{ fontWeight: '700' }}>Producto no disponible: </Text>
+            ya no hay existencias en esta sede. Quítalo del carrito para continuar.
+          </>
+        ) : (
+          <>
+            <Text style={{ fontWeight: '700' }}>Cantidad no disponible: </Text>
+            solo hay {available} {available === 1 ? 'unidad disponible' : 'unidades disponibles'}. Has agregado{' '}
+            {item.qty}. Ajusta la cantidad.
+          </>
+        )}
+      </Text>
+    </View>
   );
 }

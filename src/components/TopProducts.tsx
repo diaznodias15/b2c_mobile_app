@@ -12,6 +12,7 @@ import { useCartStore } from '@/store/cart.store';
 import { useToastStore } from '@/store/toast.store';
 import type { ThemeColors } from '@/theme/colors';
 import type { Product } from '@/types/whitelabel';
+import { toAvailability } from '@/utils/cartStock';
 
 export function TopProducts({
   colors,
@@ -61,6 +62,7 @@ export function TopProducts({
         pri_product_price: product.pri_product_price,
         qty_discount: product.qty_discount,
         qty_tax: product.qty_tax,
+        qty_availability: toAvailability(product.qty_product),
         qty: 1,
       });
       showToast('Producto agregado al carrito');

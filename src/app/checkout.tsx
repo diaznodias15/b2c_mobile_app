@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
@@ -21,6 +21,7 @@ import { useUserStore } from '@/store/user.store';
 import { hexToRgba, type ThemeColors } from '@/theme/colors';
 import { isAreaCodeValid, isPhoneNumberValid, VE_AREA_CODES, VE_COUNTRY_CODE } from '@/utils/phone';
 import { buildLiteOrderPayload } from '@/utils/orderPayload';
+import { hasStockIssue } from '@/utils/cartStock';
 import { getCartSummary } from '@/utils/pricing';
 
 /**
@@ -52,6 +53,13 @@ export default function CheckoutScreen() {
     [items, branchId]
   );
   const cartSummary = useMemo(() => getCartSummary(cartItems), [cartItems]);
+  const refreshCartFromServer = useCartStore((s) => s.refreshFromServer);
+
+  // La orden se arma con el carrito del SERVIDOR: antes de mostrar totales y
+  // pedir datos se repone, para no cobrar algo distinto de lo que se ve.
+  useEffect(() => {
+    if (isAuthenticated && branchId !== null) void refreshCartFromServer(branchId);
+  }, [isAuthenticated, branchId, refreshCartFromServer]);
   const { displayCurrency, exchangeRate } = useDisplayCurrency();
 
   const resetCheckout = useCheckoutStore((s) => s.reset);
@@ -185,6 +193,12 @@ export default function CheckoutScreen() {
   // la sesión que expira con el checkout abierto (401 → signOut global).
   if (!isAuthenticated) {
     return <CheckoutLoginRequired colors={colors} insets={insets} />;
+  }
+
+  // El stock cambió entre el carrito y acá (o se refrescó desde el servidor): el
+  // backend rechazaría la orden con "No tenemos esa cantidad disponible".
+  if (cartItems.some(hasStockIssue)) {
+    return <CheckoutStockIssue colors={colors} insets={insets} />;
   }
 
   if (!isLite) {
@@ -523,6 +537,31 @@ function CheckoutLoginRequired({ colors, insets }: { colors: ThemeColors; insets
           accessibilityLabel="Iniciar sesión"
         >
           <Text style={{ fontSize: 14, fontWeight: '700', color: colors.onPrimary }}>Iniciar sesión</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function CheckoutStockIssue({ colors, insets }: { colors: ThemeColors; insets: { top: number } }) {
+  const router = useRouter();
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <CheckoutBackButton insets={insets} colors={colors} />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+        <Text style={{ fontSize: 17, fontWeight: '700', color: colors.foreground, textAlign: 'center', marginBottom: 6 }}>
+          Revisa tu carrito
+        </Text>
+        <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', marginBottom: 24 }}>
+          Algunos productos ya no tienen la cantidad que pediste. Ajusta las cantidades para continuar.
+        </Text>
+        <Pressable
+          onPress={() => router.replace('/cart')}
+          style={{ paddingVertical: 12, paddingHorizontal: 22, borderRadius: 999, backgroundColor: colors.primary }}
+          accessibilityRole="button"
+          accessibilityLabel="Volver al carrito"
+        >
+          <Text style={{ fontSize: 14, fontWeight: '700', color: colors.onPrimary }}>Volver al carrito</Text>
         </Pressable>
       </View>
     </View>

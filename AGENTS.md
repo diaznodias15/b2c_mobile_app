@@ -449,6 +449,26 @@ Con sesión (`isSyncEnabled`, lo prende `user.store` en
 backend pasa a ser la fuente de verdad. `cart.store` NO importa
 `user.store` (evita el ciclo); es `user.store` quien llama a `cart.store`.
 
+**El backend arma la orden con el carrito del SERVIDOR** (`OrderController`:
+`ShoppingCartItem` del usuario + sede), no con los `products` del payload.
+Con sesión, el carrito local tiene que ser un espejo del remoto:
+
+- `POST /api/cart/add-product` **SUMA** `qty_product` al ítem existente
+  (`+=`): se manda lo **agregado**, nunca el total. Antes se mandaba el total
+  y el servidor terminaba con más unidades que las mostradas (el cliente
+  pagaba de más). `PUT update-product-quantity` sí fija la cantidad exacta.
+- El stock lo valida el backend al agregar, al cambiar cantidad y al crear la
+  orden (disponible = existencias − reservado). El carrito remoto devuelve
+  `qty_availability`; para invitados se guarda el `qty_product` del producto
+  al agregarlo (`toAvailability`). Lógica pura en `utils/cartStock.ts`.
+- `refreshFromServer(branchId)` repone la sede desde el servidor: al entrar al
+  carrito y al checkout, al cambiar de sede y con pull-to-refresh. No corre
+  mientras hay operaciones en vuelo (la UI saltaría hacia atrás).
+- Si una operación falla (ej. sin stock) se muestra el mensaje del backend en
+  un toast y se re-lee el carrito (rollback). No volver a "fire-and-forget".
+- UI: alerta "Cantidad no disponible" bajo la card, tope del stepper = stock,
+  botón de pago bloqueado y `CheckoutStockIssue` si hay ítems pasados de stock.
+
 **Checkout (`checkout.tsx`)** tiene dos modos, elegidos en runtime por
 `appConfig.is_lite_mode` (`isConfigFlagTrue`):
 

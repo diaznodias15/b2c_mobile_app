@@ -22,6 +22,7 @@ import { useCartStore } from '@/store/cart.store';
 import { useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
 import { formatDisplayPrice } from '@/utils/currency';
+import { toAvailability } from '@/utils/cartStock';
 import { getProductPricing } from '@/utils/pricing';
 import { STOCK_META } from '@/utils/stock';
 import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
@@ -100,6 +101,7 @@ export default function ProductDetailScreen() {
       pri_product_price: product.pri_product_price,
       qty_discount: product.qty_discount,
       qty_tax: product.qty_tax,
+      qty_availability: toAvailability(product.qty_product),
       qty: quantity,
     });
     showToast('Producto agregado al carrito');

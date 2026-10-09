@@ -33,6 +33,11 @@ export type CartItem = {
   qty_discount?: number | string;
   qty_tax?: number | string;
   qty: number;
+  /**
+   * Stock disponible de la sede (ver `utils/cartStock.ts`). Opcional: los
+   * carritos persistidos antes de este campo no lo tienen.
+   */
+  qty_availability?: number;
   /** Timestamp del último add, para que el item más reciente quede arriba. */
   added_at: number;
 };
