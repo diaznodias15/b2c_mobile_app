@@ -39,6 +39,14 @@ export type CartItem = {
 
 export type FulfillmentType = 'PICKUP' | 'DELIVERY';
 
+/**
+ * Tipo de entrega tal como lo guarda/recibe el backend. `TBD` ("Por definir")
+ * solo lo crea el modo Lite — el cliente nunca lo elige: un asesor define
+ * después si es retiro o delivery. Por eso NO va en `FulfillmentType`, que es
+ * lo que el usuario escoge en el checkout Full.
+ */
+export type OrderFulfillmentType = FulfillmentType | 'TBD';
+
 /** Datos de envío para DELIVERY. */
 export type DeliveryAddress = {
   /** Texto legible (calle, referencia). */

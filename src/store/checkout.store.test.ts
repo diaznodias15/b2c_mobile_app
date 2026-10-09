@@ -86,6 +86,18 @@ describe('useCheckoutStore', () => {
     expect(useCheckoutStore.getState().contact?.tx_name).toBe('Juan');
   });
 
+  it('guarda el teléfono del destinatario en operadora + número', () => {
+    expect(useCheckoutStore.getState().recipientAreaCode).toBe('0412');
+    useCheckoutStore.getState().setRecipientAreaCode('0424');
+    useCheckoutStore.getState().setRecipientPhone('456-7890');
+    const s = useCheckoutStore.getState();
+    expect(s.recipientAreaCode).toBe('0424');
+    expect(s.recipientPhone).toBe('456-7890');
+    useCheckoutStore.getState().reset();
+    expect(useCheckoutStore.getState().recipientAreaCode).toBe('0412');
+    expect(useCheckoutStore.getState().recipientPhone).toBe('');
+  });
+
   it('reset limpia todo', () => {
     useCheckoutStore.getState().setFulfillment('DELIVERY');
     useCheckoutStore.getState().setPaymentMethod(pm);

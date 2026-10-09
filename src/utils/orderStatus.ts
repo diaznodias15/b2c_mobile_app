@@ -10,7 +10,7 @@ import {
 } from 'lucide-react-native';
 
 import type { OrderStatus, PaymentMethodCode } from '@/types/orders';
-import type { FulfillmentType } from '@/types/cart';
+import type { OrderFulfillmentType } from '@/types/cart';
 import type { ThemeColors } from '@/theme/colors';
 
 /**
@@ -60,9 +60,10 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethodCode, string> = {
   EXPRESS: 'Express',
 };
 
-export const FULFILLMENT_LABELS: Record<FulfillmentType, string> = {
+export const FULFILLMENT_LABELS: Record<OrderFulfillmentType, string> = {
   PICKUP: 'Retiro en tienda',
   DELIVERY: 'Delivery',
+  TBD: 'Por definir',
 };
 
 /**

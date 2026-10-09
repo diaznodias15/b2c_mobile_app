@@ -10,24 +10,28 @@ import { CartSummaryCard } from '@/components/CartSummaryCard';
 import { CheckoutBackButton } from '@/components/CheckoutPrimitives';
 import { CheckoutEntregaStep } from '@/components/CheckoutEntregaStep';
 import { CheckoutPagoStep } from '@/components/CheckoutPagoStep';
+import { PhoneContactFields } from '@/components/PhoneContactFields';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { selectEffectiveBranchId, useBranchStore } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
 import { useCheckoutStore } from '@/store/checkout.store';
 import { isConfigFlagTrue, useConfigStore, useThemeColors } from '@/store/config.store';
 import { hexToRgba, type ThemeColors } from '@/theme/colors';
+import { isAreaCodeValid, isPhoneNumberValid, VE_AREA_CODES, VE_COUNTRY_CODE } from '@/utils/phone';
+import { buildLiteOrderPayload } from '@/utils/orderPayload';
 import { getCartSummary } from '@/utils/pricing';
 
 /**
  * Orquesta los dos modos del checkout (CHECKOUT-FLOW.md), gateado en
  * runtime por `appConfig.is_lite_mode`:
- *  - Lite: un solo paso (confirmar datos de contacto) → éxito. El
- *    payload real que espera el backend en este modo es MÍNIMO
- *    (branch_id, fulfillment_type: PICKUP, tx_payment_method: EXPRESS,
- *    is_lite: 1 — §12.2) — no pide nombre/teléfono en el submit porque
- *    ya los tiene del usuario autenticado. El form de contacto que se
- *    ve acá es una mejora de UX para que el representante de WhatsApp
- *    sepa a quién y cómo contactar, no algo que el backend exija.
+ *  - Lite: un solo paso (teléfono de contacto + aceptar) → éxito. El
+ *    cliente no elige entrega ni pago: se manda `fulfillment_type: 'TBD'`
+ *    ("Por definir"), `tx_payment_method: 'EXPRESS'`, `is_lite: 1` y el
+ *    **teléfono en 3 partes** (`tx_recipient_country_code/area_code/
+ *    phone_number`). Con `is_lite_mode = 1` el backend (`OrderController`)
+ *    exige el teléfono aun en retiro y responde 400 "El código del país es
+ *    requerido." si falta; un asesor llama o escribe por WhatsApp para
+ *    coordinar. Ver `docs/mobile/12-checkout-lite.md` de la web.
  *  - Full: 2 pasos locales (Entrega → Pago), con estado compartido en
  *    `useCheckoutStore` — éxito. Sin mapa interactivo para elegir
  *    dirección todavía (MVP, ver `CheckoutEntregaStep`).
@@ -51,6 +55,7 @@ export default function CheckoutScreen() {
   const fulfillment = useCheckoutStore((s) => s.fulfillment);
   const deliveryAddress = useCheckoutStore((s) => s.deliveryAddress);
   const recipientName = useCheckoutStore((s) => s.recipientName);
+  const recipientAreaCode = useCheckoutStore((s) => s.recipientAreaCode);
   const recipientPhone = useCheckoutStore((s) => s.recipientPhone);
   const comments = useCheckoutStore((s) => s.comments);
   const paymentMethod = useCheckoutStore((s) => s.paymentMethod);
@@ -71,6 +76,9 @@ export default function CheckoutScreen() {
   // conoce al usuario autenticado. Solo se pide aceptar que la tienda
   // va a contactarlo para coordinar pago y entrega (CHECKOUT-FLOW.md §12).
   const [acceptContact, setAcceptContact] = useState(false);
+  // Teléfono de contacto del modo Lite (obligatorio incluso en retiro).
+  const [liteAreaCode, setLiteAreaCode] = useState<string>(VE_AREA_CODES[0]);
+  const [litePhone, setLitePhone] = useState('');
 
   const isLite = isConfigFlagTrue(appConfig?.is_lite_mode);
 
@@ -88,23 +96,22 @@ export default function CheckoutScreen() {
     setOrderNumber(result.tx_order_number);
   };
 
-  const liteCanSubmit = acceptContact && !isSubmitting;
+  const liteCanSubmit =
+    acceptContact && isAreaCodeValid(liteAreaCode) && isPhoneNumberValid(litePhone) && !isSubmitting;
 
   const handleSubmitLite = async () => {
     if (!liteCanSubmit || branchId === null) return;
     setError(null);
     setIsSubmitting(true);
     try {
-      const result = await createOrder({
-        branch_id: branchId,
-        fulfillment_type: 'PICKUP',
-        tx_delivery_mode: 'EXPRESS',
-        tx_payment_method: 'EXPRESS',
-        qty_delivery_amount: 0,
-        tx_currency_code: 'Bs.',
-        is_lite: 1,
-        products: productsPayload,
-      });
+      const result = await createOrder(
+        buildLiteOrderPayload({
+          branchId,
+          areaCode: liteAreaCode,
+          phoneNumber: litePhone,
+          products: productsPayload,
+        })
+      );
       await handleFinish(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo crear el pedido');
@@ -141,8 +148,9 @@ export default function CheckoutScreen() {
           tx_recipient_name: recipientName.trim(),
           tx_recipient_address: deliveryAddress?.tx_address.trim(),
           tx_recipient_aditional_info: comments.trim() || undefined,
-          tx_recipient_country_code: '+58' as const,
-          tx_recipient_phone_number: recipientPhone.trim(),
+          tx_recipient_country_code: VE_COUNTRY_CODE,
+          tx_recipient_area_code: recipientAreaCode,
+          tx_recipient_phone_number: recipientPhone,
         }),
         products: productsPayload,
       });
@@ -220,6 +228,15 @@ export default function CheckoutScreen() {
             la entrega. No se requiere pago en línea ni datos de despacho en este momento.
           </Text>
         </View>
+
+        <PhoneContactFields
+          label="Teléfono de contacto"
+          areaCode={liteAreaCode}
+          number={litePhone}
+          onChangeAreaCode={setLiteAreaCode}
+          onChangeNumber={setLitePhone}
+          colors={colors}
+        />
 
         <Pressable
           onPress={() => setAcceptContact((v) => !v)}

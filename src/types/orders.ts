@@ -1,4 +1,4 @@
-import type { FulfillmentType } from '@/types/cart';
+import type { OrderFulfillmentType } from '@/types/cart';
 
 /**
  * Estados posibles de una orden (MY-ORDERS-MODULE.md §25). `CANCELED`
@@ -67,7 +67,7 @@ export type OrderDetail = {
   dt_created_at: string;
   qty_items: number;
   qty_units: number;
-  fulfillment_type: FulfillmentType;
+  fulfillment_type: OrderFulfillmentType;
   tx_delivery_mode?: 'EXPRESS' | 'STANDARD';
   tx_branch_alias: string;
   tx_payment_method: PaymentMethodCode;

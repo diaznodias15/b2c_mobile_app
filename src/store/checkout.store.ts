@@ -6,6 +6,7 @@ import type {
   FulfillmentType,
 } from '@/types/cart';
 import type { PaymentMethodCode } from '@/types/orders';
+import { VE_AREA_CODES } from '@/utils/phone';
 
 /**
  * Estado del wizard de checkout Full (no persistimos — si el usuario
@@ -31,6 +32,9 @@ type CheckoutState = {
   deliveryAddress: DeliveryAddress | null;
   /** Nombre/teléfono de quien RECIBE el pedido — solo DELIVERY, distinto del `contact` del checkout Lite. */
   recipientName: string;
+  /** Operadora (`0414`…) del teléfono de quien recibe — ver `utils/phone.ts`. */
+  recipientAreaCode: string;
+  /** Número ya formateado `000-0000` (sin operadora ni país). */
   recipientPhone: string;
   paymentMethod: PaymentMethodCode | null;
   paymentReference: string;
@@ -57,6 +61,7 @@ type CheckoutState = {
   setFulfillment: (f: FulfillmentType) => void;
   setDeliveryAddress: (a: DeliveryAddress) => void;
   setRecipientName: (name: string) => void;
+  setRecipientAreaCode: (areaCode: string) => void;
   setRecipientPhone: (phone: string) => void;
   setPaymentMethod: (m: PaymentMethodCode | null) => void;
   setPaymentReference: (ref: string) => void;
@@ -77,6 +82,7 @@ const initialState: Omit<
   | 'setFulfillment'
   | 'setDeliveryAddress'
   | 'setRecipientName'
+  | 'setRecipientAreaCode'
   | 'setRecipientPhone'
   | 'setPaymentMethod'
   | 'setPaymentReference'
@@ -94,6 +100,7 @@ const initialState: Omit<
   fulfillment: null,
   deliveryAddress: null,
   recipientName: '',
+  recipientAreaCode: VE_AREA_CODES[0],
   recipientPhone: '',
   paymentMethod: null,
   paymentReference: '',
@@ -121,6 +128,7 @@ export const useCheckoutStore = create<CheckoutState>()((set) => ({
     })),
   setDeliveryAddress: (a) => set({ deliveryAddress: a }),
   setRecipientName: (name) => set({ recipientName: name }),
+  setRecipientAreaCode: (areaCode) => set({ recipientAreaCode: areaCode }),
   setRecipientPhone: (phone) => set({ recipientPhone: phone }),
   setPaymentMethod: (m) => set({ paymentMethod: m }),
   setPaymentReference: (ref) => set({ paymentReference: ref }),

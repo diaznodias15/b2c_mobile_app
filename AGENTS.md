@@ -443,9 +443,15 @@ backend pasa a ser la fuente de verdad. `cart.store` NO importa
 **Checkout (`checkout.tsx`)** tiene dos modos, elegidos en runtime por
 `appConfig.is_lite_mode` (`isConfigFlagTrue`):
 
-- **Lite**: un paso. Payload mínimo (`fulfillment_type: PICKUP`,
-  `tx_payment_method: EXPRESS`, `is_lite: 1`); la tienda contacta al
-  cliente por WhatsApp para coordinar pago y entrega.
+- **Lite** (el que está activo en producción, `is_lite_mode: 1`): un paso con
+  **teléfono de contacto obligatorio + checkbox**. El payload
+  (`buildLiteOrderPayload`, `utils/orderPayload.ts`, con test) manda
+  `fulfillment_type: 'TBD'` ("Por definir"), `tx_payment_method: EXPRESS`,
+  `is_lite: 1` y el teléfono en 3 partes. **Con `is_lite_mode = 1` el backend
+  exige el teléfono aun en retiro** (`OrderController.php`: 400 "El código del
+  país es requerido.") y `TBD` solo se acepta en Lite (`CreateOrder.php`). No
+  volver al payload viejo `PICKUP` sin teléfono. La tienda contacta al cliente
+  por WhatsApp para coordinar pago y entrega.
 - **Full**: dos pasos locales, `CheckoutEntregaStep` → `CheckoutPagoStep`,
   con estado compartido en `useCheckoutStore` (no persiste: si se cierra
   la app se reinicia). Entrega = `DELIVERY` o `PICKUP`; en delivery se
@@ -457,6 +463,12 @@ Reglas a respetar:
 
 - `deliveryFee: null` significa "no se pudo cotizar", **no** "envío
   gratis": mostrar "se coordina por WhatsApp", nunca asumir 0.
+- **Teléfono en 3 partes** (`PhoneContactFields`, `utils/phone.ts`): país `+58`,
+  operadora (`0412/0414/0416/0422/0424/0426`) y número `000-0000` con guión.
+  Lo usan Lite y la entrega a domicilio del Full (`recipientAreaCode` +
+  `recipientPhone` en `checkout.store`). Un campo libre de teléfono da 400.
+- `OrderFulfillmentType` (`PICKUP | DELIVERY | TBD`) es el tipo del backend;
+  `FulfillmentType` (sin `TBD`) es lo que el cliente elige en el Full.
 - `paymentMethod` es el **código** (`PaymentMethodCode`), no un objeto.
 - Los campos de pago varían por método (PAGOMOVIL → banco origen +
   teléfono pagador; ZELLE → titular; etc.). El monto se autocalcula pero

@@ -1,5 +1,5 @@
 import { axiosRequest } from '../axiosRequest';
-import type { FulfillmentType } from '@/types/cart';
+import type { OrderFulfillmentType } from '@/types/cart';
 import type { Order, OrderDetail, PaymentMethodCode } from '@/types/orders';
 import type { Envelope, Pagination } from '@/types/whitelabel';
 import { toQueryString } from '@/utils/queryParams';
@@ -15,15 +15,14 @@ const DETAIL = (txOrderNumber: string) => `/api/orders/detail/${txOrderNumber}`;
  * NO coincide con los nombres de campo reales del backend. Se corrige
  * acá antes de que el checkout Full dependiera de ella.
  *
- * `is_lite`/`tx_payment_method: 'EXPRESS'`/`fulfillment_type: 'PICKUP'`
- * fijos es el payload MÍNIMO real del modo Lite (§12.2) — no pide
- * nombre/teléfono/dirección en el submit (eso ya lo tiene el backend
- * del usuario autenticado). Los campos de pago y de destinatario son
- * opcionales acá porque solo aplican en modo Full.
+ * Modo Lite: `is_lite: 1`, `tx_payment_method: 'EXPRESS'`, `fulfillment_type: 'TBD'`
+ * y el teléfono en 3 partes (`tx_recipient_*`) — con `is_lite_mode = 1` el
+ * backend lo exige también en retiro. No pide nombre ni dirección. Los campos
+ * de pago y de destinatario son opcionales acá porque solo aplican en Full.
  */
 export type CreateOrderPayload = {
   branch_id: number;
-  fulfillment_type: FulfillmentType;
+  fulfillment_type: OrderFulfillmentType;
   tx_delivery_mode: 'EXPRESS';
   tx_payment_method: PaymentMethodCode;
   /** 0 si PICKUP o si el subtotal supera `qty_free_delivery_threshold`. */

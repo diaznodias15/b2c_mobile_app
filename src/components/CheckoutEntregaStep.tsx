@@ -13,6 +13,7 @@ import {
   checkoutInputStyle,
 } from '@/components/CheckoutPrimitives';
 import { DeliveryMapModal } from '@/components/DeliveryMapModal';
+import { PhoneContactFields } from '@/components/PhoneContactFields';
 import { selectEffectiveBranchId, useBranchStore } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
 import { useCheckoutStore } from '@/store/checkout.store';
@@ -20,6 +21,7 @@ import { useConfigStore } from '@/store/config.store';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { formatDisplayPrice } from '@/utils/currency';
 import { getCartSummary } from '@/utils/pricing';
+import { isAreaCodeValid, isPhoneNumberValid } from '@/utils/phone';
 import { isNameValid } from '@/utils/validations';
 import type { ThemeColors } from '@/theme/colors';
 
@@ -50,6 +52,8 @@ export function CheckoutEntregaStep({
   const setDeliveryAddress = useCheckoutStore((s) => s.setDeliveryAddress);
   const recipientName = useCheckoutStore((s) => s.recipientName);
   const setRecipientName = useCheckoutStore((s) => s.setRecipientName);
+  const recipientAreaCode = useCheckoutStore((s) => s.recipientAreaCode);
+  const setRecipientAreaCode = useCheckoutStore((s) => s.setRecipientAreaCode);
   const recipientPhone = useCheckoutStore((s) => s.recipientPhone);
   const setRecipientPhone = useCheckoutStore((s) => s.setRecipientPhone);
   const comments = useCheckoutStore((s) => s.comments);
@@ -73,7 +77,10 @@ export function CheckoutEntregaStep({
   const canContinue =
     fulfillment !== null &&
     (!isDelivery ||
-      (addressText.trim().length > 5 && isNameValid(recipientName) && recipientPhone.trim().length >= 7));
+      (addressText.trim().length > 5 &&
+        isNameValid(recipientName) &&
+        isAreaCodeValid(recipientAreaCode) &&
+        isPhoneNumberValid(recipientPhone)));
 
   async function handleConfirmMapPosition(position: { lat: number; lng: number; label?: string }) {
     setDeliveryAddress({
@@ -162,16 +169,14 @@ export function CheckoutEntregaStep({
               />
             </CheckoutField>
 
-            <CheckoutField label="Teléfono de quien recibe" colors={colors}>
-              <TextInput
-                value={recipientPhone}
-                onChangeText={setRecipientPhone}
-                placeholder="+58 0414-1234567"
-                placeholderTextColor={colors.muted}
-                style={checkoutInputStyle(colors)}
-                keyboardType="phone-pad"
-              />
-            </CheckoutField>
+            <PhoneContactFields
+              label="Teléfono de quien recibe"
+              areaCode={recipientAreaCode}
+              number={recipientPhone}
+              onChangeAreaCode={setRecipientAreaCode}
+              onChangeNumber={setRecipientPhone}
+              colors={colors}
+            />
 
             <CheckoutField label="Dirección" colors={colors}>
               <TextInput
