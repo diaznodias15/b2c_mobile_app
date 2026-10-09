@@ -128,6 +128,38 @@ coincide con esas versiones. Hay que compilar un dev-client.
   dependencias nativas; para JS/CSS alcanza con Metro (`npm run
   start:fresh` + reload de la app).
 
+### Trampas del entorno Windows (descubiertas 2026-10-09)
+
+- **Sincronizar `src` a `C:\dev` con PowerShell, no con `robocopy` desde Git
+  Bash.** Desde Git Bash la ruta con barras invertidas se rompe y `robocopy`
+  imprime su ayuda y sale **sin copiar nada** (con `>/dev/null` parece que
+  sincronizó). Ya pasó: se compiló un APK con el `src` viejo. Usar
+  `robocopy "<repo>\src" 'C:\dev\b2c_mobile_app\src' /MIR` en PowerShell (sale
+  con código 1 cuando copia archivos, es normal) y comprobar buscando algo
+  nuevo en `C:\dev`. Si el bundle de JS del APK no trae el cambio, Gradle
+  reutilizó el bundle: confirmarlo con
+  `unzip -p app-release.apk assets/index.android.bundle | grep -ac <símbolo>`.
+- **Compilar nativo desde la app de escritorio de Claude falla** (`CreateProcess
+  failed` en ninja): corre empaquetada (MSIX) y `AppData\Local` queda
+  redirigido, así que CMake guarda la ruta virtualizada
+  `...\Packages\Claude_*\LocalCache\...`. Se evita con un acceso directo fuera
+  de AppData: `New-Item -ItemType Junction -Path C:\Android\Sdk -Target
+  $env:LOCALAPPDATA\Android\Sdk`, `ANDROID_HOME=C:\Android\Sdk` y
+  `sdk.dir=C:/Android/Sdk` en `android/local.properties` (**con barras
+  normales**: con `\` el .properties lo toma como escape y queda
+  `C:AndroidSdk`). Si ya hubo un build fallido, borrar los `.cxx` de `android/`
+  y de `node_modules/*/android/`: guardan la ruta mala.
+- **Poca RAM** (Gradle muere con "daemon disappeared"): compilar con
+  `--no-parallel --max-workers=2` y cerrar emulador/Android Studio. Al agregar
+  propiedades a `gradle.properties` con `echo`, cuidar el salto de línea (si
+  falta, se pega a la línea anterior).
+- **El APK de teléfono no abre en el emulador** (`libreactnative.so` no
+  encontrada): el AVD es `x86_64` y el release solo lleva
+  `arm64-v8a,armeabi-v7a`. Para probar en el emulador, compilar aparte con
+  `-PreactNativeArchitectures=x86_64` (~40 MB). `expo run:android --device
+  Pixel_8` puede quedarse colgado en "Starting Metro Bundler": instalar el APK
+  con `adb install -r` y arrancar `npx expo start --dev-client --port 8082`.
+
 ## Forma real de `/api/config/get` (verificado con curl, 2026-09-08)
 
 El backend NO anida todo bajo `app_config` como el nombre del campo
