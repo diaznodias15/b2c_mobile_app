@@ -10,6 +10,7 @@ import { Check, ChevronLeft } from 'lucide-react-native';
 
 import { BranchInventoryList } from '@/components/BranchInventoryList';
 import { DiscountBadge } from '@/components/DiscountBadge';
+import { ProductDetailMessage } from '@/components/ProductDetailMessage';
 import { ProductDetailSkeleton } from '@/components/ProductDetailSkeleton';
 import { QuantityStepper } from '@/components/QuantityStepper';
 import { TopProducts } from '@/components/TopProducts';
@@ -17,6 +18,7 @@ import { getProductDetail } from '@/api/services/products.services';
 import { useAddToCartFlight } from '@/hooks/useAddToCartFlight';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { useRefreshControl } from '@/hooks/useRefreshControl';
+import { useSlowLoading } from '@/hooks/useSlowLoading';
 import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
 import { useThemeColors } from '@/store/config.store';
@@ -24,6 +26,7 @@ import { useToastStore } from '@/store/toast.store';
 import { formatDisplayPrice } from '@/utils/currency';
 import { toAvailability } from '@/utils/cartStock';
 import { getProductPricing } from '@/utils/pricing';
+import { getProductDetailView } from '@/utils/productDetailState';
 import { STOCK_META } from '@/utils/stock';
 import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
 import type { ThemeColors } from '@/theme/colors';
@@ -62,19 +65,79 @@ export default function ProductDetailScreen() {
   const [quantity, setQuantity] = useState(1);
   const { imageRef, isAdding, trigger } = useAddToCartFlight();
 
-  const { data: product, isLoading } = useQuery({
+  const [retryCount, setRetryCount] = useState(0);
+  const {
+    data: product,
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['product-detail', slug, branchId],
     queryFn: () => getProductDetail(slug as string, { branch: branchId as number }),
     enabled: Boolean(slug) && branchId !== null,
   });
 
-  if (isLoading || !product) {
+  const isSlow = useSlowLoading(isFetching && !product, retryCount);
+  const view = getProductDetailView({
+    hasSlug: Boolean(slug),
+    hasBranch: branchId !== null,
+    hasData: Boolean(product),
+    isFetching,
+    isError,
+    isSlow,
+  });
+  const handleRetry = () => {
+    setRetryCount((count) => count + 1);
+    void refetch();
+  };
+
+  // Antes: `isLoading || !product` → esqueleto. Si la consulta fallaba, estaba
+  // deshabilitada o no traía datos, el esqueleto quedaba para siempre sin
+  // mensaje ni reintento. Ahora cada caso tiene su pantalla (ver
+  // `utils/productDetailState.ts`).
+  if (view !== 'ready' || !product) {
+    const showSkeleton = view === 'loading' || view === 'slow';
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <BackButton onPress={() => router.back()} insets={insets} colors={colors} />
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <ProductDetailSkeleton colors={colors} />
-        </ScrollView>
+        {showSkeleton ? (
+          <>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <ProductDetailSkeleton colors={colors} />
+            </ScrollView>
+            {view === 'slow' && (
+              <View
+                style={{
+                  position: 'absolute',
+                  left: 16,
+                  right: 16,
+                  bottom: insets.bottom + 16,
+                  backgroundColor: colors.background,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <ProductDetailMessage
+                  kind="slow"
+                  compact
+                  onRetry={handleRetry}
+                  onBack={() => router.back()}
+                  colors={colors}
+                />
+              </View>
+            )}
+          </>
+        ) : (
+          <ProductDetailMessage
+            kind={view === 'error' || view === 'no-branch' ? view : 'not-found'}
+            detail={view === 'error' ? error?.message : undefined}
+            onRetry={handleRetry}
+            onBack={() => router.back()}
+            colors={colors}
+          />
+        )}
       </View>
     );
   }
