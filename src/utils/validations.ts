@@ -1,6 +1,7 @@
 /**
  * Validaciones equivalentes a las de la web, ajustadas al contexto VE.
- * Se usan con react-hook-form vía `@hookform/resolvers/zod` o manual.
+ * Son funciones puras que usan los formularios de la app, que llevan su estado
+ * con `useState` (no hay librería de formularios).
  */
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

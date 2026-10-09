@@ -550,18 +550,19 @@ Reglas a respetar:
 
 Se quitaron (2026-10-08) por no tener ningún import: `react-native-maps`,
 `@gorhom/bottom-sheet`, `expo-image-picker`, `react-native-mask-input`,
-`tailwind-merge` y `tailwind-variants`. Si se necesita alguna, reinstalar con
-`npx expo install <paquete>` (las nativas piden rebuild).
+`tailwind-merge` y `tailwind-variants`. Y (2026-10-09), tras una auditoría:
+`zod`, `react-hook-form` y `@hookform/resolvers` (los formularios usan estado
+local + validadores propios en `utils/validations.ts`). Si se necesita alguna,
+reinstalar con `npx expo install <paquete>` (las nativas piden rebuild; esas
+tres son JS puro). `zod` sigue en `node_modules` como dependencia indirecta de
+otra librería: no es una dependencia del proyecto.
 
 **`@expo/ui`, `expo-glass-effect` y `expo-symbols` se quedan en
 `package.json` aunque no se importen**: son `dependencies` directas de
 `expo-router`, se instalan y enlazan igual, así que quitarlas no reduce el
 APK.
 
-Auditoría (2026-10-09): **`zod`, `react-hook-form` y `@hookform/resolvers`
-tampoco se usan** (los formularios usan estado local + validadores propios en
-`utils/validations.ts`; solo un comentario los menciona). Son JS puro: se pueden
-quitar sin rebuild nativo. El resto de paquetes que no se importan directamente
+Auditoría (2026-10-09): el resto de paquetes que no se importan directamente
 (`expo-constants`, `expo-linking`, `expo-status-bar`, `expo-system-ui`,
 `expo-dev-client`, `react-native-screens`, `react-native-svg`,
 `react-native-worklets`, `react-dom`/`react-native-web`…) los exigen Expo
