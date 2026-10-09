@@ -43,7 +43,7 @@ export function getOrderStatusConfig(
 }
 
 /** Steps del `OrderStatusStepper` (MY-ORDERS-MODULE.md §14) — CANCELED no se muestra acá. */
-export const ORDER_STEPPER_STEPS: Array<{ icon: LucideIcon; label: string }> = [
+export const ORDER_STEPPER_STEPS: { icon: LucideIcon; label: string }[] = [
   { icon: CircleEllipsis, label: 'Pendiente' },
   { icon: ListCheck, label: 'Aprobado' },
   { icon: PackageOpen, label: 'Procesando' },

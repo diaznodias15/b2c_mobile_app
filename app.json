@@ -34,7 +34,6 @@
         "expo-build-properties",
         {
           "android": {
-            "usesCleartextTraffic": true,
             "enablePngCrunchInReleaseBuilds": false,
             "enableMinifyInReleaseBuilds": true,
             "enableShrinkResourcesInReleaseBuilds": true

@@ -55,7 +55,7 @@ export type CreateOrderPayload = {
   tx_recipient_phone_number?: string;
 
   /** Productos: mínimo 1. */
-  products: Array<{ tx_slug: string; qty_product: number }>;
+  products: { tx_slug: string; qty_product: number }[];
 };
 
 /** Respuesta del backend al crear una orden. */

@@ -1,7 +1,6 @@
 import { axiosRequest } from '../axiosRequest';
 import type { CartServiceResponse } from '@/types/cart';
 import type { Envelope } from '@/types/whitelabel';
-import { toQueryString } from '@/utils/queryParams';
 
 const ITEMS = (branch: number) => `/api/cart/items/branch/${branch}`;
 const INDICATOR = (branch: number) => `/api/cart/indicator/branch/${branch}`;

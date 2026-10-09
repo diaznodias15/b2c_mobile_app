@@ -17,7 +17,7 @@ export function isEmailValid(value: string): boolean {
  * (registro, cambio de contraseña) pueda iterarlos y mostrar cada uno
  * como cumplido/pendiente sin duplicar los regex.
  */
-export const PASSWORD_REQUIREMENTS: Array<{ re: RegExp; label: string }> = [
+export const PASSWORD_REQUIREMENTS: { re: RegExp; label: string }[] = [
   { re: /[0-9]/, label: 'Un número' },
   { re: /[a-z]/, label: 'Una minúscula' },
   { re: /[A-Z]/, label: 'Una mayúscula' },

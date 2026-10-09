@@ -48,7 +48,7 @@ const COLLAPSE_ANIMATION = LayoutAnimation.create(
 /** Data URI base64 embebido (ver el comentario largo en `ProductCard.tsx`). */
 const PLACEHOLDER_IMAGE = { uri: UNAVAILABLE_PRODUCT_IMAGE };
 
-const LINE_ITEMS: Array<{ key: keyof OrderDetail; label: string }> = [
+const LINE_ITEMS: { key: keyof OrderDetail; label: string }[] = [
   { key: 'qty_subtotal_amount', label: 'Subtotal' },
   { key: 'qty_discount_amount', label: 'Descuento' },
   { key: 'qty_tax_amount', label: 'Impuesto (IVA)' },

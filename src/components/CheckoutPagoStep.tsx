@@ -469,7 +469,7 @@ function ReceiversList({
   items,
   colors,
 }: {
-  items: Array<Array<[string, string]>>;
+  items: [string, string][][];
   colors: ThemeColors;
 }) {
   if (items.length === 0) return null;

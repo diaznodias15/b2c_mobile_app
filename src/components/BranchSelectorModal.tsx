@@ -80,7 +80,7 @@ export function BranchSelectorModal({
     Animated.parallel([
       Animated.timing(backdropOpacity, { toValue: 1, duration: 220, useNativeDriver: true }),
       Animated.timing(sheetTranslateY, { toValue: 0, duration: 220, useNativeDriver: true }),
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+       
     ]).start();
   }, [visible]);
 
