@@ -126,12 +126,17 @@ export async function getMyOrders(
  */
 export async function getOrderDetail(
   txOrderNumber: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  options?: { fresh?: boolean }
 ): Promise<OrderDetail> {
   const envelope = await axiosRequest<Envelope<OrderDetail>>({
     method: 'GET',
     url: DETAIL(txOrderNumber),
     signal,
+    // `fresh` = recarga voluntaria (pull-to-refresh): sin la regla anti-duplicados
+    // de `axiosRequest` (5 s), que si no rechazaría la segunda recarga seguida
+    // con `DUPLICATE_REQUEST`.
+    dedup: !options?.fresh,
   });
   return envelope.data;
 }

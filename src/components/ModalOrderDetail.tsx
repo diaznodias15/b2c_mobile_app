@@ -1,19 +1,22 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Image as RNImage,
   LayoutAnimation,
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   UIManager,
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ChevronDown,
+  CircleAlert,
+  CircleCheck,
   CircleX,
   DollarSign,
   X,
@@ -26,10 +29,12 @@ import { Skeleton } from '@/components/Skeleton';
 import { getOrderDetail } from '@/api/services/orders.services';
 import { hexToRgba, type ThemeColors } from '@/theme/colors';
 import { formatPrice } from '@/utils/currency';
-import { FULFILLMENT_LABELS, PAYMENT_METHOD_LABELS } from '@/utils/orderStatus';
+import { describeStatusRefresh, patchOrderStatusInPage } from '@/utils/orderList';
+import { FULFILLMENT_LABELS, getOrderStatusConfig, PAYMENT_METHOD_LABELS } from '@/utils/orderStatus';
 import { getOrderStatusStep } from '@/utils/orderStatusStep';
 import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
 import type { OrderDetail, OrderProductItem } from '@/types/orders';
+import type { PaginatedOrders } from '@/api/services/orders.services';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -67,11 +72,60 @@ export function ModalOrderDetail({
   onClose: () => void;
   colors: ThemeColors;
 }) {
-  const { data, isLoading, isError } = useQuery({
+  const queryClient = useQueryClient();
+  // `true` solo durante una recarga voluntaria: salta el anti-duplicados de `axiosRequest`.
+  const freshRef = useRef(false);
+  const [refreshing, setRefreshing] = useState(false);
+  // Aviso del resultado de la recarga, DENTRO del modal: el `Toast` global vive en la
+  // raíz de la app y el `Modal` nativo lo tapa. Va ligado a la orden para no
+  // mostrarse en otra al cambiar de orden.
+  const [note, setNote] = useState<{ order: string; text: string; failed: boolean } | null>(null);
+  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (noteTimer.current) clearTimeout(noteTimer.current);
+  }, []);
+  const showNote = (order: string, text: string, failed = false) => {
+    if (noteTimer.current) clearTimeout(noteTimer.current);
+    setNote({ order, text, failed });
+    noteTimer.current = setTimeout(() => setNote(null), 5000);
+  };
+
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['order-detail', txOrderNumber],
-    queryFn: () => getOrderDetail(txOrderNumber as string),
+    queryFn: () => getOrderDetail(txOrderNumber as string, undefined, { fresh: freshRef.current }),
     enabled: visible && !!txOrderNumber,
   });
+
+  /**
+   * Pull-to-refresh del detalle: para verificar cambios de estado. El backend
+   * cachea el detalle (24 h) pero invalida esa caché en cada cambio de estado,
+   * así que una recarga trae el estado real. Dice si cambió o sigue igual y pone
+   * al día la insignia de la lista de fondo sin volver a pedirla.
+   */
+  const handleRefresh = async () => {
+    if (refreshing || !txOrderNumber) return;
+    const previous = data?.tx_status;
+    setRefreshing(true);
+    freshRef.current = true;
+    try {
+      const result = await refetch();
+      const next = result.data?.tx_status;
+      if (result.isError || !next) {
+        showNote(txOrderNumber, 'No se pudo actualizar. Revisa tu conexión.', true);
+        return;
+      }
+      queryClient.setQueriesData<PaginatedOrders>({ queryKey: ['my-orders'] }, (page) =>
+        page ? patchOrderStatusInPage(page, txOrderNumber, next) : page
+      );
+      showNote(
+        txOrderNumber,
+        describeStatusRefresh(previous, next, (status) => getOrderStatusConfig(status, colors)?.label ?? status)
+      );
+    } finally {
+      freshRef.current = false;
+      setRefreshing(false);
+    }
+  };
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -98,16 +152,51 @@ export function ModalOrderDetail({
           </Pressable>
         </View>
 
-        <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+        <ScrollView
+          contentContainerStyle={{ padding: 16, gap: 12 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => void handleRefresh()}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+              progressBackgroundColor={colors.background}
+            />
+          }
+        >
+          {note && note.order === txOrderNumber && (
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+                paddingVertical: 10,
+                paddingHorizontal: 12,
+                borderRadius: 12,
+                backgroundColor: hexToRgba(note.failed ? colors.danger : colors.primary, 0.12),
+              }}
+              accessibilityRole="alert"
+            >
+              {note.failed ? (
+                <CircleAlert size={16} color={colors.danger} />
+              ) : (
+                <CircleCheck size={16} color={colors.primary} />
+              )}
+              <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: colors.foreground }}>{note.text}</Text>
+            </View>
+          )}
+
           {isLoading && <OrderDetailSkeleton colors={colors} />}
 
-          {!isLoading && isError && (
+          {/* Solo se reemplaza el detalle por el error si NO hay datos: una recarga
+              fallida no debe borrar un detalle que ya se estaba viendo. */}
+          {!isLoading && isError && !data && (
             <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', paddingVertical: 40 }}>
               Lo sentimos... ocurrió un error al intentar obtener el detalle de la orden.
             </Text>
           )}
 
-          {!isLoading && !isError && data && (
+          {!isLoading && data && (
             <>
               {data.tx_status !== 'CANCELED' && (
                 <OrderStatusStepper active={getOrderStatusStep(data.tx_status)} colors={colors} />

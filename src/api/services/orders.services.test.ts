@@ -81,6 +81,14 @@ describe('orders.services', () => {
     expect(r.pagination).toEqual({});
   });
 
+  it('getOrderDetail con fresh=true salta el anti-duplicados (recarga voluntaria)', async () => {
+    mockAxios.mockResolvedValue({ status: 'OK', data: { tx_order_number: 'ORD-1' } });
+    await getOrderDetail('ORD-1');
+    await getOrderDetail('ORD-1', undefined, { fresh: true });
+    expect(mockAxios.mock.calls[mockAxios.mock.calls.length - 2][0].dedup).toBe(true);
+    expect(mockAxios.mock.calls[mockAxios.mock.calls.length - 1][0].dedup).toBe(false);
+  });
+
   it('getOrderDetail: GET al endpoint de detalle y devuelve data', async () => {
     mockAxios.mockResolvedValueOnce({
       status: 'OK',
