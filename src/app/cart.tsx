@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image as RNImage, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image as RNImage, Pressable, ScrollView, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useIsFocused, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import { CartSummaryCard } from '@/components/CartSummaryCard';
 import { CartTimer } from '@/components/CartTimer';
 import { DiscountBadge } from '@/components/DiscountBadge';
 import { ModalCartWorkingHours } from '@/components/ModalCartWorkingHours';
+import { ModalClearCart } from '@/components/ModalClearCart';
 import { QuantityStepper } from '@/components/QuantityStepper';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { useCartTimer } from '@/hooks/useCartTimer';
@@ -114,24 +115,17 @@ export default function CartScreen() {
     return () => clearTimeout(id);
   }, [branchValue, workingHours, hasItems]);
 
+  // Confirmación propia (mismo diseño que ModalLogout) en vez del Alert nativo.
+  const [clearOpen, setClearOpen] = useState(false);
   const confirmClearCart = () => {
+    if (branchId !== null) setClearOpen(true);
+  };
+  const handleClearCart = async () => {
     if (branchId === null) return;
-    Alert.alert(
-      'Vaciar carrito',
-      'Se eliminarán todos los productos de tu carrito. ¿Deseas continuar?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sí, eliminar todo',
-          style: 'destructive',
-          onPress: async () => {
-            // Con sesión espera a `DELETE /cart/clear`; solo avisa si el servidor aceptó.
-            const cleared = await clearBranch(branchId);
-            if (cleared) useToastStore.getState().show('Se eliminaron los productos del carrito.');
-          },
-        },
-      ]
-    );
+    // Con sesión espera a `DELETE /cart/clear`; solo avisa si el servidor aceptó.
+    const cleared = await clearBranch(branchId);
+    setClearOpen(false);
+    if (cleared) useToastStore.getState().show('Se eliminaron los productos del carrito.');
   };
 
   if (!isModuleEnabled(appConfig?.is_show_cart)) {
@@ -324,6 +318,14 @@ export default function CartScreen() {
         branchName={branch?.nb_branch ?? ''}
         workingHours={workingHours}
         onClose={() => setHoursOpen(false)}
+        colors={colors}
+      />
+
+      <ModalClearCart
+        visible={clearOpen}
+        isLoading={isClearing}
+        onConfirm={handleClearCart}
+        onClose={() => setClearOpen(false)}
         colors={colors}
       />
 
