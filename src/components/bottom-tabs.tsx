@@ -8,15 +8,18 @@ import {
   Ellipsis,
   House,
   LayoutGrid,
+  LogIn,
   Search,
   ShoppingCart,
   UserRound,
 } from 'lucide-react-native';
 
+import { useSafePush } from '@/hooks/useSafePush';
 import { useThemeColors } from '@/store/config.store';
 import { useCartStore, selectCartCount } from '@/store/cart.store';
 import { useCurrencyStore, type DisplayCurrency } from '@/store/currency.store';
 import { useFlyingCartStore } from '@/store/flyingCart.store';
+import { useUserStore } from '@/store/user.store';
 
 const NAV_TABS = [
   { label: 'Inicio', href: '/', icon: House },
@@ -45,10 +48,12 @@ const MORE_ROUTES = MORE_MENU.map((item) => item.href) as readonly string[];
  */
 export function BottomTabs() {
   const router = useRouter();
+  const push = useSafePush();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const cartCount = useCartStore(selectCartCount);
+  const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const displayCurrency = useCurrencyStore((s) => s.displayCurrency);
   const setDisplayCurrency = useCurrencyStore((s) => s.setDisplayCurrency);
   const setCartIconPosition = useFlyingCartStore((s) => s.setCartIconPosition);
@@ -298,13 +303,20 @@ export function BottomTabs() {
           </View>
 
           {MORE_MENU.map((item) => {
-            const Icon = item.icon;
+            // "Perfil" cambia según la sesión: logueado → "Mi perfil" (/profile);
+            // sin sesión → "Iniciar sesión", que va directo a /login (ruta del
+            // stack, se abre con push) en vez de a un perfil vacío.
+            const isProfile = item.href === '/profile';
+            const goesToLogin = isProfile && !isAuthenticated;
+            const label = isProfile ? (isAuthenticated ? 'Mi perfil' : 'Iniciar sesión') : item.label;
+            const Icon = goesToLogin ? LogIn : item.icon;
             return (
               <Pressable
                 key={item.href}
                 onPress={() => {
                   setIsMoreOpen(false);
-                  router.replace(item.href as any);
+                  if (goesToLogin) push('/login');
+                  else router.replace(item.href as any);
                 }}
                 style={{
                   flexDirection: 'row',
@@ -313,11 +325,11 @@ export function BottomTabs() {
                   paddingVertical: 12,
                 }}
                 accessibilityRole="button"
-                accessibilityLabel={item.label}
+                accessibilityLabel={label}
               >
                 <Icon size={20} color={colors.foreground} />
                 <Text style={{ fontSize: 16, color: colors.foreground }}>
-                  {item.label}
+                  {label}
                 </Text>
               </Pressable>
             );
