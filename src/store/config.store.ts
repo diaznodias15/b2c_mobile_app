@@ -48,6 +48,15 @@ export function isConfigFlagTrue(value: boolean | string | number | undefined): 
   return value === '1' || value === 'true';
 }
 
+/**
+ * `is_show_cart = 0` apaga el carrito y el checkout ("Módulo en mantenimiento").
+ * Si el flag no llegó (config aún sin cargar o backend viejo) se asume encendido:
+ * apagarlo por un dato ausente dejaría a todos sin poder comprar.
+ */
+export function isCartModuleEnabled(value: boolean | string | number | undefined): boolean {
+  return value === undefined || isConfigFlagTrue(value);
+}
+
 type ConfigState = {
   appConfig: AppConfig | null;
   isLoading: boolean;

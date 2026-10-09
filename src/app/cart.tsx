@@ -1,20 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Image as RNImage, Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useIsFocused, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Info, ShoppingBag, ShoppingCart, Trash2 } from 'lucide-react-native';
 
 import { useSafePush } from '@/hooks/useSafePush';
 import { BottomTabs } from '@/components/bottom-tabs';
+import { CartMaintenance } from '@/components/CartMaintenance';
 import { CartSummaryCard } from '@/components/CartSummaryCard';
+import { CartTimer } from '@/components/CartTimer';
 import { DiscountBadge } from '@/components/DiscountBadge';
+import { ModalCartWorkingHours } from '@/components/ModalCartWorkingHours';
 import { QuantityStepper } from '@/components/QuantityStepper';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { useCartTimer } from '@/hooks/useCartTimer';
 import { useRefreshControl } from '@/hooks/useRefreshControl';
-import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
+import { useBranchStore, selectEffectiveBranch, selectEffectiveBranchId } from '@/store/branch.store';
+import { useCartTimerStore } from '@/store/cartTimer.store';
 import { useCartStore } from '@/store/cart.store';
-import { useThemeColors } from '@/store/config.store';
+import { isCartModuleEnabled, useConfigStore, useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
 import { useUserStore } from '@/store/user.store';
 import { getAvailableUnits, getMaxQuantity, hasStockIssue } from '@/utils/cartStock';
@@ -66,6 +71,41 @@ export default function CartScreen() {
   const hasStockProblem = cartItems.some(hasStockIssue);
   const checkoutBlocked = isAuthenticated && hasStockProblem;
 
+  const appConfig = useConfigStore((s) => s.appConfig);
+  const branch = useBranchStore(selectEffectiveBranch);
+  const timerSeconds = appConfig?.qty_cart_seconds ?? 0;
+  const timerEnabled = isAuthenticated && cartItems.length > 0 && timerSeconds > 0;
+  // Al ir al checkout (push) esta pantalla queda montada debajo: sin esto su timer
+  // seguiría corriendo y podría "ganar" el vencimiento, impidiendo que el checkout
+  // vuelva al carrito. Solo corre mientras es la pantalla visible.
+  const isFocused = useIsFocused();
+
+  // Timer de reserva (solo UX: no está confirmado que el backend libere stock).
+  // Al vencer se repone el carrito desde el servidor y la cuenta se reinicia.
+  const remainingSeconds = useCartTimer({
+    enabled: timerEnabled && isFocused,
+    totalSeconds: timerSeconds,
+    onExpire: () => {
+      if (branchId !== null) void refreshFromServer(branchId);
+      useToastStore.getState().show('Se actualizó tu carrito porque venció el tiempo de reserva.');
+    },
+  });
+
+  // Aviso de horarios: 1 s después de entrar, una vez por sede y sesión.
+  const [hoursOpen, setHoursOpen] = useState(false);
+  const workingHours = branch?.tx_working_hours?.trim() ?? '';
+  const branchValue = branch?.value ?? null;
+  const hasItems = cartItems.length > 0;
+  useEffect(() => {
+    if (branchValue === null || !workingHours || !hasItems) return;
+    if (useCartTimerStore.getState().workingHoursShownFor.includes(branchValue)) return;
+    const id = setTimeout(() => {
+      useCartTimerStore.getState().markWorkingHoursShown(branchValue);
+      setHoursOpen(true);
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [branchValue, workingHours, hasItems]);
+
   const confirmClearCart = () => {
     if (branchId === null) return;
     Alert.alert(
@@ -84,6 +124,10 @@ export default function CartScreen() {
       ]
     );
   };
+
+  if (!isCartModuleEnabled(appConfig?.is_show_cart)) {
+    return <CartMaintenance colors={colors} insetsTop={insets.top} withTabs />;
+  }
 
   if (cartItems.length === 0) {
     return (
@@ -187,6 +231,12 @@ export default function CartScreen() {
         </View>
       </View>
 
+      {timerEnabled && (
+        <View style={{ paddingHorizontal: 24, paddingBottom: 10 }}>
+          <CartTimer remainingSeconds={remainingSeconds} totalSeconds={timerSeconds} colors={colors} />
+        </View>
+      )}
+
       <FlatList
         data={cartItems}
         keyExtractor={(item) => `${item.tx_slug}-${item.branch_id}`}
@@ -251,6 +301,14 @@ export default function CartScreen() {
           </Pressable>
         </CartSummaryCard>
       </View>
+
+      <ModalCartWorkingHours
+        visible={hoursOpen}
+        branchName={branch?.nb_branch ?? ''}
+        workingHours={workingHours}
+        onClose={() => setHoursOpen(false)}
+        colors={colors}
+      />
 
       <BottomTabs />
     </View>

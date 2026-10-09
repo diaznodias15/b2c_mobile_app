@@ -7,22 +7,66 @@ import { Check, CircleCheck, Info, MessageCircle } from 'lucide-react-native';
 
 import { createOrder } from '@/api/services/orders.services';
 import { CartSummaryCard } from '@/components/CartSummaryCard';
+import { CartMaintenance } from '@/components/CartMaintenance';
+import { CartTimer } from '@/components/CartTimer';
 import { CheckoutBackButton } from '@/components/CheckoutPrimitives';
 import { CheckoutEntregaStep } from '@/components/CheckoutEntregaStep';
 import { CheckoutPagoStep } from '@/components/CheckoutPagoStep';
 import { PhoneContactFields } from '@/components/PhoneContactFields';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { useCartTimer } from '@/hooks/useCartTimer';
 import { useSafePush } from '@/hooks/useSafePush';
 import { selectEffectiveBranchId, useBranchStore } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
+import { useCartTimerStore } from '@/store/cartTimer.store';
+import { useToastStore } from '@/store/toast.store';
 import { useCheckoutStore } from '@/store/checkout.store';
-import { isConfigFlagTrue, useConfigStore, useThemeColors } from '@/store/config.store';
+import { isCartModuleEnabled, isConfigFlagTrue, useConfigStore, useThemeColors } from '@/store/config.store';
 import { useUserStore } from '@/store/user.store';
 import { hexToRgba, type ThemeColors } from '@/theme/colors';
 import { isAreaCodeValid, isPhoneNumberValid, VE_AREA_CODES, VE_COUNTRY_CODE } from '@/utils/phone';
 import { buildLiteOrderPayload } from '@/utils/orderPayload';
 import { hasStockIssue } from '@/utils/cartStock';
 import { getCartSummary } from '@/utils/pricing';
+
+/**
+ * Envuelve el checkout con el timer de reserva (el mismo del carrito: el
+ * `deadline` vive en `useCartTimerStore`, así que sigue corriendo al pasar del
+ * carrito acá). Va aparte del flujo para poder superponer la píldora sin tocar
+ * el layout de cada paso. Al vencer vuelve al carrito, que se repone del servidor.
+ * Se apaga solo cuando el carrito queda vacío (pedido creado).
+ */
+export default function CheckoutScreen() {
+  const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
+  const router = useRouter();
+  const isAuthenticated = useUserStore((s) => s.isAuthenticated);
+  const branchId = useBranchStore(selectEffectiveBranchId);
+  const items = useCartStore((s) => s.items);
+  const timerSeconds = useConfigStore((s) => s.appConfig?.qty_cart_seconds ?? 0);
+  const hasItems = useMemo(() => items.some((item) => item.branch_id === branchId), [items, branchId]);
+  const timerEnabled = isAuthenticated && hasItems && timerSeconds > 0;
+
+  const remainingSeconds = useCartTimer({
+    enabled: timerEnabled,
+    totalSeconds: timerSeconds,
+    onExpire: () => {
+      useToastStore.getState().show('Venció el tiempo de reserva. Revisa tu carrito para continuar.');
+      router.replace('/cart');
+    },
+  });
+
+  return (
+    <View style={{ flex: 1 }}>
+      <CheckoutFlow />
+      {timerEnabled && (
+        <View pointerEvents="none" style={{ position: 'absolute', top: insets.top + 14, right: 16 }}>
+          <CartTimer remainingSeconds={remainingSeconds} totalSeconds={timerSeconds} colors={colors} variant="pill" />
+        </View>
+      )}
+    </View>
+  );
+}
 
 /**
  * Orquesta los dos modos del checkout (CHECKOUT-FLOW.md), gateado en
@@ -39,7 +83,7 @@ import { getCartSummary } from '@/utils/pricing';
  *    `useCheckoutStore` — éxito. Sin mapa interactivo para elegir
  *    dirección todavía (MVP, ver `CheckoutEntregaStep`).
  */
-export default function CheckoutScreen() {
+function CheckoutFlow() {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const appConfig = useConfigStore((s) => s.appConfig);
@@ -104,6 +148,7 @@ export default function CheckoutScreen() {
     }
     cartItems.forEach((item) => removeProduct(item.tx_slug, item.branch_id));
     resetCheckout();
+    useCartTimerStore.getState().reset();
     setOrderNumber(result.tx_order_number);
   };
 
@@ -172,6 +217,10 @@ export default function CheckoutScreen() {
       setIsSubmitting(false);
     }
   };
+
+  if (!isCartModuleEnabled(appConfig?.is_show_cart)) {
+    return <CartMaintenance colors={colors} insetsTop={insets.top} />;
+  }
 
   if (orderNumber) {
     return (

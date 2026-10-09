@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useConfigStore } from './config.store';
+import { isCartModuleEnabled, useConfigStore } from './config.store';
 
 const sampleConfig = {
   tx_company_name: 'Farmacia El Samán',
@@ -127,5 +127,25 @@ describe('useConfigStore', () => {
       const stored = await AsyncStorage.getItem('config-storage');
       expect(stored).not.toContain('hasBootstrapped');
     });
+  });
+});
+
+describe('isCartModuleEnabled', () => {
+  it('lo apaga solo con is_show_cart explícitamente en 0/false', () => {
+    expect(isCartModuleEnabled(0)).toBe(false);
+    expect(isCartModuleEnabled('0')).toBe(false);
+    expect(isCartModuleEnabled(false)).toBe(false);
+    expect(isCartModuleEnabled('false')).toBe(false);
+  });
+
+  it('lo deja encendido con 1/true en cualquiera de sus formas', () => {
+    expect(isCartModuleEnabled(1)).toBe(true);
+    expect(isCartModuleEnabled('1')).toBe(true);
+    expect(isCartModuleEnabled(true)).toBe(true);
+    expect(isCartModuleEnabled('true')).toBe(true);
+  });
+
+  it('un flag ausente (config sin cargar) NO apaga el carrito', () => {
+    expect(isCartModuleEnabled(undefined)).toBe(true);
   });
 });

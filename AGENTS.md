@@ -478,6 +478,22 @@ Con sesión, el carrito local tiene que ser un espejo del remoto:
   el "−" se vuelve papelera. "Vaciar carrito" pide confirmación y llama
   `clearBranch` (`DELETE /cart/clear`). "Seguir comprando" y "Ir a comprar" usan
   `router.replace('/')` porque `/` es una tab.
+- **Timer de reserva** (`useCartTimer`, `CartTimer`, `utils/cartTimer.ts`): cuenta
+  regresiva desde `appConfig.qty_cart_seconds` (420 en producción), solo con
+  sesión + productos. Es **solo UX del cliente**: no está confirmado que el
+  backend reserve/libere stock al vencer. Se calcula por timestamp (`deadline`
+  en `cartTimer.store`, en memoria) y se recalcula al volver de segundo plano
+  (`AppState`). Al vencer: en el carrito se repone desde el servidor; en el
+  checkout vuelve a `/cart`; en ambos se reinicia. El `deadline` sigue al pasar
+  del carrito al checkout (en la web es una sola página). **El timer del carrito
+  solo corre enfocado (`useIsFocused`)**: con `push` queda montado debajo del
+  checkout y, si siguiera activo, "ganaría" el vencimiento.
+- **Modal de horarios** (`ModalCartWorkingHours`): 1 s después de entrar, **una vez
+  por sede y sesión** (la web lo abre en cada visita a `/carrito`; aquí el
+  carrito es una tab que se visita seguido). Se salta si la sede no trae
+  `tx_working_hours`. No se cierra tocando fuera; el botón atrás de Android sí.
+- **`is_show_cart = 0`** muestra `CartMaintenance` en carrito y checkout
+  (`isCartModuleEnabled`: un flag ausente NO apaga el módulo).
 - UI: alerta "Cantidad no disponible" bajo la card, tope del stepper = stock,
   botón de pago bloqueado y `CheckoutStockIssue` si hay ítems pasados de stock.
 
