@@ -476,6 +476,11 @@ Reglas a respetar:
 - No avanzar a la pantalla de éxito si `createOrder` falla (bug §20.7 de
   la web, ya corregido acá).
 - `checkout` es ruta del stack (no tab): sin `<BottomTabs />`.
+- **El checkout exige sesión** (igual que la web, que deshabilita "Continuar" sin
+  token). Sin sesión, el botón del carrito dice "Iniciar sesión para continuar"
+  y va a `/login`, que al terminar hace `router.back()` y regresa al carrito con
+  el carrito ya sincronizado. `checkout.tsx` también valida `isAuthenticated`
+  (`CheckoutLoginRequired`) por si la sesión expira con el checkout abierto.
 
 ## Dependencias removidas y las que NO se pueden quitar
 

@@ -13,6 +13,7 @@ import { useRefreshControl } from '@/hooks/useRefreshControl';
 import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
 import { useThemeColors } from '@/store/config.store';
+import { useUserStore } from '@/store/user.store';
 import { formatDisplayPrice } from '@/utils/currency';
 import { getCartSummary } from '@/utils/pricing';
 import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
@@ -29,6 +30,7 @@ export default function CartScreen() {
   const colors = useThemeColors();
   const branchId = useBranchStore(selectEffectiveBranchId);
   const refreshControl = useRefreshControl();
+  const isAuthenticated = useUserStore((s) => s.isAuthenticated);
 
   // Carrito acotado a la sede activa: los precios/stock son por sede,
   // así que mezclar items de sedes distintas en un mismo total no
@@ -146,8 +148,16 @@ export default function CartScreen() {
           displayCurrency={displayCurrency}
           colors={colors}
         >
+          {!isAuthenticated && (
+            <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
+              Inicia sesión para continuar con tu compra. Tu carrito se conserva.
+            </Text>
+          )}
           <Pressable
-            onPress={() => push('/checkout')}
+            // Sin sesión el backend no deja crear la orden (el checkout exige
+            // token, igual que la web): se manda a /login, que al terminar
+            // hace router.back() y regresa acá con el carrito ya sincronizado.
+            onPress={() => push(isAuthenticated ? '/checkout' : '/login')}
             style={{
               height: 48,
               borderRadius: 12,
@@ -156,10 +166,10 @@ export default function CartScreen() {
               backgroundColor: colors.primary,
             }}
             accessibilityRole="button"
-            accessibilityLabel="Proceder al pago"
+            accessibilityLabel={isAuthenticated ? 'Proceder al pago' : 'Iniciar sesión para continuar'}
           >
             <Text style={{ fontSize: 15, fontWeight: '700', color: colors.onPrimary }}>
-              Proceder al pago
+              {isAuthenticated ? 'Proceder al pago' : 'Iniciar sesión para continuar'}
             </Text>
           </Pressable>
         </CartSummaryCard>

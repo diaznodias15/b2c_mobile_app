@@ -12,10 +12,12 @@ import { CheckoutEntregaStep } from '@/components/CheckoutEntregaStep';
 import { CheckoutPagoStep } from '@/components/CheckoutPagoStep';
 import { PhoneContactFields } from '@/components/PhoneContactFields';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { useSafePush } from '@/hooks/useSafePush';
 import { selectEffectiveBranchId, useBranchStore } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
 import { useCheckoutStore } from '@/store/checkout.store';
 import { isConfigFlagTrue, useConfigStore, useThemeColors } from '@/store/config.store';
+import { useUserStore } from '@/store/user.store';
 import { hexToRgba, type ThemeColors } from '@/theme/colors';
 import { isAreaCodeValid, isPhoneNumberValid, VE_AREA_CODES, VE_COUNTRY_CODE } from '@/utils/phone';
 import { buildLiteOrderPayload } from '@/utils/orderPayload';
@@ -40,6 +42,7 @@ export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const appConfig = useConfigStore((s) => s.appConfig);
+  const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const branchId = useBranchStore(selectEffectiveBranchId);
 
   const items = useCartStore((s) => s.items);
@@ -175,6 +178,13 @@ export default function CheckoutScreen() {
 
   if (cartItems.length === 0) {
     return <CheckoutEmpty colors={colors} insets={insets} />;
+  }
+
+  // El backend exige sesión para crear la orden (la web deshabilita el botón
+  // sin token). El carrito ya redirige a /login, pero acá también se cubre
+  // la sesión que expira con el checkout abierto (401 → signOut global).
+  if (!isAuthenticated) {
+    return <CheckoutLoginRequired colors={colors} insets={insets} />;
   }
 
   if (!isLite) {
@@ -490,6 +500,31 @@ function NextStepRow({
       <Text style={{ fontSize: 13, color: colors.foreground, flex: 1, lineHeight: 18 }}>
         <Text style={{ fontWeight: '700' }}>{title}</Text> {detail}
       </Text>
+    </View>
+  );
+}
+
+function CheckoutLoginRequired({ colors, insets }: { colors: ThemeColors; insets: { top: number } }) {
+  const push = useSafePush();
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <CheckoutBackButton insets={insets} colors={colors} />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+        <Text style={{ fontSize: 17, fontWeight: '700', color: colors.foreground, textAlign: 'center', marginBottom: 6 }}>
+          Inicia sesión para continuar
+        </Text>
+        <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', marginBottom: 24 }}>
+          Necesitas una cuenta para registrar tu pedido. Tu carrito se conserva.
+        </Text>
+        <Pressable
+          onPress={() => push('/login')}
+          style={{ paddingVertical: 12, paddingHorizontal: 22, borderRadius: 999, backgroundColor: colors.primary }}
+          accessibilityRole="button"
+          accessibilityLabel="Iniciar sesión"
+        >
+          <Text style={{ fontSize: 14, fontWeight: '700', color: colors.onPrimary }}>Iniciar sesión</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
