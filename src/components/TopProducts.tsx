@@ -49,9 +49,9 @@ export function TopProducts({
   // los `return null` de abajo — los hooks no pueden llamarse condicional
   // ni después de un return temprano (reglas de hooks de React).
   const handleAddToCart = useCallback(
-    (product: Product) => {
-      if (branchId === null) return;
-      addProduct({
+    async (product: Product): Promise<boolean> => {
+      if (branchId === null) return false;
+      const added = await addProduct({
         tx_slug: product.tx_slug,
         product_id: product.id,
         branch_id: branchId,
@@ -65,7 +65,10 @@ export function TopProducts({
         qty_availability: toAvailability(product.qty_product),
         qty: 1,
       });
-      showToast('Producto agregado al carrito');
+      // Con sesión `added` es la respuesta de la API: el toast y la animación solo
+      // salen si el servidor aceptó el cambio (si no, `addProduct` ya avisó el motivo).
+      if (added) showToast('Producto agregado al carrito');
+      return added;
     },
     [addProduct, branchId, showToast]
   );

@@ -18,6 +18,7 @@ const ADDING_FEEDBACK_MS = 650;
 export function useAddToCartFlight() {
   const imageRef = useRef<View>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   /** Devuelve `false` (y no hace nada) si ya hay una animación en curso. */
   function trigger(source: ImageSourcePropType): boolean {
@@ -32,5 +33,27 @@ export function useAddToCartFlight() {
     return true;
   }
 
-  return { imageRef, isAdding, trigger };
+  /**
+   * Agrega esperando la respuesta: `isSubmitting` (loader en el botón) dura lo que
+   * tarde `action`, y solo si el servidor la aceptó (`true`) se dispara la
+   * animación hacia el carrito. Con sesión el carrito espera a la API antes de
+   * cambiar nada (ver `cart.store`); sin sesión resuelve al instante.
+   * Si ya hay un intento en curso o la animación anterior no terminó, no hace nada.
+   */
+  async function addWithFlight(
+    source: ImageSourcePropType,
+    action: () => Promise<boolean> | boolean
+  ): Promise<void> {
+    if (isAdding || isSubmitting) return;
+    setIsSubmitting(true);
+    let ok = false;
+    try {
+      ok = await action();
+    } finally {
+      setIsSubmitting(false);
+    }
+    if (ok) trigger(source);
+  }
+
+  return { imageRef, isAdding, isSubmitting, trigger, addWithFlight };
 }

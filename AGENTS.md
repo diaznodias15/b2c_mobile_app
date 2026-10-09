@@ -440,12 +440,11 @@ principio**, no `ScrollView` a secas.
 
 ## Carrito y checkout (`cart.tsx`, `checkout.tsx`) — basado en CHECKOUT-FLOW.md
 
-**Carrito (`cart.store.ts`)**: offline-first. Persiste en AsyncStorage y
-cada ítem lleva su `branch_id` (las pantallas filtran por la sede activa).
-Con sesión (`isSyncEnabled`, lo prende `user.store` en
-`signIn`/`signOut`/`rehydrateAuth`) cada mutación además pega a
-`/api/cart/*` fire-and-forget, sin rollback (solo `console.warn`).
-`syncOnLogin()` sube el carrito local (`mergeLocalCart`) y después el
+**Carrito (`cart.store.ts`)**: persiste en AsyncStorage y cada ítem lleva su
+`branch_id` (las pantallas filtran por la sede activa). **Sin sesión** los
+cambios son instantáneos (no hay API). **Con sesión** (`isSyncEnabled`, lo
+prende `user.store` en `signIn`/`signOut`/`rehydrateAuth`) **se espera la
+respuesta de `/api/cart/*` antes de cambiar nada** (ver abajo). `syncOnLogin()` sube el carrito local (`mergeLocalCart`) y después el
 backend pasa a ser la fuente de verdad. `cart.store` NO importa
 `user.store` (evita el ciclo); es `user.store` quien llama a `cart.store`.
 
@@ -464,19 +463,27 @@ Con sesión, el carrito local tiene que ser un espejo del remoto:
 - `refreshFromServer(branchId)` repone la sede desde el servidor: al entrar al
   carrito y al checkout, al cambiar de sede y con pull-to-refresh. No corre
   mientras hay operaciones en vuelo (la UI saltaría hacia atrás).
-- Si una operación falla (ej. sin stock) se muestra el mensaje del backend en
-  un toast y se re-lee el carrito (rollback). No volver a "fire-and-forget".
-- **Cambios de cantidad con debounce de 500 ms** (`QTY_SYNC_DEBOUNCE_MS`): la UI y
-  los totales cambian al instante, pero al servidor va UNA sola petición
-  `PUT` con la cantidad final por producto. Mientras hay uno esperando cuenta
-  como operación en vuelo (`refreshFromServer` no corre). `removeProduct`,
-  `clearBranch` y `reset` cancelan los pendientes. Si se cierra la sesión antes
-  de que venza, no se manda nada.
+- **Con sesión se espera la API antes de cambiar el carrito** (no es optimista;
+  decisión explícita: así las cantidades locales no se desfasan del servidor).
+  `addProduct`/`updateQuantity`/`removeProduct`/`clearBranch` devuelven
+  `Promise<boolean>`: `true` si se aplicó, `false` si el servidor lo rechazó
+  (toast con el mensaje del backend + se re-lee el carrito, porque el stock pudo
+  cambiar) o si ya había una operación en esa línea. Mientras tanto la línea está
+  en `pendingKeys` (`cartLineKey(sede, slug)`, `cartClearKey(sede)`): la UI
+  muestra un spinner (`QuantityStepper loading`, papelera, "Vaciar carrito",
+  botón "+" de las tarjetas) y bloquea los botones de esa línea; el botón de
+  pago se bloquea mientras haya cualquier operación en curso. Líneas distintas
+  van en paralelo. El toast "agregado" y la animación hacia el carrito salen SOLO
+  si el servidor aceptó (`useAddToCartFlight().addWithFlight`). **No hay
+  debounce**: con el botón bloqueado no se pueden encadenar peticiones.
+- **Al crear una orden el backend vacía su carrito**: el checkout limpia SOLO lo
+  local con `clearBranchLocal`. Llamar a `removeProduct` por ítem daría errores
+  (el servidor ya no los tiene).
 - La línea del carrito usa `getCartLinePricing` (`utils/pricing.ts`): total de la
   línea (precio final × cantidad), valor base tachado + badge `-N%` si hay
   descuento, e "IVA inc.". `QuantityStepper` acepta `onRemove`: con cantidad 1
   el "−" se vuelve papelera. "Vaciar carrito" pide confirmación y llama
-  `clearBranch` (`DELETE /cart/clear`). "Seguir comprando" y "Ir a comprar" usan
+  `clearBranch` (`DELETE /cart/clear`, esperando la respuesta). "Seguir comprando" y "Ir a comprar" usan
   `router.replace('/')` porque `/` es una tab.
 - **Timer de reserva** (`useCartTimer`, `CartTimer`, `utils/cartTimer.ts`): cuenta
   regresiva desde `appConfig.qty_cart_seconds` (420 en producción), solo con

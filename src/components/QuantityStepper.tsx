@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Minus, Plus, Trash2 } from 'lucide-react-native';
 
 import type { ThemeColors } from '@/theme/colors';
@@ -15,6 +15,7 @@ export function QuantityStepper({
   onChange,
   colors,
   disabled = false,
+  loading = false,
   onRemove,
 }: {
   value: number;
@@ -23,6 +24,11 @@ export function QuantityStepper({
   colors: ThemeColors;
   disabled?: boolean;
   /**
+   * Hay una operación con el servidor en curso: bloquea los botones y reemplaza
+   * el número por un spinner (con sesión se espera la respuesta de la API).
+   */
+  loading?: boolean;
+  /**
    * Si se pasa, con cantidad 1 el botón "−" se vuelve una papelera que llama a
    * `onRemove` (como en la web) en vez de quedar deshabilitado. Es para el
    * carrito; el detalle de producto no lo usa.
@@ -30,6 +36,7 @@ export function QuantityStepper({
   onRemove?: () => void;
 }) {
   const removesAtOne = onRemove !== undefined && value <= 1;
+  const blocked = disabled || loading;
 
   return (
     <View
@@ -41,12 +48,12 @@ export function QuantityStepper({
         borderRadius: 12,
         paddingHorizontal: 12,
         height: 46,
-        opacity: disabled ? 0.5 : 1,
+        opacity: blocked ? 0.6 : 1,
       }}
     >
       <Pressable
         onPress={() => (removesAtOne ? onRemove() : onChange(Math.max(1, value - 1)))}
-        disabled={disabled || (value <= 1 && !removesAtOne)}
+        disabled={blocked || (value <= 1 && !removesAtOne)}
         accessibilityRole="button"
         accessibilityLabel={removesAtOne ? 'Quitar del carrito' : 'Restar cantidad'}
         hitSlop={8}
@@ -57,21 +64,27 @@ export function QuantityStepper({
           <Minus size={16} color={colors.foreground} />
         )}
       </Pressable>
-      <Text
-        style={{
-          fontSize: 16,
-          fontWeight: '700',
-          color: colors.foreground,
-          minWidth: 20,
-          textAlign: 'center',
-        }}
-        accessibilityLiveRegion="polite"
-      >
-        {value}
-      </Text>
+      {loading ? (
+        <View style={{ minWidth: 20, alignItems: 'center' }}>
+          <ActivityIndicator size="small" color={colors.primary} />
+        </View>
+      ) : (
+        <Text
+          style={{
+            fontSize: 16,
+            fontWeight: '700',
+            color: colors.foreground,
+            minWidth: 20,
+            textAlign: 'center',
+          }}
+          accessibilityLiveRegion="polite"
+        >
+          {value}
+        </Text>
+      )}
       <Pressable
         onPress={() => onChange(Math.min(max, value + 1))}
-        disabled={disabled || value >= max}
+        disabled={blocked || value >= max}
         accessibilityRole="button"
         accessibilityLabel="Sumar cantidad"
         hitSlop={8}

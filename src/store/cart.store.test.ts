@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/api/services/cart.services', () => ({
   addProduct: vi.fn().mockResolvedValue(undefined),
@@ -15,7 +15,6 @@ import * as cartApi from '@/api/services/cart.services';
 import { useToastStore } from '@/store/toast.store';
 // eslint-disable-next-line import/first
 import {
-  QTY_SYNC_DEBOUNCE_MS,
   useCartStore,
   selectCartCount,
   selectItemsByBranch,
@@ -44,10 +43,6 @@ describe('useCartStore', () => {
     useCartStore.getState().reset();
     useToastStore.getState().hide();
     vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   it('starts empty', () => {
@@ -118,35 +113,226 @@ describe('useCartStore', () => {
     expect(mockedCartApi.removeProduct).not.toHaveBeenCalled();
   });
 
-  it('con sesión (isSyncEnabled=true): addProduct también sincroniza al backend', () => {
-    useCartStore.getState().setSyncEnabled(true);
-    useCartStore.getState().addProduct(item({ qty: 2 }));
-    expect(mockedCartApi.addProduct).toHaveBeenCalledWith({
-      branch_id: 1,
+  describe('con sesión: se espera la respuesta de la API antes de cambiar nada', () => {
+    /** Promesa que se resuelve/rechaza a mano, para congelar una petición "en vuelo". */
+    const deferred = () => {
+      let resolve: () => void = () => {};
+      let reject: (e: Error) => void = () => {};
+      const promise = new Promise<never>((res, rej) => {
+        resolve = () => res({} as never);
+        reject = rej;
+      });
+      return { promise, resolve, reject };
+    };
+    const synced = (...items: CartItem[]) => {
+      useCartStore.getState().setSyncEnabled(true);
+      useCartStore.getState().setRemoteCart(items);
+    };
+    const flush = () => new Promise((r) => setTimeout(r, 0));
+    /** Lo que devuelve el servidor tras una operación rechazada: el ítem sigue igual. */
+    const serverItem = (qty: number) => ({
+      id: 10,
+      nb_brand: 'X',
+      cod_barcode: '1',
+      nb_product: 'A',
       tx_slug: 'a',
-      qty_product: 2,
+      qty_product: qty,
+      pri_product_price: '100',
+      pri_product_final_price: '100',
+    });
+
+    it('addProduct: no cambia nada hasta que responde la API y marca la línea como pendiente', async () => {
+      synced();
+      const d = deferred();
+      mockedCartApi.addProduct.mockReturnValueOnce(d.promise);
+
+      const pending = useCartStore.getState().addProduct(item({ qty: 2 }));
+      expect(useCartStore.getState().items).toHaveLength(0);
+      expect(useCartStore.getState().pendingKeys).toEqual(['1:a']);
+
+      d.resolve();
+      expect(await pending).toBe(true);
+      expect(useCartStore.getState().items[0].qty).toBe(2);
+      expect(useCartStore.getState().pendingKeys).toEqual([]);
+    });
+
+    it('addProduct a un ítem existente manda solo lo agregado (el backend SUMA)', async () => {
+      // `POST /api/cart/add-product` hace `qty_product += request.qty_product`: mandar el
+      // total (3) dejaba el servidor con 1 + 3 = 4 mientras la UI mostraba 3.
+      synced(item({ qty: 1 }));
+      expect(await useCartStore.getState().addProduct(item({ qty: 2 }))).toBe(true);
+      expect(mockedCartApi.addProduct).toHaveBeenLastCalledWith({ branch_id: 1, tx_slug: 'a', qty_product: 2 });
+      expect(useCartStore.getState().items[0].qty).toBe(3);
+    });
+
+    it('addProduct rechazado: no cambia el carrito, avisa con el mensaje del backend y re-lee el servidor', async () => {
+      synced(item({ qty: 1 }));
+      mockedCartApi.addProduct.mockRejectedValueOnce(new Error('No tenemos esa cantidad disponible en estos momentos.'));
+      mockedCartApi.getCartItems.mockResolvedValueOnce([
+        {
+          id: 10,
+          nb_brand: 'X',
+          cod_barcode: '1',
+          nb_product: 'A',
+          tx_slug: 'a',
+          qty_product: 1,
+          qty_availability: 1,
+          pri_product_price: '100',
+          pri_product_final_price: '100',
+        },
+      ]);
+
+      expect(await useCartStore.getState().addProduct(item({ qty: 3 }))).toBe(false);
+
+      expect(useCartStore.getState().items[0].qty).toBe(1);
+      expect(useToastStore.getState().message).toBe('No tenemos esa cantidad disponible en estos momentos.');
+      expect(mockedCartApi.getCartItems).toHaveBeenCalledWith(1);
+      // El refresh trajo el stock real: ahora la línea sabe que solo hay 1.
+      expect(useCartStore.getState().items[0].qty_availability).toBe(1);
+      expect(useCartStore.getState().pendingKeys).toEqual([]);
+    });
+
+    it('updateQuantity: la cantidad no cambia hasta que responde la API', async () => {
+      synced(item({ qty: 1 }));
+      const d = deferred();
+      mockedCartApi.updateQuantity.mockReturnValueOnce(d.promise);
+
+      const pending = useCartStore.getState().updateQuantity('a', 1, 5);
+      expect(useCartStore.getState().items[0].qty).toBe(1);
+      expect(useCartStore.getState().pendingKeys).toEqual(['1:a']);
+
+      d.resolve();
+      expect(await pending).toBe(true);
+      expect(useCartStore.getState().items[0].qty).toBe(5);
+      expect(mockedCartApi.updateQuantity).toHaveBeenCalledWith({ branch_id: 1, tx_slug: 'a', qty_product: 5 });
+    });
+
+    it('updateQuantity rechazado: conserva la cantidad y avisa', async () => {
+      synced(item({ qty: 2 }));
+      mockedCartApi.updateQuantity.mockRejectedValueOnce(new Error('Sin stock'));
+      mockedCartApi.getCartItems.mockResolvedValueOnce([serverItem(2)]);
+      expect(await useCartStore.getState().updateQuantity('a', 1, 9)).toBe(false);
+      expect(useCartStore.getState().items[0].qty).toBe(2);
+      expect(useToastStore.getState().message).toBe('Sin stock');
+    });
+
+    it('removeProduct: el ítem sigue hasta que responde la API', async () => {
+      synced(item());
+      const d = deferred();
+      mockedCartApi.removeProduct.mockReturnValueOnce(d.promise);
+
+      const pending = useCartStore.getState().removeProduct('a', 1);
+      expect(useCartStore.getState().items).toHaveLength(1);
+      expect(useCartStore.getState().pendingKeys).toEqual(['1:a']);
+
+      d.resolve();
+      expect(await pending).toBe(true);
+      expect(useCartStore.getState().items).toHaveLength(0);
+      expect(mockedCartApi.removeProduct).toHaveBeenCalledWith('a', 1);
+    });
+
+    it('removeProduct rechazado: el ítem se queda', async () => {
+      synced(item());
+      mockedCartApi.removeProduct.mockRejectedValueOnce(new Error('El producto no existe en el carrito.'));
+      mockedCartApi.getCartItems.mockResolvedValueOnce([serverItem(1)]);
+      expect(await useCartStore.getState().removeProduct('a', 1)).toBe(false);
+      expect(useCartStore.getState().items).toHaveLength(1);
+    });
+
+    it('clearBranch: vacía solo esa sede, pero solo cuando responde la API', async () => {
+      synced(item({ tx_slug: 'a', branch_id: 1 }), item({ tx_slug: 'b', branch_id: 1 }), item({ tx_slug: 'c', branch_id: 2 }));
+      const d = deferred();
+      mockedCartApi.clearCart.mockReturnValueOnce(d.promise);
+
+      const pending = useCartStore.getState().clearBranch(1);
+      expect(useCartStore.getState().items).toHaveLength(3);
+      expect(useCartStore.getState().pendingKeys).toEqual(['clear:1']);
+
+      d.resolve();
+      expect(await pending).toBe(true);
+      expect(useCartStore.getState().items.map((i) => i.tx_slug)).toEqual(['c']);
+      expect(mockedCartApi.clearCart).toHaveBeenCalledWith(1);
+    });
+
+    it('una segunda operación sobre la MISMA línea mientras hay una en curso se ignora', async () => {
+      synced(item({ qty: 1 }));
+      const d = deferred();
+      mockedCartApi.updateQuantity.mockReturnValueOnce(d.promise);
+
+      const first = useCartStore.getState().updateQuantity('a', 1, 2);
+      const second = await useCartStore.getState().updateQuantity('a', 1, 7);
+      expect(second).toBe(false);
+      expect(mockedCartApi.updateQuantity).toHaveBeenCalledTimes(1);
+
+      d.resolve();
+      await first;
+      expect(useCartStore.getState().items[0].qty).toBe(2);
+    });
+
+    it('líneas distintas pueden ir en paralelo', async () => {
+      synced(item({ tx_slug: 'a', qty: 1 }), item({ tx_slug: 'b', qty: 1 }));
+      const da = deferred();
+      const db = deferred();
+      mockedCartApi.updateQuantity.mockReturnValueOnce(da.promise).mockReturnValueOnce(db.promise);
+
+      const pa = useCartStore.getState().updateQuantity('a', 1, 2);
+      const pb = useCartStore.getState().updateQuantity('b', 1, 3);
+      expect(useCartStore.getState().pendingKeys).toEqual(['1:a', '1:b']);
+
+      da.resolve();
+      db.resolve();
+      await Promise.all([pa, pb]);
+      expect(useCartStore.getState().items.map((i) => i.qty)).toEqual([2, 3]);
+      expect(useCartStore.getState().pendingKeys).toEqual([]);
+    });
+
+    it('no se re-lee el servidor mientras hay una operación en curso (evita que la UI salte hacia atrás)', async () => {
+      synced(item({ qty: 1 }));
+      const d = deferred();
+      mockedCartApi.updateQuantity.mockReturnValueOnce(d.promise);
+
+      const pending = useCartStore.getState().updateQuantity('a', 1, 4);
+      await useCartStore.getState().refreshFromServer(1);
+      expect(mockedCartApi.getCartItems).not.toHaveBeenCalled();
+
+      d.resolve();
+      await pending;
+      await flush();
+      await useCartStore.getState().refreshFromServer(1);
+      expect(mockedCartApi.getCartItems).toHaveBeenCalledTimes(1);
+    });
+
+    it('clearBranchLocal vacía la sede sin llamar al backend (post-orden: el servidor ya lo vació)', () => {
+      synced(item({ tx_slug: 'a', branch_id: 1 }), item({ tx_slug: 'c', branch_id: 2 }));
+      useCartStore.getState().clearBranchLocal(1);
+      expect(useCartStore.getState().items.map((i) => i.tx_slug)).toEqual(['c']);
+      expect(mockedCartApi.clearCart).not.toHaveBeenCalled();
+      expect(mockedCartApi.removeProduct).not.toHaveBeenCalled();
     });
   });
 
-  it('con sesión: addProduct a un item existente manda solo lo agregado (el backend SUMA)', () => {
-    // `POST /api/cart/add-product` hace `qty_product += request.qty_product`: mandar el
-    // total (3) dejaba el servidor con 1 + 3 = 4 mientras la UI mostraba 3.
-    useCartStore.getState().setSyncEnabled(true);
-    useCartStore.getState().addProduct(item({ qty: 1 }));
-    useCartStore.getState().addProduct(item({ qty: 2 }));
-    expect(useCartStore.getState().items[0].qty).toBe(3);
-    expect(mockedCartApi.addProduct).toHaveBeenLastCalledWith({
-      branch_id: 1,
-      tx_slug: 'a',
-      qty_product: 2,
+  describe('sin sesión: instantáneo, sin API ni estado pendiente', () => {
+    it('resuelve true, aplica el cambio en el acto y no marca nada como pendiente', async () => {
+      const pending = useCartStore.getState().addProduct(item({ qty: 2 }));
+      expect(useCartStore.getState().items[0].qty).toBe(2);
+      expect(useCartStore.getState().pendingKeys).toEqual([]);
+      expect(await pending).toBe(true);
+      expect(mockedCartApi.addProduct).not.toHaveBeenCalled();
+    });
+
+    it('clearBranch vacía la sede localmente', async () => {
+      useCartStore.getState().setRemoteCart([item({ branch_id: 1 }), item({ tx_slug: 'c', branch_id: 2 })]);
+      expect(await useCartStore.getState().clearBranch(1)).toBe(true);
+      expect(useCartStore.getState().items.map((i) => i.tx_slug)).toEqual(['c']);
+      expect(mockedCartApi.clearCart).not.toHaveBeenCalled();
     });
   });
 
   describe('stock', () => {
-    it('addProduct no pasa del stock disponible y avisa con un toast', () => {
+    it('addProduct no pasa del stock disponible y avisa con un toast', async () => {
       useCartStore.getState().setSyncEnabled(true);
-      useCartStore.getState().addProduct(item({ qty: 2, qty_availability: 3 }));
-      useCartStore.getState().addProduct(item({ qty: 2, qty_availability: 3 }));
+      await useCartStore.getState().addProduct(item({ qty: 2, qty_availability: 3 }));
+      await useCartStore.getState().addProduct(item({ qty: 2, qty_availability: 3 }));
       expect(useCartStore.getState().items[0].qty).toBe(3);
       expect(useToastStore.getState().message).toContain('Solo hay 3 unidades');
       // Al servidor solo se mandó lo realmente agregado: 2 y luego 1.
@@ -154,143 +340,29 @@ describe('useCartStore', () => {
       expect(mockedCartApi.addProduct).toHaveBeenNthCalledWith(2, { branch_id: 1, tx_slug: 'a', qty_product: 1 });
     });
 
-    it('addProduct en el tope no cambia nada ni llama al backend', () => {
+    it('addProduct en el tope no cambia nada ni llama al backend', async () => {
       useCartStore.getState().setSyncEnabled(true);
-      useCartStore.getState().addProduct(item({ qty: 3, qty_availability: 3 }));
+      await useCartStore.getState().addProduct(item({ qty: 3, qty_availability: 3 }));
       mockedCartApi.addProduct.mockClear();
-      useCartStore.getState().addProduct(item({ qty: 1, qty_availability: 3 }));
+      expect(await useCartStore.getState().addProduct(item({ qty: 1, qty_availability: 3 }))).toBe(false);
       expect(useCartStore.getState().items[0].qty).toBe(3);
       expect(mockedCartApi.addProduct).not.toHaveBeenCalled();
     });
 
     it('updateQuantity no deja subir por encima del stock, pero sí bajar', async () => {
-      vi.useFakeTimers();
       useCartStore.getState().setSyncEnabled(true);
       useCartStore.getState().setRemoteCart([item({ qty: 5, qty_availability: 3 })]);
-      useCartStore.getState().updateQuantity('a', 1, 6);
+      expect(await useCartStore.getState().updateQuantity('a', 1, 6)).toBe(false);
       expect(useCartStore.getState().items[0].qty).toBe(5);
       expect(mockedCartApi.updateQuantity).not.toHaveBeenCalled();
-      useCartStore.getState().updateQuantity('a', 1, 4);
+      expect(await useCartStore.getState().updateQuantity('a', 1, 4)).toBe(true);
       expect(useCartStore.getState().items[0].qty).toBe(4);
-      await vi.advanceTimersByTimeAsync(QTY_SYNC_DEBOUNCE_MS);
       expect(mockedCartApi.updateQuantity).toHaveBeenCalledWith({ branch_id: 1, tx_slug: 'a', qty_product: 4 });
     });
 
     it('sin dato de stock no limita (carritos viejos)', () => {
       useCartStore.getState().addProduct(item({ qty: 50 }));
       expect(useCartStore.getState().items[0].qty).toBe(50);
-    });
-  });
-
-  describe('debounce de cantidad (500 ms)', () => {
-    const syncedCart = (...items: CartItem[]) => {
-      vi.useFakeTimers();
-      useCartStore.getState().setSyncEnabled(true);
-      useCartStore.getState().setRemoteCart(items);
-    };
-
-    it('la UI cambia al instante pero al servidor va UNA sola petición con la cantidad final', async () => {
-      syncedCart(item({ qty: 1 }));
-      useCartStore.getState().updateQuantity('a', 1, 2);
-      useCartStore.getState().updateQuantity('a', 1, 3);
-      useCartStore.getState().updateQuantity('a', 1, 4);
-
-      expect(useCartStore.getState().items[0].qty).toBe(4);
-      expect(mockedCartApi.updateQuantity).not.toHaveBeenCalled();
-
-      await vi.advanceTimersByTimeAsync(QTY_SYNC_DEBOUNCE_MS);
-      expect(mockedCartApi.updateQuantity).toHaveBeenCalledTimes(1);
-      expect(mockedCartApi.updateQuantity).toHaveBeenCalledWith({ branch_id: 1, tx_slug: 'a', qty_product: 4 });
-    });
-
-    it('cada toque reinicia la espera', async () => {
-      syncedCart(item({ qty: 1 }));
-      useCartStore.getState().updateQuantity('a', 1, 2);
-      await vi.advanceTimersByTimeAsync(400);
-      useCartStore.getState().updateQuantity('a', 1, 3);
-      await vi.advanceTimersByTimeAsync(400);
-      expect(mockedCartApi.updateQuantity).not.toHaveBeenCalled();
-      await vi.advanceTimersByTimeAsync(100);
-      expect(mockedCartApi.updateQuantity).toHaveBeenCalledTimes(1);
-    });
-
-    it('productos distintos se sincronizan por separado', async () => {
-      syncedCart(item({ tx_slug: 'a', qty: 1 }), item({ tx_slug: 'b', qty: 1 }));
-      useCartStore.getState().updateQuantity('a', 1, 2);
-      useCartStore.getState().updateQuantity('b', 1, 5);
-      await vi.advanceTimersByTimeAsync(QTY_SYNC_DEBOUNCE_MS);
-      expect(mockedCartApi.updateQuantity).toHaveBeenCalledTimes(2);
-      expect(mockedCartApi.updateQuantity).toHaveBeenCalledWith({ branch_id: 1, tx_slug: 'a', qty_product: 2 });
-      expect(mockedCartApi.updateQuantity).toHaveBeenCalledWith({ branch_id: 1, tx_slug: 'b', qty_product: 5 });
-    });
-
-    it('quitar el producto cancela el cambio de cantidad pendiente', async () => {
-      syncedCart(item({ qty: 1 }));
-      useCartStore.getState().updateQuantity('a', 1, 3);
-      useCartStore.getState().removeProduct('a', 1);
-      await vi.advanceTimersByTimeAsync(QTY_SYNC_DEBOUNCE_MS);
-      expect(mockedCartApi.updateQuantity).not.toHaveBeenCalled();
-      expect(mockedCartApi.removeProduct).toHaveBeenCalledWith('a', 1);
-    });
-
-    it('si se cierra la sesión antes de que venza, no se manda nada', async () => {
-      syncedCart(item({ qty: 1 }));
-      useCartStore.getState().updateQuantity('a', 1, 3);
-      useCartStore.getState().setSyncEnabled(false);
-      await vi.advanceTimersByTimeAsync(QTY_SYNC_DEBOUNCE_MS);
-      expect(mockedCartApi.updateQuantity).not.toHaveBeenCalled();
-    });
-
-    it('sin sesión no programa ninguna petición', async () => {
-      vi.useFakeTimers();
-      useCartStore.getState().setRemoteCart([item({ qty: 1 })]);
-      useCartStore.getState().updateQuantity('a', 1, 3);
-      await vi.advanceTimersByTimeAsync(QTY_SYNC_DEBOUNCE_MS);
-      expect(mockedCartApi.updateQuantity).not.toHaveBeenCalled();
-      expect(useCartStore.getState().items[0].qty).toBe(3);
-    });
-
-    it('mientras hay un cambio esperando no se refresca desde el servidor (no pisa la cantidad)', async () => {
-      syncedCart(item({ qty: 1 }));
-      useCartStore.getState().updateQuantity('a', 1, 4);
-      await useCartStore.getState().refreshFromServer(1);
-      expect(mockedCartApi.getCartItems).not.toHaveBeenCalled();
-      expect(useCartStore.getState().items[0].qty).toBe(4);
-
-      await vi.advanceTimersByTimeAsync(QTY_SYNC_DEBOUNCE_MS);
-      await useCartStore.getState().refreshFromServer(1);
-      expect(mockedCartApi.getCartItems).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('clearBranch', () => {
-    it('vacía solo la sede indicada y, con sesión, llama a clear del backend', () => {
-      useCartStore.getState().setSyncEnabled(true);
-      useCartStore.getState().setRemoteCart([
-        item({ tx_slug: 'a', branch_id: 1 }),
-        item({ tx_slug: 'b', branch_id: 1 }),
-        item({ tx_slug: 'c', branch_id: 2 }),
-      ]);
-      useCartStore.getState().clearBranch(1);
-      expect(useCartStore.getState().items.map((i) => i.tx_slug)).toEqual(['c']);
-      expect(mockedCartApi.clearCart).toHaveBeenCalledWith(1);
-    });
-
-    it('sin sesión es solo local', () => {
-      useCartStore.getState().setRemoteCart([item({ branch_id: 1 })]);
-      useCartStore.getState().clearBranch(1);
-      expect(useCartStore.getState().items).toEqual([]);
-      expect(mockedCartApi.clearCart).not.toHaveBeenCalled();
-    });
-
-    it('cancela los cambios de cantidad pendientes de esa sede', async () => {
-      vi.useFakeTimers();
-      useCartStore.getState().setSyncEnabled(true);
-      useCartStore.getState().setRemoteCart([item({ qty: 1 })]);
-      useCartStore.getState().updateQuantity('a', 1, 3);
-      useCartStore.getState().clearBranch(1);
-      await vi.advanceTimersByTimeAsync(QTY_SYNC_DEBOUNCE_MS);
-      expect(mockedCartApi.updateQuantity).not.toHaveBeenCalled();
     });
   });
 
@@ -340,50 +412,6 @@ describe('useCartStore', () => {
       await useCartStore.getState().refreshFromServer(1);
       expect(useCartStore.getState().items[0].qty).toBe(2);
     });
-
-    it('no refresca mientras hay una operación en vuelo (evita que la UI salte hacia atrás)', async () => {
-      useCartStore.getState().setSyncEnabled(true);
-      let resolveAdd: () => void = () => {};
-      mockedCartApi.addProduct.mockReturnValueOnce(new Promise((r) => (resolveAdd = () => r({} as never))));
-      useCartStore.getState().addProduct(item({ qty: 1 }));
-
-      await useCartStore.getState().refreshFromServer(1);
-      expect(mockedCartApi.getCartItems).not.toHaveBeenCalled();
-
-      resolveAdd();
-      await new Promise((r) => setTimeout(r, 0));
-      await useCartStore.getState().refreshFromServer(1);
-      expect(mockedCartApi.getCartItems).toHaveBeenCalledTimes(1);
-    });
-
-    it('si una operación falla (ej. sin stock): toast con el mensaje del backend y re-lee el carrito', async () => {
-      useCartStore.getState().setSyncEnabled(true);
-      mockedCartApi.addProduct.mockRejectedValueOnce(
-        new Error('No tenemos esa cantidad disponible en estos momentos.')
-      );
-      mockedCartApi.getCartItems.mockResolvedValueOnce([remote({ qty_product: 2 })]);
-
-      useCartStore.getState().addProduct(item({ qty: 3 }));
-      await vi.waitFor(() => expect(mockedCartApi.getCartItems).toHaveBeenCalledWith(1));
-      await vi.waitFor(() => expect(useCartStore.getState().items[0].qty).toBe(2));
-
-      expect(useToastStore.getState().message).toBe('No tenemos esa cantidad disponible en estos momentos.');
-    });
-  });
-
-  it('con sesión: updateQuantity y removeProduct sincronizan al backend', async () => {
-    vi.useFakeTimers();
-    useCartStore.getState().setSyncEnabled(true);
-    useCartStore.getState().addProduct(item());
-    useCartStore.getState().updateQuantity('a', 1, 5);
-    await vi.advanceTimersByTimeAsync(QTY_SYNC_DEBOUNCE_MS);
-    expect(mockedCartApi.updateQuantity).toHaveBeenCalledWith({
-      branch_id: 1,
-      tx_slug: 'a',
-      qty_product: 5,
-    });
-    useCartStore.getState().removeProduct('a', 1);
-    expect(mockedCartApi.removeProduct).toHaveBeenCalledWith('a', 1);
   });
 
   it('syncOnLogin: mergea por sede y reemplaza con la respuesta del backend', async () => {

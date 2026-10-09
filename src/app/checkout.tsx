@@ -91,7 +91,7 @@ function CheckoutFlow() {
   const branchId = useBranchStore(selectEffectiveBranchId);
 
   const items = useCartStore((s) => s.items);
-  const removeProduct = useCartStore((s) => s.removeProduct);
+  const clearBranchLocal = useCartStore((s) => s.clearBranchLocal);
   const cartItems = useMemo(
     () => items.filter((item) => item.branch_id === branchId),
     [items, branchId]
@@ -146,7 +146,9 @@ function CheckoutFlow() {
       setError('No pudimos confirmar tu pedido. Intentá de nuevo.');
       return;
     }
-    cartItems.forEach((item) => removeProduct(item.tx_slug, item.branch_id));
+    // El backend ya vació su carrito al crear la orden: se limpia SOLO lo local.
+    // Llamar a `remove-product` sobre ítems que ya no existen daría errores.
+    if (branchId !== null) clearBranchLocal(branchId);
     resetCheckout();
     useCartTimerStore.getState().reset();
     setOrderNumber(result.tx_order_number);

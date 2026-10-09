@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { Image as RNImage, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Image as RNImage, Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Check, Plus } from 'lucide-react-native';
 
@@ -44,7 +44,8 @@ export const ProductCard = memo(function ProductCard({
   product: Product;
   colors: ThemeColors;
   onPress: (product: Product) => void;
-  onAddToCart: (product: Product) => void;
+  /** Debe resolver `true` si el producto se agregó (con sesión, tras responder la API). */
+  onAddToCart: (product: Product) => Promise<boolean> | boolean;
 }) {
   const { basePrice, finalPrice, hasDiscount } = getProductPricing(product);
   const { displayCurrency, exchangeRate } = useDisplayCurrency();
@@ -52,13 +53,13 @@ export const ProductCard = memo(function ProductCard({
   const [imageFailed, setImageFailed] = useState(false);
   const showPlaceholder = !product.tx_img_url || imageFailed;
 
-  const { imageRef, isAdding, trigger } = useAddToCartFlight();
+  const { imageRef, isAdding, isSubmitting, addWithFlight } = useAddToCartFlight();
 
   const handleAddToCart = () => {
-    const started = trigger(
-      showPlaceholder ? PLACEHOLDER_IMAGE : { uri: product.tx_img_url as string }
+    void addWithFlight(
+      showPlaceholder ? PLACEHOLDER_IMAGE : { uri: product.tx_img_url as string },
+      () => onAddToCart(product)
     );
-    if (started) onAddToCart(product);
   };
 
   return (
@@ -159,7 +160,7 @@ export const ProductCard = memo(function ProductCard({
 
         <Pressable
           onPress={handleAddToCart}
-          disabled={isAdding}
+          disabled={isAdding || isSubmitting}
           style={{
             width: 28,
             height: 28,
@@ -167,12 +168,15 @@ export const ProductCard = memo(function ProductCard({
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: colors.primary,
-            opacity: isAdding ? 0.7 : 1,
+            opacity: isAdding || isSubmitting ? 0.7 : 1,
           }}
           accessibilityRole="button"
           accessibilityLabel={`Agregar ${product.nb_product} al carrito`}
+          accessibilityState={{ busy: isSubmitting }}
         >
-          {isAdding ? (
+          {isSubmitting ? (
+            <ActivityIndicator size="small" color={colors.onPrimary} />
+          ) : isAdding ? (
             <Check size={16} color={colors.onPrimary} strokeWidth={2.5} />
           ) : (
             <Plus size={16} color={colors.onPrimary} strokeWidth={2.5} />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dimensions, Image as RNImage, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image as RNImage, Pressable, ScrollView, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -63,7 +63,7 @@ export default function ProductDetailScreen() {
   const refreshControl = useRefreshControl();
 
   const [quantity, setQuantity] = useState(1);
-  const { imageRef, isAdding, trigger } = useAddToCartFlight();
+  const { imageRef, isAdding, isSubmitting, addWithFlight } = useAddToCartFlight();
 
   const [retryCount, setRetryCount] = useState(0);
   const {
@@ -150,25 +150,28 @@ export default function ProductDetailScreen() {
 
   const handleAddToCart = () => {
     if (branchId === null || !canAddToCart) return;
-    const started = trigger(images.length > 0 ? { uri: images[0] } : PLACEHOLDER_IMAGE);
-    if (!started) return;
-
-    addProduct({
-      tx_slug: product.tx_slug,
-      product_id: product.id,
-      branch_id: branchId,
-      nb_product: product.nb_product,
-      nb_brand: product.nb_brand,
-      tx_img_url: images[0] ?? null,
-      pri_product_final_price: product.pri_product_final_price,
-      pri_product_price: product.pri_product_price,
-      qty_discount: product.qty_discount,
-      qty_tax: product.qty_tax,
-      qty_availability: toAvailability(product.qty_product),
-      qty: quantity,
+    void addWithFlight(images.length > 0 ? { uri: images[0] } : PLACEHOLDER_IMAGE, async () => {
+      const added = await addProduct({
+        tx_slug: product.tx_slug,
+        product_id: product.id,
+        branch_id: branchId,
+        nb_product: product.nb_product,
+        nb_brand: product.nb_brand,
+        tx_img_url: images[0] ?? null,
+        pri_product_final_price: product.pri_product_final_price,
+        pri_product_price: product.pri_product_price,
+        qty_discount: product.qty_discount,
+        qty_tax: product.qty_tax,
+        qty_availability: toAvailability(product.qty_product),
+        qty: quantity,
+      });
+      // Con sesión espera a la API; toast y animación solo si el servidor aceptó.
+      if (added) {
+        showToast('Producto agregado al carrito');
+        setQuantity(1);
+      }
+      return added;
     });
-    showToast('Producto agregado al carrito');
-    setQuantity(1);
   };
 
   return (
@@ -280,11 +283,11 @@ export default function ProductDetailScreen() {
               max={maxQty}
               onChange={setQuantity}
               colors={colors}
-              disabled={!canAddToCart}
+              disabled={!canAddToCart || isSubmitting}
             />
             <Pressable
               onPress={handleAddToCart}
-              disabled={!canAddToCart || isAdding}
+              disabled={!canAddToCart || isAdding || isSubmitting}
               style={{
                 flex: 1,
                 height: 46,
@@ -294,12 +297,17 @@ export default function ProductDetailScreen() {
                 justifyContent: 'center',
                 gap: 8,
                 backgroundColor: canAddToCart ? colors.primary : colors.border,
-                opacity: isAdding ? 0.7 : 1,
+                opacity: isAdding || isSubmitting ? 0.7 : 1,
               }}
               accessibilityRole="button"
               accessibilityLabel="Agregar al carrito"
+              accessibilityState={{ busy: isSubmitting }}
             >
-              {isAdding && <Check size={16} color={colors.onPrimary} strokeWidth={2.5} />}
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color={colors.onPrimary} />
+              ) : (
+                isAdding && <Check size={16} color={colors.onPrimary} strokeWidth={2.5} />
+              )}
               <Text
                 style={{
                   fontSize: 15,
@@ -307,7 +315,7 @@ export default function ProductDetailScreen() {
                   color: canAddToCart ? colors.onPrimary : colors.muted,
                 }}
               >
-                {!canAddToCart ? 'Sin stock' : isAdding ? 'Agregado' : 'Agregar al carrito'}
+                {!canAddToCart ? 'Sin stock' : isSubmitting ? 'Agregando…' : isAdding ? 'Agregado' : 'Agregar al carrito'}
               </Text>
             </Pressable>
           </View>

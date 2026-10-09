@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Image as RNImage, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image as RNImage, Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useIsFocused, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,7 +18,7 @@ import { useCartTimer } from '@/hooks/useCartTimer';
 import { useRefreshControl } from '@/hooks/useRefreshControl';
 import { useBranchStore, selectEffectiveBranch, selectEffectiveBranchId } from '@/store/branch.store';
 import { useCartTimerStore } from '@/store/cartTimer.store';
-import { useCartStore } from '@/store/cart.store';
+import { cartClearKey, cartLineKey, useCartStore } from '@/store/cart.store';
 import { isCartModuleEnabled, useConfigStore, useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
 import { useUserStore } from '@/store/user.store';
@@ -59,6 +59,10 @@ export default function CartScreen() {
   const { displayCurrency, exchangeRate } = useDisplayCurrency();
   const refreshFromServer = useCartStore((s) => s.refreshFromServer);
   const clearBranch = useCartStore((s) => s.clearBranch);
+  // Con sesión cada operación espera a la API: mientras haya alguna en curso se
+  // bloquea el pago (la orden se arma con el carrito del servidor).
+  const hasPendingOps = useCartStore((s) => s.pendingKeys.length > 0);
+  const isClearing = useCartStore((s) => branchId !== null && s.pendingKeys.includes(cartClearKey(branchId)));
 
   // Con sesión el backend arma la orden con SU carrito, no con el local: al
   // entrar (y al cambiar de sede) se repone desde el servidor para ver precios,
@@ -70,6 +74,7 @@ export default function CartScreen() {
   // Hay productos con más unidades que el stock: no se puede pagar así.
   const hasStockProblem = cartItems.some(hasStockIssue);
   const checkoutBlocked = isAuthenticated && hasStockProblem;
+  const ctaDisabled = checkoutBlocked || hasPendingOps;
 
   const appConfig = useConfigStore((s) => s.appConfig);
   const branch = useBranchStore(selectEffectiveBranch);
@@ -116,9 +121,10 @@ export default function CartScreen() {
         {
           text: 'Sí, eliminar todo',
           style: 'destructive',
-          onPress: () => {
-            clearBranch(branchId);
-            useToastStore.getState().show('Se eliminaron los productos del carrito.');
+          onPress: async () => {
+            // Con sesión espera a `DELETE /cart/clear`; solo avisa si el servidor aceptó.
+            const cleared = await clearBranch(branchId);
+            if (cleared) useToastStore.getState().show('Se eliminaron los productos del carrito.');
           },
         },
       ]
@@ -220,12 +226,18 @@ export default function CartScreen() {
           </Pressable>
           <Pressable
             onPress={confirmClearCart}
+            disabled={isClearing || hasPendingOps}
             hitSlop={8}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 5, opacity: hasPendingOps ? 0.6 : 1 }}
             accessibilityRole="button"
             accessibilityLabel="Vaciar carrito"
+            accessibilityState={{ busy: isClearing }}
           >
-            <Trash2 size={14} color={colors.danger} />
+            {isClearing ? (
+              <ActivityIndicator size="small" color={colors.danger} />
+            ) : (
+              <Trash2 size={14} color={colors.danger} />
+            )}
             <Text style={{ fontSize: 13, fontWeight: '600', color: colors.danger }}>Vaciar carrito</Text>
           </Pressable>
         </View>
@@ -282,19 +294,19 @@ export default function CartScreen() {
             // token, igual que la web): se manda a /login, que al terminar
             // hace router.back() y regresa acá con el carrito ya sincronizado.
             onPress={() => push(isAuthenticated ? '/checkout' : '/login')}
-            disabled={checkoutBlocked}
+            disabled={ctaDisabled}
             style={{
               height: 48,
               borderRadius: 12,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: checkoutBlocked ? colors.border : colors.primary,
+              backgroundColor: ctaDisabled ? colors.border : colors.primary,
             }}
             accessibilityRole="button"
             accessibilityLabel={isAuthenticated ? 'Proceder al pago' : 'Iniciar sesión para continuar'}
           >
             <Text
-              style={{ fontSize: 15, fontWeight: '700', color: checkoutBlocked ? colors.muted : colors.onPrimary }}
+              style={{ fontSize: 15, fontWeight: '700', color: ctaDisabled ? colors.muted : colors.onPrimary }}
             >
               {isAuthenticated ? 'Proceder al pago' : 'Iniciar sesión para continuar'}
             </Text>
@@ -319,6 +331,8 @@ function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeColors })
   const push = useSafePush();
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeProduct = useCartStore((s) => s.removeProduct);
+  // Hay una operación de ESTA línea esperando a la API: loader y botones bloqueados.
+  const isPending = useCartStore((s) => s.pendingKeys.includes(cartLineKey(item.branch_id, item.tx_slug)));
   const { displayCurrency, exchangeRate } = useDisplayCurrency();
 
   const [imageFailed, setImageFailed] = useState(false);
@@ -327,9 +341,10 @@ function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeColors })
   const pricing = getCartLinePricing(item);
   const fmt = (amount: number) => formatDisplayPrice(amount, exchangeRate, displayCurrency);
 
-  const handleRemove = () => {
-    removeProduct(item.tx_slug, item.branch_id);
-    useToastStore.getState().show('El producto ha sido eliminado del carrito.');
+  const handleRemove = async () => {
+    // Con sesión espera a `DELETE`; el toast solo sale si el servidor aceptó.
+    const removed = await removeProduct(item.tx_slug, item.branch_id);
+    if (removed) useToastStore.getState().show('El producto ha sido eliminado del carrito.');
   };
 
   return (
@@ -412,18 +427,24 @@ function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeColors })
 
       <View style={{ alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <Pressable
-          onPress={handleRemove}
+          onPress={() => void handleRemove()}
+          disabled={isPending}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={`Quitar ${item.nb_product} del carrito`}
         >
-          <Trash2 size={18} color={colors.danger} />
+          {isPending ? (
+            <ActivityIndicator size="small" color={colors.danger} />
+          ) : (
+            <Trash2 size={18} color={colors.danger} />
+          )}
         </Pressable>
         <QuantityStepper
           value={item.qty}
           max={getMaxQuantity(item, MAX_QTY)}
-          onChange={(qty) => updateQuantity(item.tx_slug, item.branch_id, qty)}
-          onRemove={handleRemove}
+          onChange={(qty) => void updateQuantity(item.tx_slug, item.branch_id, qty)}
+          onRemove={() => void handleRemove()}
+          loading={isPending}
           colors={colors}
         />
       </View>
