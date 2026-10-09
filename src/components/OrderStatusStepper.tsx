@@ -11,7 +11,7 @@ export function OrderStatusStepper({
   active,
   colors,
 }: {
-  /** 0-4 (ver mapping in_status en MY-ORDERS-MODULE.md §25). */
+  /** 0-4: usar `getOrderStatusStep(tx_status)` (`utils/orderStatusStep.ts`). */
   active: number;
   colors: ThemeColors;
 }) {

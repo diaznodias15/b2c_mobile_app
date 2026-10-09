@@ -326,6 +326,15 @@ completo.
   nuevo a `auth.services.ts`, verificar contra un login real (no solo
   contra la doc) qué forma tiene la respuesta.
 
+- **El stepper de estado del detalle de orden no se iluminaba** — la app leía
+  `data.in_status`, pero el backend **no lo manda**: en la web lo calcula
+  `orderDetailAdapter` a partir de `tx_status` (verificado: no hay `in_status`
+  en `b2c_api`). Llegaba `undefined` y `index <= undefined` es falso en todos
+  los pasos. Ahora el paso sale de `getOrderStatusStep(tx_status)`
+  (`utils/orderStatusStep.ts`, con test). No volver a leer `in_status`. Ese
+  módulo está aparte de `orderStatus.ts` porque este importa íconos de
+  `lucide-react-native`, que no cargan en los tests de Node.
+
 - **`order.dt_created_at` (`GET /api/orders/my-orders/branch/:branch`)
   viene CRUDO** (`"YYYY-MM-DD HH:mm:ss"`), no pre-formateado
   `"DD/MM/YYYY"` como sugiere MY-ORDERS-MODULE.md (ahí lo formatea el

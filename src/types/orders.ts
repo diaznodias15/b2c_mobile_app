@@ -56,8 +56,8 @@ export type OrderProductItem = {
 export type OrderDetail = {
   tx_order_number: string;
   tx_status: OrderStatus;
-  /** 0=PENDING, 1=APPROVED, 2=PROCESSING, 3=PROCESSED, 4=FINISHED. */
-  in_status: number;
+  // OJO: el backend no manda `in_status` (lo calcula el adaptador de la web).
+  // El paso del stepper se deriva de `tx_status` con `getOrderStatusStep`.
   qty_subtotal_amount: number;
   qty_tax_amount: number;
   qty_discount_amount: number;

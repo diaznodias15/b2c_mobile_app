@@ -84,7 +84,7 @@ describe('orders.services', () => {
   it('getOrderDetail: GET al endpoint de detalle y devuelve data', async () => {
     mockAxios.mockResolvedValueOnce({
       status: 'OK',
-      data: { tx_order_number: 'ORD-1', in_status: 2 },
+      data: { tx_order_number: 'ORD-1', tx_status: 'PROCESSING' },
     });
     const r = await getOrderDetail('ORD-1');
     expect(r.tx_order_number).toBe('ORD-1');

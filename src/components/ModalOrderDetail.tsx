@@ -27,6 +27,7 @@ import { getOrderDetail } from '@/api/services/orders.services';
 import { hexToRgba, type ThemeColors } from '@/theme/colors';
 import { formatPrice } from '@/utils/currency';
 import { FULFILLMENT_LABELS, PAYMENT_METHOD_LABELS } from '@/utils/orderStatus';
+import { getOrderStatusStep } from '@/utils/orderStatusStep';
 import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
 import type { OrderDetail, OrderProductItem } from '@/types/orders';
 
@@ -109,7 +110,7 @@ export function ModalOrderDetail({
           {!isLoading && !isError && data && (
             <>
               {data.tx_status !== 'CANCELED' && (
-                <OrderStatusStepper active={data.in_status} colors={colors} />
+                <OrderStatusStepper active={getOrderStatusStep(data.tx_status)} colors={colors} />
               )}
 
               {data.tx_status === 'CANCELED' && (
