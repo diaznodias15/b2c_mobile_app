@@ -67,6 +67,9 @@ export async function getCartItems(
     method: 'GET',
     url: ITEMS(branchId),
     signal: options?.signal,
+    // Se relee tras cada merge/operación y con pull-to-refresh: la ventana anti-duplicados
+    // de 5 s lo rechazaría (DUPLICATE_REQUEST) y el carrito quedaría desfasado.
+    dedup: false,
   });
   return envelope.data ?? [];
 }

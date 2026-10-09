@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image as RNImage, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image as RNImage, Pressable, ScrollView, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useIsFocused, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -58,6 +58,7 @@ export default function CartScreen() {
 
   const { displayCurrency, exchangeRate } = useDisplayCurrency();
   const refreshFromServer = useCartStore((s) => s.refreshFromServer);
+  const isSyncingLogin = useCartStore((s) => s.isSyncingLogin);
   const clearBranch = useCartStore((s) => s.clearBranch);
   // Con sesión cada operación espera a la API: mientras haya alguna en curso se
   // bloquea el pago (la orden se arma con el carrito del servidor).
@@ -68,8 +69,10 @@ export default function CartScreen() {
   // entrar (y al cambiar de sede) se repone desde el servidor para ver precios,
   // stock y cantidades reales.
   useEffect(() => {
-    if (isAuthenticated && branchId !== null) void refreshFromServer(branchId);
-  }, [isAuthenticated, branchId, refreshFromServer]);
+    // Tras un login espera a que termine `syncOnLogin` (merge del carrito local) y entonces
+    // lee el servidor: así también aparecen los productos de una sesión anterior.
+    if (isAuthenticated && branchId !== null && !isSyncingLogin) void refreshFromServer(branchId);
+  }, [isAuthenticated, branchId, refreshFromServer, isSyncingLogin]);
 
   // Hay productos con más unidades que el stock: no se puede pagar así.
   const hasStockProblem = cartItems.some(hasStockIssue);
@@ -138,9 +141,11 @@ export default function CartScreen() {
   if (cartItems.length === 0) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <View
-          style={{
-            flex: 1,
+        {/* ScrollView (no View) para poder refrescar con swipe también con el carrito vacío. */}
+        <ScrollView
+          refreshControl={refreshControl}
+          contentContainerStyle={{
+            flexGrow: 1,
             alignItems: 'center',
             justifyContent: 'center',
             paddingTop: insets.top,
@@ -191,7 +196,7 @@ export default function CartScreen() {
               Ir a comprar
             </Text>
           </Pressable>
-        </View>
+        </ScrollView>
         <BottomTabs />
       </View>
     );

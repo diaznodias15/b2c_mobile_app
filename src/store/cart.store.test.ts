@@ -447,6 +447,29 @@ describe('useCartStore', () => {
     expect(items.filter((i) => i.branch_id === 2)).toHaveLength(0);
   });
 
+  it('syncOnLogin: bloquea refreshFromServer mientras corre y libera al terminar', async () => {
+    useCartStore.getState().addProduct(item({ tx_slug: 'a', branch_id: 1, qty: 2 }));
+    useCartStore.getState().setSyncEnabled(true);
+    let releaseMerge: () => void = () => {};
+    mockedCartApi.mergeLocalCart.mockImplementation(
+      () => new Promise((resolve) => { releaseMerge = () => resolve({} as never); })
+    );
+    mockedCartApi.getCartItems.mockClear();
+
+    const sync = useCartStore.getState().syncOnLogin();
+    expect(useCartStore.getState().isSyncingLogin).toBe(true);
+
+    // Un refresh en pleno merge leería el servidor vacío y borraría el carrito local.
+    await useCartStore.getState().refreshFromServer(1);
+    expect(mockedCartApi.getCartItems).not.toHaveBeenCalled();
+    expect(useCartStore.getState().items).toHaveLength(1);
+
+    releaseMerge();
+    await sync;
+    expect(useCartStore.getState().isSyncingLogin).toBe(false);
+    expect(mockedCartApi.getCartItems).toHaveBeenCalledTimes(1);
+  });
+
   it('syncOnLogin: si mergeLocalCart falla para una sede, no rompe y sigue con las demás', async () => {
     useCartStore.getState().addProduct(item({ tx_slug: 'a', branch_id: 1 }));
     mockedCartApi.mergeLocalCart.mockRejectedValueOnce(new Error('network error'));

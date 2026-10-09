@@ -45,6 +45,8 @@ import { clampToAvailability, getAvailableUnits } from '@/utils/cartStock';
 type CartState = {
   items: CartItem[];
   isSyncEnabled: boolean;
+  /** `true` mientras `syncOnLogin` sube el carrito local y baja el del servidor. */
+  isSyncingLogin: boolean;
   /**
    * Operaciones al servidor en curso: `cartLineKey(sede, slug)` por línea y
    * `cartClearKey(sede)` para "vaciar carrito". Solo en memoria (no se persiste).
@@ -67,9 +69,13 @@ type CartState = {
   reset: () => void;
 };
 
-const initialState: Pick<CartState, 'items' | 'isSyncEnabled' | 'pendingKeys'> = {
+const initialState: Pick<
+  CartState,
+  'items' | 'isSyncEnabled' | 'isSyncingLogin' | 'pendingKeys'
+> = {
   items: [],
   isSyncEnabled: false,
+  isSyncingLogin: false,
   pendingKeys: [],
 };
 
@@ -258,21 +264,30 @@ export const useCartStore = create<CartState>()(
         syncOnLogin: async () => {
           const localItems = get().items;
           const branchIds = [...new Set(localItems.map((i) => i.branch_id))];
-          for (const branchId of branchIds) {
-            const itemsForBranch = localItems.filter((i) => i.branch_id === branchId);
-            try {
-              await cartApi.mergeLocalCart(
-                branchId,
-                itemsForBranch.map((i) => ({ tx_slug: i.tx_slug, qty_product: i.qty }))
-              );
-              const remoteItems = await cartApi.getCartItems(branchId);
-              const otherBranchesItems = get().items.filter((i) => i.branch_id !== branchId);
-              set({
-                items: [...otherBranchesItems, ...remoteItems.map((item) => mapBackendItem(branchId, item))],
-              });
-            } catch (err) {
-              console.warn(`[cart.store] No se pudo sincronizar el carrito de la sede ${branchId}:`, err);
+          // Mientras sube/baja el carrito no se permite otro `refreshFromServer`: leería el
+          // servidor a medio merge (vacío) y borraría el carrito local.
+          pendingSyncs += 1;
+          set({ isSyncingLogin: true });
+          try {
+            for (const branchId of branchIds) {
+              const itemsForBranch = localItems.filter((i) => i.branch_id === branchId);
+              try {
+                await cartApi.mergeLocalCart(
+                  branchId,
+                  itemsForBranch.map((i) => ({ tx_slug: i.tx_slug, qty_product: i.qty }))
+                );
+                const remoteItems = await cartApi.getCartItems(branchId);
+                const otherBranchesItems = get().items.filter((i) => i.branch_id !== branchId);
+                set({
+                  items: [...otherBranchesItems, ...remoteItems.map((item) => mapBackendItem(branchId, item))],
+                });
+              } catch (err) {
+                console.warn(`[cart.store] No se pudo sincronizar el carrito de la sede ${branchId}:`, err);
+              }
             }
+          } finally {
+            pendingSyncs -= 1;
+            set({ isSyncingLogin: false });
           }
         },
 

@@ -476,6 +476,13 @@ Con sesión, el carrito local tiene que ser un espejo del remoto:
   van en paralelo. El toast "agregado" y la animación hacia el carrito salen SOLO
   si el servidor aceptó (`useAddToCartFlight().addWithFlight`). **No hay
   debounce**: con el botón bloqueado no se pueden encadenar peticiones.
+- **Login con carrito local** (`syncOnLogin`): cuenta como operación en vuelo
+  (`pendingSyncs` + `isSyncingLogin`), así ningún `refreshFromServer` lee el
+  servidor a medio merge (devolvía vacío y borraba el carrito local) y
+  `cart.tsx` espera a que termine antes de releer. `getCartItems` usa
+  `dedup: false`: la ventana anti-duplicados de 5 s hacía fallar en silencio la
+  lectura posterior al merge. El estado "carrito vacío" también es un
+  `ScrollView` con pull-to-refresh (justo ese es el estado tras el login).
 - **Al crear una orden el backend vacía su carrito**: el checkout limpia SOLO lo
   local con `clearBranchLocal`. Llamar a `removeProduct` por ítem daría errores
   (el servidor ya no los tiene).
