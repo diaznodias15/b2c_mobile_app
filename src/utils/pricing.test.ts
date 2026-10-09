@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { calculateDiscountAmount, calculateTaxAmount, getCartSummary, getProductPricing } from './pricing';
+import {
+  calculateDiscountAmount,
+  calculateTaxAmount,
+  getCartLinePricing,
+  getCartSummary,
+  getProductPricing,
+} from './pricing';
 import type { Product } from '@/types/whitelabel';
 import type { CartItem } from '@/types/cart';
 
@@ -114,5 +120,56 @@ describe('getCartSummary', () => {
     expect(summary.discountTotal).toBe(0);
     expect(summary.taxTotal).toBe(0);
     expect(summary.total).toBe(80);
+  });
+});
+
+describe('getCartLinePricing', () => {
+  const line = (over: Partial<CartItem> = {}): CartItem => ({
+    tx_slug: 'a',
+    product_id: 1,
+    branch_id: 1,
+    nb_product: 'A',
+    nb_brand: 'X',
+    pri_product_final_price: '90',
+    pri_product_price: '100',
+    qty_discount: 10,
+    qty_tax: 16,
+    qty: 3,
+    added_at: 0,
+    ...over,
+  });
+
+  it('el total de la línea es precio final × cantidad', () => {
+    const p = getCartLinePricing(line({ qty: 3 }));
+    expect(p.unitPrice).toBe(90);
+    expect(p.lineTotal).toBe(270);
+    expect(p.lineBase).toBe(300);
+  });
+
+  it('se recalcula con la cantidad en vivo', () => {
+    expect(getCartLinePricing(line({ qty: 1 })).lineTotal).toBe(90);
+    expect(getCartLinePricing(line({ qty: 5 })).lineTotal).toBe(450);
+  });
+
+  it('marca descuento solo si hay % y el final es menor al base', () => {
+    expect(getCartLinePricing(line()).hasDiscount).toBe(true);
+    expect(getCartLinePricing(line()).discountPercent).toBe(10);
+    expect(getCartLinePricing(line({ qty_discount: 0 })).hasDiscount).toBe(false);
+    expect(getCartLinePricing(line({ pri_product_final_price: '100' })).hasDiscount).toBe(false);
+  });
+
+  it('el IVA de la línea coincide con el del resumen del carrito', () => {
+    const item = line({ qty: 2 });
+    expect(getCartLinePricing(item).lineTax).toBeCloseTo(getCartSummary([item]).taxTotal, 10);
+    expect(getCartLinePricing(item).lineTax).toBeCloseTo(90 * 0.16 * 2, 6);
+  });
+
+  it('ítems viejos sin precio base ni %: sin descuento ni IVA, sin NaN', () => {
+    const p = getCartLinePricing(
+      line({ pri_product_price: undefined, qty_discount: undefined, qty_tax: undefined, qty: 2 })
+    );
+    expect(p.lineTotal).toBe(180);
+    expect(p.hasDiscount).toBe(false);
+    expect(p.lineTax).toBe(0);
   });
 });

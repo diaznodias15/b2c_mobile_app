@@ -1,22 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Image as RNImage, Pressable, Text, View } from 'react-native';
+import { Alert, FlatList, Image as RNImage, Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Info, ShoppingCart, Trash2 } from 'lucide-react-native';
+import { Info, ShoppingBag, ShoppingCart, Trash2 } from 'lucide-react-native';
 
 import { useSafePush } from '@/hooks/useSafePush';
 import { BottomTabs } from '@/components/bottom-tabs';
 import { CartSummaryCard } from '@/components/CartSummaryCard';
+import { DiscountBadge } from '@/components/DiscountBadge';
 import { QuantityStepper } from '@/components/QuantityStepper';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { useRefreshControl } from '@/hooks/useRefreshControl';
 import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
 import { useThemeColors } from '@/store/config.store';
+import { useToastStore } from '@/store/toast.store';
 import { useUserStore } from '@/store/user.store';
 import { getAvailableUnits, getMaxQuantity, hasStockIssue } from '@/utils/cartStock';
 import { formatDisplayPrice } from '@/utils/currency';
-import { getCartSummary } from '@/utils/pricing';
+import { getCartLinePricing, getCartSummary } from '@/utils/pricing';
 import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
 import { hexToRgba } from '@/theme/colors';
 import type { ThemeColors } from '@/theme/colors';
@@ -28,6 +31,7 @@ const PLACEHOLDER_IMAGE = { uri: UNAVAILABLE_PRODUCT_IMAGE };
 
 export default function CartScreen() {
   const push = useSafePush();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const branchId = useBranchStore(selectEffectiveBranchId);
@@ -49,6 +53,7 @@ export default function CartScreen() {
 
   const { displayCurrency, exchangeRate } = useDisplayCurrency();
   const refreshFromServer = useCartStore((s) => s.refreshFromServer);
+  const clearBranch = useCartStore((s) => s.clearBranch);
 
   // Con sesión el backend arma la orden con SU carrito, no con el local: al
   // entrar (y al cambiar de sede) se repone desde el servidor para ver precios,
@@ -60,6 +65,25 @@ export default function CartScreen() {
   // Hay productos con más unidades que el stock: no se puede pagar así.
   const hasStockProblem = cartItems.some(hasStockIssue);
   const checkoutBlocked = isAuthenticated && hasStockProblem;
+
+  const confirmClearCart = () => {
+    if (branchId === null) return;
+    Alert.alert(
+      'Vaciar carrito',
+      'Se eliminarán todos los productos de tu carrito. ¿Deseas continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Sí, eliminar todo',
+          style: 'destructive',
+          onPress: () => {
+            clearBranch(branchId);
+            useToastStore.getState().show('Se eliminaron los productos del carrito.');
+          },
+        },
+      ]
+    );
+  };
 
   if (cartItems.length === 0) {
     return (
@@ -103,7 +127,7 @@ export default function CartScreen() {
             Agregá productos desde el inicio o la búsqueda para verlos acá.
           </Text>
           <Pressable
-            onPress={() => push('/')}
+            onPress={() => router.replace('/')}
             style={{
               paddingVertical: 12,
               paddingHorizontal: 20,
@@ -125,18 +149,43 @@ export default function CartScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <Text
-        style={{
-          fontSize: 22,
-          fontWeight: '700',
-          color: colors.foreground,
-          paddingTop: insets.top + 12,
-          paddingHorizontal: 24,
-          paddingBottom: 12,
-        }}
-      >
-        Carrito
-      </Text>
+      <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 24, paddingBottom: 12, gap: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+          <Text style={{ fontSize: 22, fontWeight: '700', color: colors.foreground }}>Carrito</Text>
+          <Text style={{ fontSize: 13, color: colors.muted }}>
+            {cartItems.length} {cartItems.length === 1 ? 'producto' : 'productos'}
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Pressable
+            onPress={() => router.replace('/')}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              paddingVertical: 7,
+              paddingHorizontal: 12,
+              borderRadius: 999,
+              backgroundColor: colors.section,
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Seguir comprando"
+          >
+            <ShoppingBag size={14} color={colors.foreground} />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: colors.foreground }}>Seguir comprando</Text>
+          </Pressable>
+          <Pressable
+            onPress={confirmClearCart}
+            hitSlop={8}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}
+            accessibilityRole="button"
+            accessibilityLabel="Vaciar carrito"
+          >
+            <Trash2 size={14} color={colors.danger} />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: colors.danger }}>Vaciar carrito</Text>
+          </Pressable>
+        </View>
+      </View>
 
       <FlatList
         data={cartItems}
@@ -216,7 +265,14 @@ function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeColors })
 
   const [imageFailed, setImageFailed] = useState(false);
   const showPlaceholder = !item.tx_img_url || imageFailed;
-  const unitPrice = Number(item.pri_product_final_price);
+  // Con la cantidad actual: la fila se recalcula al instante al tocar +/−.
+  const pricing = getCartLinePricing(item);
+  const fmt = (amount: number) => formatDisplayPrice(amount, exchangeRate, displayCurrency);
+
+  const handleRemove = () => {
+    removeProduct(item.tx_slug, item.branch_id);
+    useToastStore.getState().show('El producto ha sido eliminado del carrito.');
+  };
 
   return (
     <Pressable
@@ -258,6 +314,11 @@ function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeColors })
             onError={() => setImageFailed(true)}
           />
         )}
+        {pricing.hasDiscount && (
+          <View style={{ position: 'absolute', top: 3, left: 3 }}>
+            <DiscountBadge percent={Math.round(pricing.discountPercent)} colors={colors} size="sm" />
+          </View>
+        )}
       </View>
 
       <View style={{ flex: 1, justifyContent: 'space-between' }}>
@@ -275,14 +336,25 @@ function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeColors })
             {item.nb_product}
           </Text>
         </View>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: colors.foreground }}>
-          {formatDisplayPrice(unitPrice, exchangeRate, displayCurrency)}
-        </Text>
+        <View>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', columnGap: 6 }}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: colors.primary }}>{fmt(pricing.lineTotal)}</Text>
+            {pricing.hasDiscount && (
+              <Text style={{ fontSize: 11, color: colors.muted, textDecorationLine: 'line-through' }}>
+                {fmt(pricing.lineBase)}
+              </Text>
+            )}
+          </View>
+          <Text style={{ fontSize: 11, color: colors.muted }}>
+            {item.qty} × {fmt(pricing.unitPrice)}
+            {pricing.lineTax > 0 ? ` · IVA inc. ${fmt(pricing.lineTax)}` : ''}
+          </Text>
+        </View>
       </View>
 
       <View style={{ alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <Pressable
-          onPress={() => removeProduct(item.tx_slug, item.branch_id)}
+          onPress={handleRemove}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={`Quitar ${item.nb_product} del carrito`}
@@ -293,6 +365,7 @@ function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeColors })
           value={item.qty}
           max={getMaxQuantity(item, MAX_QTY)}
           onChange={(qty) => updateQuantity(item.tx_slug, item.branch_id, qty)}
+          onRemove={handleRemove}
           colors={colors}
         />
       </View>

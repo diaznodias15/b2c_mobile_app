@@ -466,6 +466,18 @@ Con sesión, el carrito local tiene que ser un espejo del remoto:
   mientras hay operaciones en vuelo (la UI saltaría hacia atrás).
 - Si una operación falla (ej. sin stock) se muestra el mensaje del backend en
   un toast y se re-lee el carrito (rollback). No volver a "fire-and-forget".
+- **Cambios de cantidad con debounce de 500 ms** (`QTY_SYNC_DEBOUNCE_MS`): la UI y
+  los totales cambian al instante, pero al servidor va UNA sola petición
+  `PUT` con la cantidad final por producto. Mientras hay uno esperando cuenta
+  como operación en vuelo (`refreshFromServer` no corre). `removeProduct`,
+  `clearBranch` y `reset` cancelan los pendientes. Si se cierra la sesión antes
+  de que venza, no se manda nada.
+- La línea del carrito usa `getCartLinePricing` (`utils/pricing.ts`): total de la
+  línea (precio final × cantidad), valor base tachado + badge `-N%` si hay
+  descuento, e "IVA inc.". `QuantityStepper` acepta `onRemove`: con cantidad 1
+  el "−" se vuelve papelera. "Vaciar carrito" pide confirmación y llama
+  `clearBranch` (`DELETE /cart/clear`). "Seguir comprando" y "Ir a comprar" usan
+  `router.replace('/')` porque `/` es una tab.
 - UI: alerta "Cantidad no disponible" bajo la card, tope del stepper = stock,
   botón de pago bloqueado y `CheckoutStockIssue` si hay ítems pasados de stock.
 

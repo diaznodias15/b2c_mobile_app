@@ -88,3 +88,38 @@ export function getCartSummary(items: CartItem[]): CartSummary {
     { subtotal: 0, discountTotal: 0, taxTotal: 0, total: 0 }
   );
 }
+
+export type CartLinePricing = {
+  /** Precio unitario final (con descuento e IVA), en Bs. */
+  unitPrice: number;
+  /** Precio final × cantidad: lo que cuesta la línea. */
+  lineTotal: number;
+  /** Precio base × cantidad: el valor tachado cuando hay descuento. */
+  lineBase: number;
+  /** true solo si hay un `qty_discount` real Y el precio final es menor al base. */
+  hasDiscount: boolean;
+  /** Porcentaje de descuento (para el badge "-N%"). */
+  discountPercent: number;
+  /** IVA de toda la línea (0 si el ítem no trae % de IVA). */
+  lineTax: number;
+};
+
+/**
+ * Montos de UNA línea del carrito, calculados con la cantidad actual: la fila
+ * se recalcula al instante cuando el cliente cambia la cantidad (la web usa la
+ * cantidad "en vivo" del stepper, no espera al debounce). Reutiliza
+ * `getCartSummary` para el IVA, así la fila y el resumen no pueden discrepar.
+ */
+export function getCartLinePricing(item: CartItem): CartLinePricing {
+  const unitPrice = Number(item.pri_product_final_price);
+  const basePrice = Number(item.pri_product_price ?? item.pri_product_final_price);
+  const discountPercent = Number(item.qty_discount ?? 0);
+  return {
+    unitPrice,
+    lineTotal: unitPrice * item.qty,
+    lineBase: basePrice * item.qty,
+    hasDiscount: discountPercent > 0 && basePrice > unitPrice,
+    discountPercent,
+    lineTax: getCartSummary([item]).taxTotal,
+  };
+}

@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
-import { Minus, Plus } from 'lucide-react-native';
+import { Minus, Plus, Trash2 } from 'lucide-react-native';
 
 import type { ThemeColors } from '@/theme/colors';
 
@@ -15,13 +15,22 @@ export function QuantityStepper({
   onChange,
   colors,
   disabled = false,
+  onRemove,
 }: {
   value: number;
   max: number;
   onChange: (value: number) => void;
   colors: ThemeColors;
   disabled?: boolean;
+  /**
+   * Si se pasa, con cantidad 1 el botón "−" se vuelve una papelera que llama a
+   * `onRemove` (como en la web) en vez de quedar deshabilitado. Es para el
+   * carrito; el detalle de producto no lo usa.
+   */
+  onRemove?: () => void;
 }) {
+  const removesAtOne = onRemove !== undefined && value <= 1;
+
   return (
     <View
       style={{
@@ -36,13 +45,17 @@ export function QuantityStepper({
       }}
     >
       <Pressable
-        onPress={() => onChange(Math.max(1, value - 1))}
-        disabled={disabled || value <= 1}
+        onPress={() => (removesAtOne ? onRemove() : onChange(Math.max(1, value - 1)))}
+        disabled={disabled || (value <= 1 && !removesAtOne)}
         accessibilityRole="button"
-        accessibilityLabel="Restar cantidad"
+        accessibilityLabel={removesAtOne ? 'Quitar del carrito' : 'Restar cantidad'}
         hitSlop={8}
       >
-        <Minus size={16} color={colors.foreground} />
+        {removesAtOne ? (
+          <Trash2 size={16} color={colors.danger} />
+        ) : (
+          <Minus size={16} color={colors.foreground} />
+        )}
       </Pressable>
       <Text
         style={{

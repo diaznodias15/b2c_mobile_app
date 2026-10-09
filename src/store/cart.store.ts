@@ -53,6 +53,8 @@ type CartState = {
   setRemoteCart: (items: CartItem[]) => void;
   setSyncEnabled: (enabled: boolean) => void;
   syncOnLogin: () => Promise<void>;
+  /** Vacía el carrito de la sede (local y, con sesión, `DELETE /cart/clear`). */
+  clearBranch: (branchId: number) => void;
   /** Reemplaza los ítems de la sede por los del servidor (solo con sesión). */
   refreshFromServer: (branchId: number) => Promise<void>;
   reset: () => void;
@@ -88,6 +90,36 @@ function mapBackendItem(branchId: number, item: CartItemFromBackend): CartItem {
 let pendingSyncs = 0;
 /** Una operación falló: re-leer el carrito en cuanto no quede ninguna en vuelo. */
 let needsRefresh = false;
+
+/**
+ * Cambios de cantidad: la UI y los totales se actualizan al instante, pero al
+ * servidor se manda UNA sola petición cuando el usuario deja de tocar (igual
+ * que la web, 500 ms). Sin esto, 5 toques en "+" eran 5 `PUT`.
+ * Mientras hay un cambio esperando cuenta como operación en vuelo
+ * (`pendingSyncs`) para que un refresh no pise la cantidad nueva.
+ */
+export const QTY_SYNC_DEBOUNCE_MS = 500;
+const qtyTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const qtyKey = (branchId: number, slug: string) => `${branchId}:${slug}`;
+
+function cancelQtySync(branchId: number, slug: string): void {
+  const key = qtyKey(branchId, slug);
+  const timer = qtyTimers.get(key);
+  if (timer === undefined) return;
+  clearTimeout(timer);
+  qtyTimers.delete(key);
+  pendingSyncs -= 1;
+}
+
+/** Cancela los cambios de cantidad pendientes de una sede (o de todas). */
+function cancelAllQtySyncs(branchId?: number): void {
+  for (const key of [...qtyTimers.keys()]) {
+    if (branchId !== undefined && !key.startsWith(`${branchId}:`)) continue;
+    clearTimeout(qtyTimers.get(key));
+    qtyTimers.delete(key);
+    pendingSyncs -= 1;
+  }
+}
 
 async function syncWithServer(
   request: Promise<unknown>,
@@ -176,14 +208,32 @@ export const useCartStore = create<CartState>()(
           ),
         }));
         if (get().isSyncEnabled) {
-          void syncWithServer(
-            cartApi.updateQuantity({ branch_id, tx_slug, qty_product: safeQty }),
-            branch_id,
-            get().refreshFromServer
+          const key = qtyKey(branch_id, tx_slug);
+          const waiting = qtyTimers.get(key);
+          if (waiting !== undefined) clearTimeout(waiting);
+          else pendingSyncs += 1;
+          qtyTimers.set(
+            key,
+            setTimeout(() => {
+              qtyTimers.delete(key);
+              // Se manda la cantidad FINAL (la última que quedó en el store).
+              const latest = get().items.find((i) => i.tx_slug === tx_slug && i.branch_id === branch_id);
+              if (latest && get().isSyncEnabled) {
+                void syncWithServer(
+                  cartApi.updateQuantity({ branch_id, tx_slug, qty_product: latest.qty }),
+                  branch_id,
+                  get().refreshFromServer
+                );
+              }
+              // `syncWithServer` ya sumó su propio contador (de forma síncrona).
+              pendingSyncs -= 1;
+            }, QTY_SYNC_DEBOUNCE_MS)
           );
         }
       },
       removeProduct: (tx_slug, branch_id) => {
+        // Si había un cambio de cantidad esperando, ya no tiene sentido mandarlo.
+        cancelQtySync(branch_id, tx_slug);
         set((state) => ({
           items: state.items.filter(
             (i) => !(i.tx_slug === tx_slug && i.branch_id === branch_id)
@@ -197,7 +247,17 @@ export const useCartStore = create<CartState>()(
           );
         }
       },
-      clear: () => set({ items: [] }),
+      clear: () => {
+        cancelAllQtySyncs();
+        set({ items: [] });
+      },
+      clearBranch: (branchId) => {
+        cancelAllQtySyncs(branchId);
+        set((state) => ({ items: state.items.filter((i) => i.branch_id !== branchId) }));
+        if (get().isSyncEnabled) {
+          void syncWithServer(cartApi.clearCart(branchId), branchId, get().refreshFromServer);
+        }
+      },
       setRemoteCart: (items) => set({ items }),
       setSyncEnabled: (enabled) => set({ isSyncEnabled: enabled }),
       syncOnLogin: async () => {
@@ -237,7 +297,10 @@ export const useCartStore = create<CartState>()(
           console.warn(`[cart.store] no se pudo refrescar el carrito de la sede ${branchId}:`, err);
         }
       },
-      reset: () => set(initialState),
+      reset: () => {
+        cancelAllQtySyncs();
+        set(initialState);
+      },
     }),
     {
       name: 'cart-storage',
