@@ -7,7 +7,7 @@ import { Info, ShoppingBag, ShoppingCart, Trash2 } from 'lucide-react-native';
 
 import { useSafePush } from '@/hooks/useSafePush';
 import { BottomTabs } from '@/components/bottom-tabs';
-import { CartMaintenance } from '@/components/CartMaintenance';
+import { ModuleMaintenance } from '@/components/ModuleMaintenance';
 import { CartSummaryCard } from '@/components/CartSummaryCard';
 import { CartTimer } from '@/components/CartTimer';
 import { DiscountBadge } from '@/components/DiscountBadge';
@@ -19,7 +19,7 @@ import { useRefreshControl } from '@/hooks/useRefreshControl';
 import { useBranchStore, selectEffectiveBranch, selectEffectiveBranchId } from '@/store/branch.store';
 import { useCartTimerStore } from '@/store/cartTimer.store';
 import { cartClearKey, cartLineKey, useCartStore } from '@/store/cart.store';
-import { isCartModuleEnabled, useConfigStore, useThemeColors } from '@/store/config.store';
+import { isModuleEnabled, useConfigStore, useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
 import { useUserStore } from '@/store/user.store';
 import { getAvailableUnits, getMaxQuantity, hasStockIssue } from '@/utils/cartStock';
@@ -131,8 +131,8 @@ export default function CartScreen() {
     );
   };
 
-  if (!isCartModuleEnabled(appConfig?.is_show_cart)) {
-    return <CartMaintenance colors={colors} insetsTop={insets.top} withTabs />;
+  if (!isModuleEnabled(appConfig?.is_show_cart)) {
+    return <ModuleMaintenance colors={colors} insetsTop={insets.top} withTabs />;
   }
 
   if (cartItems.length === 0) {
@@ -174,7 +174,7 @@ export default function CartScreen() {
           <Text
             style={{ fontSize: 14, color: colors.muted, textAlign: 'center', marginBottom: 24 }}
           >
-            Agregá productos desde el inicio o la búsqueda para verlos acá.
+            Agrega productos desde el inicio o la búsqueda para verlos aquí.
           </Text>
           <Pressable
             onPress={() => router.replace('/')}

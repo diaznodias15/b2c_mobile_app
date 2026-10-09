@@ -499,8 +499,8 @@ Con sesión, el carrito local tiene que ser un espejo del remoto:
   por sede y sesión** (la web lo abre en cada visita a `/carrito`; aquí el
   carrito es una tab que se visita seguido). Se salta si la sede no trae
   `tx_working_hours`. No se cierra tocando fuera; el botón atrás de Android sí.
-- **`is_show_cart = 0`** muestra `CartMaintenance` en carrito y checkout
-  (`isCartModuleEnabled`: un flag ausente NO apaga el módulo).
+- **`is_show_cart = 0`** muestra `ModuleMaintenance` en carrito y checkout
+  (`isModuleEnabled`: un flag ausente NO apaga el módulo).
 - UI: alerta "Cantidad no disponible" bajo la card, tope del stepper = stock,
   botón de pago bloqueado y `CheckoutStockIssue` si hay ítems pasados de stock.
 
@@ -592,3 +592,28 @@ fila que abra una pantalla del stack usa `useSafePush()`
 700 ms (`src/utils/navigation.ts`, con tests). La ventana es **global**, no
 por componente: cubre la animación `slide_from_right`. `router.replace`
 (tabs, login/registro) y `router.back` no lo necesitan.
+
+## Perfil y "Información personal" (`profile.tsx`)
+
+- **El perfil se revalida con `GET /api/auth/me`** (`useUserStore.refreshUser`): al
+  arrancar (`rehydrateAuth`), al abrir la pantalla y con pull-to-refresh. El store
+  solo persiste lo que llegó en el login, así que sin esto los datos (nombre,
+  teléfono…) quedaban viejos y un token vencido seguía pareciendo sesión activa
+  (el 401 lo cierra el listener global). `me()` usa `dedup: false` porque se llama
+  varias veces en pocos segundos. Si la sesión se cierra mientras se pide, no se
+  resucita al usuario.
+- `is_show_user = 0` muestra `ModuleMaintenance` (como `is_show_cart` en el carrito).
+- **Cambiar contraseña** (`ModalResetPassword`): el backend exige que la contraseña
+  **antigua** también cumpla la política (8–40, mayúscula, minúscula, número y
+  símbolo) y responde **400** (no 401) si es incorrecta. `getPasswordChangeIssues`
+  (`utils/passwordChange.ts`) lo valida en el cliente y avisa si la nueva es igual a
+  la antigua. Los campos declaran `autoComplete`/`textContentType` para los gestores
+  de contraseñas. Limitación del backend: un usuario antiguo con una clave débil no
+  puede cambiarla.
+
+## Textos de la interfaz: tuteo, no voseo
+
+Toda la UI habla de "tú" ("Inicia sesión", "Agrega productos", "¿No tienes
+cuenta?"), no de "vos" ("Iniciá", "Agregá", "¿No tenés?"). Había una mezcla;
+`utils/uiCopy.test.ts` escanea `src/` y falla si aparece una forma de voseo.
+Si el test marca una palabra legítima, ajusta su lista en vez de desactivarlo.

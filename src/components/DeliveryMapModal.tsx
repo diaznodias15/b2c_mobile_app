@@ -250,7 +250,7 @@ export function DeliveryMapModal({
           }}
         >
           <Text style={{ fontSize: 12, color: colors.muted, textAlign: 'center' }}>
-            Tocá el mapa o arrastrá el pin para ajustar el punto de entrega.
+            Toca el mapa o arrastra el pin para ajustar el punto de entrega.
           </Text>
 
           <Pressable

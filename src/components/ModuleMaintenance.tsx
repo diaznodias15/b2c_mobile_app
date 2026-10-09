@@ -6,11 +6,12 @@ import { BottomTabs } from '@/components/bottom-tabs';
 import { hexToRgba, type ThemeColors } from '@/theme/colors';
 
 /**
- * Pantalla del carrito/checkout cuando el admin lo apaga (`is_show_cart = 0`):
- * "Lo sentimos / Módulo en mantenimiento", con salida al inicio.
- * `withTabs` agrega la barra inferior (el carrito es una tab; el checkout no).
+ * Pantalla de un módulo que el admin apagó (`is_show_cart = 0` para carrito y
+ * checkout, `is_show_user = 0` para el perfil): "Lo sentimos / Módulo en
+ * mantenimiento", con salida al inicio. `withTabs` agrega la barra inferior
+ * (carrito y perfil son tabs; el checkout no).
  */
-export function CartMaintenance({
+export function ModuleMaintenance({
   colors,
   insetsTop,
   withTabs = false,

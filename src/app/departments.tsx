@@ -121,7 +121,7 @@ function EmptyDepartments({ colors }: { colors: ReturnType<typeof useThemeColors
         }}
       >
         No pudimos encontrar departamentos disponibles en este momento.{'\n'}
-        Probá recargar en unos segundos.
+        Prueba a recargar en unos segundos.
       </Text>
 
       <Pressable

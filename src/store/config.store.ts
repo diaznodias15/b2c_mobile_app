@@ -49,11 +49,12 @@ export function isConfigFlagTrue(value: boolean | string | number | undefined): 
 }
 
 /**
- * `is_show_cart = 0` apaga el carrito y el checkout ("Módulo en mantenimiento").
+ * Un módulo con su flag en 0/false (`is_show_cart` → carrito y checkout,
+ * `is_show_user` → perfil) se muestra como "Módulo en mantenimiento".
  * Si el flag no llegó (config aún sin cargar o backend viejo) se asume encendido:
- * apagarlo por un dato ausente dejaría a todos sin poder comprar.
+ * apagarlo por un dato ausente dejaría a todos sin poder usar la app.
  */
-export function isCartModuleEnabled(value: boolean | string | number | undefined): boolean {
+export function isModuleEnabled(value: boolean | string | number | undefined): boolean {
   return value === undefined || isConfigFlagTrue(value);
 }
 

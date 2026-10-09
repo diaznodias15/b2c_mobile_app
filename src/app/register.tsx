@@ -157,7 +157,7 @@ export default function RegisterScreen() {
           <Text
             style={{ fontSize: 14, color: colors.muted, textAlign: 'center', marginBottom: 28 }}
           >
-            Revisá tu bandeja de entrada (y spam) para verificar tu cuenta antes de iniciar
+            Revisa tu bandeja de entrada (y spam) para verificar tu cuenta antes de iniciar
             sesión.
           </Text>
 
@@ -246,7 +246,7 @@ export default function RegisterScreen() {
           Crear cuenta
         </Text>
         <Text style={{ fontSize: 14, color: colors.muted, marginBottom: 24 }}>
-          Completá tus datos para poder finalizar tus compras.
+          Completa tus datos para poder finalizar tus compras.
         </Text>
 
         <Field label="Correo electrónico" colors={colors}>
@@ -556,7 +556,7 @@ export default function RegisterScreen() {
           accessibilityLabel="Ya tengo cuenta"
         >
           <Text style={{ fontSize: 14, color: colors.muted }}>
-            ¿Ya tenés cuenta? <Text style={{ color: colors.primary, fontWeight: '700' }}>Iniciá sesión</Text>
+            ¿Ya tienes cuenta? <Text style={{ color: colors.primary, fontWeight: '700' }}>Inicia sesión</Text>
           </Text>
         </Pressable>
       </KeyboardAwareScrollView>

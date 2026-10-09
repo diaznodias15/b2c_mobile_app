@@ -125,7 +125,7 @@ export default function LoginScreen() {
           Iniciar sesión
         </Text>
         <Text style={{ fontSize: 14, color: colors.muted, marginBottom: 32 }}>
-          Ingresá con tu cuenta para continuar con tu compra.
+          Ingresa con tu cuenta para continuar con tu compra.
         </Text>
 
         <FieldLabel colors={colors}>Correo electrónico</FieldLabel>
@@ -245,8 +245,8 @@ export default function LoginScreen() {
           accessibilityLabel="Crear cuenta"
         >
           <Text style={{ fontSize: 14, color: colors.muted }}>
-            ¿No tenés cuenta?{' '}
-            <Text style={{ color: colors.primary, fontWeight: '700' }}>Registrate</Text>
+            ¿No tienes cuenta?{' '}
+            <Text style={{ color: colors.primary, fontWeight: '700' }}>Regístrate</Text>
           </Text>
         </Pressable>
       </KeyboardAwareScrollView>

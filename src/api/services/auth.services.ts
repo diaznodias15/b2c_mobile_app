@@ -142,7 +142,10 @@ export async function logout(): Promise<void> {
 
 export async function me(): Promise<User> {
   try {
-    const res = await axiosRequest<MeResponse>({ method: 'GET', url: '/api/auth/me' });
+    // `dedup: false`: se llama al arrancar, al abrir el perfil y al refrescar, a veces
+    // con segundos de diferencia; con el anti-duplicados (5 s) la segunda daría
+    // `DUPLICATE_REQUEST`.
+    const res = await axiosRequest<MeResponse>({ method: 'GET', url: '/api/auth/me', dedup: false });
     return res.data;
   } catch (err) {
     throw cleanError(err, 'No se pudo obtener el usuario');
@@ -247,7 +250,9 @@ export async function resetPassword(
   payload: ResetPasswordPayload
 ): Promise<ResetPasswordResponse> {
   try {
-    return axiosRequest<ResetPasswordResponse>({
+    // `return await` (no solo `return`): sin el `await` el rechazo escapa del try/catch y
+    // `cleanError` nunca se aplica.
+    return await axiosRequest<ResetPasswordResponse>({
       method: 'POST',
       url: '/api/auth/reset-password',
       data: payload,

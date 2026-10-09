@@ -7,6 +7,7 @@ import { selectEffectiveBranchId, useBranchStore } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
 import { useConfigStore, useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
+import { useUserStore } from '@/store/user.store';
 import { canStartRefresh } from '@/utils/refreshGuard';
 
 /**
@@ -16,6 +17,7 @@ import { canStartRefresh } from '@/utils/refreshGuard';
  *  - el config/whitelabel (`bootstrapConfig`: colores, tasa, sedes,
  *    departamentos, publicidad, marcas — todo vive en stores de Zustand);
  *  - el carrito del servidor (precios, stock y cantidades; solo con sesión);
+ *  - el perfil del usuario (`/auth/me`; solo con sesión);
  *  - las queries de TanStack Query activas (`invalidateQueries` re-pide
  *    solo las que están montadas, o sea "lo correspondiente a la vista
  *    en donde estoy": más vendidos, órdenes, detalle de producto, etc.).
@@ -53,6 +55,8 @@ export function useRefreshControl(): ReactElement<RefreshControlProps> {
         queryClient.invalidateQueries(),
         // El carrito no es una query: vive en Zustand. Con sesión se repone del servidor.
         branchId === null ? Promise.resolve() : useCartStore.getState().refreshFromServer(branchId),
+        // Datos del perfil (nombre, teléfono…): no-op si no hay sesión.
+        useUserStore.getState().refreshUser(),
       ]);
       // `bootstrapConfig` no lanza: deja el fallo en el store.
       useToastStore

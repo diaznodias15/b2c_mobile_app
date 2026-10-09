@@ -1,11 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Eye, EyeOff, Save, X } from 'lucide-react-native';
 
 import { resetPassword } from '@/api/services/auth.services';
 import { PasswordStrengthMeter } from '@/components/PasswordStrengthMeter';
-import { isConfirmPasswordValid, isPasswordValid } from '@/utils/validations';
+import {
+  getPasswordChangeIssues,
+  OLD_PASSWORD_INVALID_MESSAGE,
+  SAME_PASSWORD_MESSAGE,
+} from '@/utils/passwordChange';
 import type { ThemeColors } from '@/theme/colors';
 
 export function ModalResetPassword({
@@ -27,11 +31,18 @@ export function ModalResetPassword({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const canSubmit =
-    oldPassword.length > 0 &&
-    isPasswordValid(newPassword) &&
-    isConfirmPasswordValid(newPassword, confirmPassword) &&
-    !isSubmitting;
+  // El backend exige que la antigua también cumpla la política: se avisa antes de enviar.
+  const issues = getPasswordChangeIssues({ oldPassword, newPassword, confirmPassword });
+  const canSubmit = issues.canChange && !isSubmitting;
+
+  // Cierre diferido tras el éxito: se cancela si el modal se desmonta antes.
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    },
+    []
+  );
 
   const reset = () => {
     setOldPassword('');
@@ -61,7 +72,7 @@ export function ModalResetPassword({
         new_password_confirmation: confirmPassword,
       });
       setSuccess(true);
-      setTimeout(() => {
+      closeTimer.current = setTimeout(() => {
         reset();
         onClose();
       }, 1200);
@@ -129,20 +140,24 @@ export function ModalResetPassword({
               <>
                 <PasswordField
                   label="Antigua contraseña"
+                  kind="current"
                   value={oldPassword}
                   onChangeText={setOldPassword}
                   show={showOld}
                   onToggleShow={() => setShowOld((v) => !v)}
+                  error={issues.oldInvalid ? OLD_PASSWORD_INVALID_MESSAGE : undefined}
                   colors={colors}
                 />
 
                 <View>
                   <PasswordField
                     label="Contraseña nueva"
+                    kind="new"
                     value={newPassword}
                     onChangeText={setNewPassword}
                     show={showNew}
                     onToggleShow={() => setShowNew((v) => !v)}
+                    error={issues.sameAsOld ? SAME_PASSWORD_MESSAGE : undefined}
                     colors={colors}
                   />
                   <View style={{ marginTop: 8 }}>
@@ -152,6 +167,7 @@ export function ModalResetPassword({
 
                 <PasswordField
                   label="Confirmar contraseña"
+                  kind="new"
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   show={showConfirm}
@@ -198,17 +214,22 @@ export function ModalResetPassword({
 
 function PasswordField({
   label,
+  kind,
   value,
   onChangeText,
   show,
   onToggleShow,
+  error,
   colors,
 }: {
   label: string;
+  /** `current`: la contraseña actual; `new`: una nueva (para que el gestor ofrezca guardarla). */
+  kind: 'current' | 'new';
   value: string;
   onChangeText: (v: string) => void;
   show: boolean;
   onToggleShow: () => void;
+  error?: string;
   colors: ThemeColors;
 }) {
   return (
@@ -229,6 +250,11 @@ function PasswordField({
           onChangeText={onChangeText}
           secureTextEntry={!show}
           autoCapitalize="none"
+          autoCorrect={false}
+          // Gestores de contraseñas: ofrecer rellenar la actual y guardar la nueva.
+          autoComplete={kind === 'current' ? 'current-password' : 'new-password'}
+          textContentType={kind === 'current' ? 'password' : 'newPassword'}
+          importantForAutofill="yes"
           placeholder="••••••••"
           placeholderTextColor={colors.muted}
           style={{ flex: 1, fontSize: 15, color: colors.foreground, paddingVertical: 12 }}
@@ -242,6 +268,7 @@ function PasswordField({
           {show ? <EyeOff size={18} color={colors.muted} /> : <Eye size={18} color={colors.muted} />}
         </Pressable>
       </View>
+      {error ? <Text style={{ fontSize: 12, color: colors.danger, marginTop: 6 }}>{error}</Text> : null}
     </View>
   );
 }

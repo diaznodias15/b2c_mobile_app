@@ -121,7 +121,7 @@ export default function OrdersScreen() {
           {!isLoading && isError && (
             <View style={{ paddingVertical: 40, paddingHorizontal: 24, alignItems: 'center' }}>
               <Text style={{ fontSize: 14, color: colors.danger, textAlign: 'center' }}>
-                No pudimos cargar tus órdenes. Intentá de nuevo más tarde.
+                No pudimos cargar tus órdenes. Inténtalo de nuevo más tarde.
               </Text>
             </View>
           )}

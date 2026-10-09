@@ -25,7 +25,7 @@ export default function RootLayout() {
     const unsubscribeUnauthorized = onUnauthorized(() => {
       if (!useUserStore.getState().isAuthenticated) return;
       void useUserStore.getState().signOut();
-      useToastStore.getState().show('Tu sesión expiró. Iniciá sesión de nuevo.');
+      useToastStore.getState().show('Tu sesión expiró. Inicia sesión de nuevo.');
     });
     return unsubscribeUnauthorized;
   }, []);

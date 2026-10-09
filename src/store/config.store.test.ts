@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { isCartModuleEnabled, useConfigStore } from './config.store';
+import { isModuleEnabled, useConfigStore } from './config.store';
 
 const sampleConfig = {
   tx_company_name: 'Farmacia El Samán',
@@ -130,22 +130,22 @@ describe('useConfigStore', () => {
   });
 });
 
-describe('isCartModuleEnabled', () => {
+describe('isModuleEnabled', () => {
   it('lo apaga solo con is_show_cart explícitamente en 0/false', () => {
-    expect(isCartModuleEnabled(0)).toBe(false);
-    expect(isCartModuleEnabled('0')).toBe(false);
-    expect(isCartModuleEnabled(false)).toBe(false);
-    expect(isCartModuleEnabled('false')).toBe(false);
+    expect(isModuleEnabled(0)).toBe(false);
+    expect(isModuleEnabled('0')).toBe(false);
+    expect(isModuleEnabled(false)).toBe(false);
+    expect(isModuleEnabled('false')).toBe(false);
   });
 
   it('lo deja encendido con 1/true en cualquiera de sus formas', () => {
-    expect(isCartModuleEnabled(1)).toBe(true);
-    expect(isCartModuleEnabled('1')).toBe(true);
-    expect(isCartModuleEnabled(true)).toBe(true);
-    expect(isCartModuleEnabled('true')).toBe(true);
+    expect(isModuleEnabled(1)).toBe(true);
+    expect(isModuleEnabled('1')).toBe(true);
+    expect(isModuleEnabled(true)).toBe(true);
+    expect(isModuleEnabled('true')).toBe(true);
   });
 
   it('un flag ausente (config sin cargar) NO apaga el carrito', () => {
-    expect(isCartModuleEnabled(undefined)).toBe(true);
+    expect(isModuleEnabled(undefined)).toBe(true);
   });
 });

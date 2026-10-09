@@ -7,7 +7,7 @@ import { Check, CircleCheck, Info, MessageCircle } from 'lucide-react-native';
 
 import { createOrder } from '@/api/services/orders.services';
 import { CartSummaryCard } from '@/components/CartSummaryCard';
-import { CartMaintenance } from '@/components/CartMaintenance';
+import { ModuleMaintenance } from '@/components/ModuleMaintenance';
 import { CartTimer } from '@/components/CartTimer';
 import { CheckoutBackButton } from '@/components/CheckoutPrimitives';
 import { CheckoutEntregaStep } from '@/components/CheckoutEntregaStep';
@@ -21,7 +21,7 @@ import { useCartStore } from '@/store/cart.store';
 import { useCartTimerStore } from '@/store/cartTimer.store';
 import { useToastStore } from '@/store/toast.store';
 import { useCheckoutStore } from '@/store/checkout.store';
-import { isCartModuleEnabled, isConfigFlagTrue, useConfigStore, useThemeColors } from '@/store/config.store';
+import { isModuleEnabled, isConfigFlagTrue, useConfigStore, useThemeColors } from '@/store/config.store';
 import { useUserStore } from '@/store/user.store';
 import { hexToRgba, type ThemeColors } from '@/theme/colors';
 import { isAreaCodeValid, isPhoneNumberValid, VE_AREA_CODES, VE_COUNTRY_CODE } from '@/utils/phone';
@@ -143,7 +143,7 @@ function CheckoutFlow() {
     // Bug §20.7 de la web corregido: no avanzar a "éxito" si el backend
     // no mandó un número de orden real.
     if (!result.tx_order_number) {
-      setError('No pudimos confirmar tu pedido. Intentá de nuevo.');
+      setError('No pudimos confirmar tu pedido. Inténtalo de nuevo.');
       return;
     }
     // El backend ya vació su carrito al crear la orden: se limpia SOLO lo local.
@@ -220,8 +220,8 @@ function CheckoutFlow() {
     }
   };
 
-  if (!isCartModuleEnabled(appConfig?.is_show_cart)) {
-    return <CartMaintenance colors={colors} insetsTop={insets.top} />;
+  if (!isModuleEnabled(appConfig?.is_show_cart)) {
+    return <ModuleMaintenance colors={colors} insetsTop={insets.top} />;
   }
 
   if (orderNumber) {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyRound, LogIn, LogOut, Package, User } from 'lucide-react-native';
@@ -7,11 +7,12 @@ import { useSafePush } from '@/hooks/useSafePush';
 import { logout as logoutRequest } from '@/api/services/auth.services';
 import { BottomTabs } from '@/components/bottom-tabs';
 import { ModalLogout } from '@/components/ModalLogout';
+import { ModuleMaintenance } from '@/components/ModuleMaintenance';
 import { ModalResetPassword } from '@/components/ModalResetPassword';
 import { ProfileActionCard } from '@/components/ProfileActionCard';
 import { ProfileHeader } from '@/components/ProfileHeader';
 import { useRefreshControl } from '@/hooks/useRefreshControl';
-import { useThemeColors } from '@/store/config.store';
+import { isModuleEnabled, useConfigStore, useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
 import { useUserStore } from '@/store/user.store';
 import type { ThemeColors } from '@/theme/colors';
@@ -25,10 +26,18 @@ export default function ProfileScreen() {
   const user = useUserStore((s) => s.user);
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const signOut = useUserStore((s) => s.signOut);
+  const refreshUser = useUserStore((s) => s.refreshUser);
+  const appConfig = useConfigStore((s) => s.appConfig);
 
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+
+  // Al abrir el perfil se revalidan los datos con `/auth/me` (el store solo guarda lo que
+  // llegó en el login). No-op sin sesión.
+  useEffect(() => {
+    void refreshUser();
+  }, [refreshUser]);
 
   const handleConfirmSignOut = async () => {
     setIsSigningOut(true);
@@ -41,6 +50,11 @@ export default function ProfileScreen() {
       showToast('Sesión cerrada');
     }
   };
+
+  // `is_show_user = 0`: el admin apagó el perfil (la web muestra "Módulo en mantenimiento").
+  if (!isModuleEnabled(appConfig?.is_show_user)) {
+    return <ModuleMaintenance colors={colors} insetsTop={insets.top} withTabs />;
+  }
 
   if (!isAuthenticated || !user) {
     return (
@@ -225,7 +239,7 @@ function LoggedOutState({
           No iniciaste sesión
         </Text>
         <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', marginBottom: 24 }}>
-          Iniciá sesión para ver tu perfil y completar tus compras.
+          Inicia sesión para ver tu perfil y completar tus compras.
         </Text>
         <Pressable
           onPress={onLogin}

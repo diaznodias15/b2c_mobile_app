@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from '@/utils/secureStorage';
 import { setToken, getToken } from '@/api/axiosRequest';
+import { me } from '@/api/services/auth.services';
 import { useCartStore } from '@/store/cart.store';
 
 /**
@@ -36,6 +37,13 @@ type UserState = {
   signOut: () => Promise<void>;
   /** Rehidrata el estado chequeando si hay token en SecureStore. */
   rehydrateAuth: () => Promise<boolean>;
+  /**
+   * Revalida el perfil con `GET /api/auth/me`. El store persiste el usuario del login,
+   * así que sin esto los datos (nombre, teléfono…) quedan viejos y un token vencido
+   * sigue pareciendo una sesión activa. Un 401 cierra la sesión por el listener global
+   * (`onUnauthorized`); cualquier otro fallo conserva lo que ya hay.
+   */
+  refreshUser: () => Promise<void>;
   reset: () => void;
 };
 
@@ -47,7 +55,7 @@ const initialState: Pick<UserState, 'user' | 'isAuthenticated' | 'isLoading'> = 
 
 export const useUserStore = create<UserState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...initialState,
       setUser: (user) => set({ user, isAuthenticated: true }),
       setLoading: (loading) => set({ isLoading: loading }),
@@ -85,7 +93,21 @@ export const useUserStore = create<UserState>()(
         // local ya persiste entre reinicios y ya se sincronizó cuando
         // se creó.
         useCartStore.getState().setSyncEnabled(true);
+        // Datos del perfil al día (y detecta un token ya vencido) sin bloquear el arranque.
+        void get().refreshUser();
         return true;
+      },
+      refreshUser: async () => {
+        if (!get().isAuthenticated) return;
+        try {
+          const fresh = await me();
+          // La sesión pudo cerrarse mientras se pedía: no resucitar un usuario ya borrado.
+          const current = get().user;
+          if (get().isAuthenticated && current) set({ user: { ...current, ...fresh } });
+        } catch (err) {
+          // 401 → el listener global cierra la sesión. Sin red u otro error: se conserva lo local.
+          console.warn('[user.store] no se pudo revalidar el perfil:', err);
+        }
       },
       reset: () => set(initialState),
     }),

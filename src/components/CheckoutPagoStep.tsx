@@ -131,7 +131,7 @@ export function CheckoutPagoStep({
           ¿Cómo preferís pagar?
         </Text>
         <Text style={{ fontSize: 14, color: colors.muted, marginBottom: 20 }}>
-          Elegí un método. El formulario aparece debajo con los datos que necesitamos.
+          Elige un método. El formulario aparece debajo con los datos que necesitamos.
         </Text>
 
         {isLoadingMethods ? (
@@ -151,7 +151,7 @@ export function CheckoutPagoStep({
             )}
             <PaymentMethodCard
               label="Efectivo"
-              subtitle="Pagás al recibir"
+              subtitle="Pagas al recibir"
               icon={Banknote}
               {...paymentMethodColorFor('EFECTIVO', colors)}
               selected={paymentMethod === 'EFECTIVO'}
@@ -247,7 +247,7 @@ export function CheckoutPagoStep({
                 />
                 <CheckoutSelectField
                   label="Banco de origen"
-                  placeholder="Seleccioná tu banco"
+                  placeholder="Selecciona tu banco"
                   value={bankOrigin}
                   options={methodsConfig?.banks ?? []}
                   onChange={setBankOrigin}

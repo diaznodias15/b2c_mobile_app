@@ -125,10 +125,10 @@ export function CheckoutEntregaStep({
         keyboardShouldPersistTaps="handled"
       >
         <Text style={{ fontSize: 24, fontWeight: '700', color: colors.foreground, marginBottom: 6 }}>
-          ¿Cómo querés recibir tu pedido?
+          ¿Cómo quieres recibir tu pedido?
         </Text>
         <Text style={{ fontSize: 14, color: colors.muted, marginBottom: 20 }}>
-          Elegí una opción para continuar.
+          Elige una opción para continuar.
         </Text>
 
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>

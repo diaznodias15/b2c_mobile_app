@@ -198,8 +198,8 @@ function SearchEmptyState({
         <SearchIcon size={40} color={colors.muted} strokeWidth={1.6} />
         <Text style={{ fontSize: 15, color: colors.muted, textAlign: 'center', marginTop: 12 }}>
           {query.trim().length === 0
-            ? 'Escribí el nombre de un producto para empezar a buscar.'
-            : `Escribí al menos ${MIN_QUERY_LENGTH} letras para buscar.`}
+            ? 'Escribe el nombre de un producto para empezar a buscar.'
+            : `Escribe al menos ${MIN_QUERY_LENGTH} letras para buscar.`}
         </Text>
       </View>
     );
