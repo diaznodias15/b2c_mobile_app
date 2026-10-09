@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { FlatList, Image as RNImage, Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ShoppingCart, Trash2 } from 'lucide-react-native';
 
+import { useSafePush } from '@/hooks/useSafePush';
 import { BottomTabs } from '@/components/bottom-tabs';
 import { CartSummaryCard } from '@/components/CartSummaryCard';
 import { QuantityStepper } from '@/components/QuantityStepper';
@@ -24,7 +24,7 @@ const MAX_QTY = 99;
 const PLACEHOLDER_IMAGE = { uri: UNAVAILABLE_PRODUCT_IMAGE };
 
 export default function CartScreen() {
-  const router = useRouter();
+  const push = useSafePush();
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const branchId = useBranchStore(selectEffectiveBranchId);
@@ -87,7 +87,7 @@ export default function CartScreen() {
             Agregá productos desde el inicio o la búsqueda para verlos acá.
           </Text>
           <Pressable
-            onPress={() => router.push('/')}
+            onPress={() => push('/')}
             style={{
               paddingVertical: 12,
               paddingHorizontal: 20,
@@ -147,7 +147,7 @@ export default function CartScreen() {
           colors={colors}
         >
           <Pressable
-            onPress={() => router.push('/checkout')}
+            onPress={() => push('/checkout')}
             style={{
               height: 48,
               borderRadius: 12,
@@ -171,7 +171,7 @@ export default function CartScreen() {
 }
 
 function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeColors }) {
-  const router = useRouter();
+  const push = useSafePush();
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeProduct = useCartStore((s) => s.removeProduct);
   const { displayCurrency, exchangeRate } = useDisplayCurrency();
@@ -182,7 +182,7 @@ function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeColors })
 
   return (
     <Pressable
-      onPress={() => router.push(`/product/${item.tx_slug}`)}
+      onPress={() => push(`/product/${item.tx_slug}`)}
       style={{
         flexDirection: 'row',
         gap: 12,

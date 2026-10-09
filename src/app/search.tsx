@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { PackageSearch, Search as SearchIcon, X } from 'lucide-react-native';
 
+import { useSafePush } from '@/hooks/useSafePush';
 import { BottomTabs } from '@/components/bottom-tabs';
 import { ProductListItem } from '@/components/ProductListItem';
 import { ProductListItemSkeleton } from '@/components/ProductListItemSkeleton';
@@ -23,7 +23,7 @@ const MIN_QUERY_LENGTH = 3;
 const DEBOUNCE_MS = 400;
 
 export default function SearchScreen() {
-  const router = useRouter();
+  const push = useSafePush();
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const branchId = useBranchStore(selectEffectiveBranchId);
@@ -80,8 +80,8 @@ export default function SearchScreen() {
   );
 
   const handlePressProduct = useCallback(
-    (product: Product) => router.push(`/product/${product.tx_slug}`),
-    [router]
+    (product: Product) => push(`/product/${product.tx_slug}`),
+    [push]
   );
 
   const renderItem = useCallback(

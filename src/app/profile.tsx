@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyRound, LogIn, LogOut, Package, User } from 'lucide-react-native';
 
+import { useSafePush } from '@/hooks/useSafePush';
 import { logout as logoutRequest } from '@/api/services/auth.services';
 import { BottomTabs } from '@/components/bottom-tabs';
 import { ModalLogout } from '@/components/ModalLogout';
@@ -17,7 +17,7 @@ import { useUserStore } from '@/store/user.store';
 import type { ThemeColors } from '@/theme/colors';
 
 export default function ProfileScreen() {
-  const router = useRouter();
+  const push = useSafePush();
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const refreshControl = useRefreshControl();
@@ -44,7 +44,7 @@ export default function ProfileScreen() {
 
   if (!isAuthenticated || !user) {
     return (
-      <LoggedOutState colors={colors} insetsTop={insets.top} onLogin={() => router.push('/login')} />
+      <LoggedOutState colors={colors} insetsTop={insets.top} onLogin={() => push('/login')} />
     );
   }
 
@@ -69,7 +69,7 @@ export default function ProfileScreen() {
             icon={<Package size={20} color={colors.primary} strokeWidth={2} />}
             label="Mis órdenes"
             variant="orders"
-            onPress={() => router.push('/orders')}
+            onPress={() => push('/orders')}
             colors={colors}
           />
           <ProfileActionCard

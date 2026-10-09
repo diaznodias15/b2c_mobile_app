@@ -5,6 +5,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft, Eye, EyeOff, Lock, LogIn, Mail, Send } from 'lucide-react-native';
 
+import { useSafePush } from '@/hooks/useSafePush';
 import { login, sendEmailVerification } from '@/api/services/auth.services';
 import { useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
@@ -26,6 +27,7 @@ const UNVERIFIED_EMAIL_MESSAGE = 'Correo electrónico no verificado';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const push = useSafePush();
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const signIn = useUserStore((s) => s.signIn);
@@ -237,7 +239,7 @@ export default function LoginScreen() {
         </Pressable>
 
         <Pressable
-          onPress={() => router.push('/register')}
+          onPress={() => push('/register')}
           style={{ marginTop: 20, alignItems: 'center' }}
           accessibilityRole="button"
           accessibilityLabel="Crear cuenta"

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Dimensions, FlatList, ScrollView, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
 import { useSharedValue } from 'react-native-reanimated';
 import { Carousel, Pagination } from 'react-native-reanimated-carousel';
 
+import { useSafePush } from '@/hooks/useSafePush';
 import { BottomTabs } from '@/components/bottom-tabs';
 import { BrandsMarquee } from '@/components/BrandsMarquee';
 import { DeliveryBanner } from '@/components/DeliveryBanner';
@@ -60,7 +60,7 @@ export default function HomeScreen() {
   const colors = useThemeColors();
   const advertising = useAdvertisingStore((s) => s.advertising);
   const departments = useDepartmentStore((s) => s.departments);
-  const router = useRouter();
+  const push = useSafePush();
   const carouselProgress = useSharedValue(0);
   const refreshControl = useRefreshControl();
 
@@ -132,7 +132,7 @@ export default function HomeScreen() {
               <DepartmentCard
                 department={item}
                 colors={colors}
-                onPress={() => router.push('/departments')}
+                onPress={() => push('/departments')}
               />
             )}
           />

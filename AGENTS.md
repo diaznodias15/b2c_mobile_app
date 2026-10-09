@@ -501,3 +501,13 @@ y, como `android/` es generado, hay que aplicarlos con
 release minificado crashea al abrir o pierde una librería por reflexión,
 probar primero con `enableMinifyInReleaseBuilds: false` y agregar
 `extraProguardRules` en vez de apagarlo del todo.
+
+## Navegación: `useSafePush`, no `router.push` directo
+
+`router.push` siempre apila una pantalla: tocar varias veces seguidas un
+producto abría N copias del detalle y había que volver N veces. Todo botón o
+fila que abra una pantalla del stack usa `useSafePush()`
+(`src/hooks/useSafePush.ts`), que descarta los toques repetidos durante
+700 ms (`src/utils/navigation.ts`, con tests). La ventana es **global**, no
+por componente: cubre la animación `slide_from_right`. `router.replace`
+(tabs, login/registro) y `router.back` no lo necesitan.

@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import { ScrollView, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 
+import { useSafePush } from '@/hooks/useSafePush';
 import { ProductCardSkeleton } from '@/components/ProductCardSkeleton';
 import { SectionHeader } from '@/components/SectionHeader';
 import { ProductCard } from '@/components/ProductCard';
@@ -29,7 +29,7 @@ export function TopProducts({
   /** Oculta un producto puntual del carrusel (ej. el que ya se está viendo en el detalle). */
   excludeSlug?: string;
 }) {
-  const router = useRouter();
+  const push = useSafePush();
   const branchId = useBranchStore(selectEffectiveBranchId);
   const addProduct = useCartStore((s) => s.addProduct);
   const showToast = useToastStore((s) => s.show);
@@ -69,8 +69,8 @@ export function TopProducts({
   );
 
   const handlePressProduct = useCallback(
-    (product: Product) => router.push(`/product/${product.tx_slug}`),
-    [router]
+    (product: Product) => push(`/product/${product.tx_slug}`),
+    [push]
   );
 
   if (branchId === null) return null;

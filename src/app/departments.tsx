@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PackageSearch, RefreshCcw } from 'lucide-react-native';
 
+import { useSafePush } from '@/hooks/useSafePush';
 import { BottomTabs } from '@/components/bottom-tabs';
 import { DepartmentCard, DEPARTMENT_CARD_HEIGHT, DEPARTMENT_CARD_WIDTH } from '@/components/DepartmentCard';
 import { bootstrapConfig } from '@/components/Providers';
@@ -17,7 +17,7 @@ export default function DepartmentsScreen() {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const departments = useDepartmentStore((s) => s.departments);
-  const router = useRouter();
+  const push = useSafePush();
   const refreshControl = useRefreshControl();
 
   return (
@@ -53,7 +53,7 @@ export default function DepartmentsScreen() {
           <DepartmentCard
             department={item}
             colors={colors}
-            onPress={() => router.push('/departments')}
+            onPress={() => push('/departments')}
           />
         )}
       />
