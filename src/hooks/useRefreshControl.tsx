@@ -5,8 +5,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { bootstrapConfig } from '@/components/Providers';
 import { selectEffectiveBranchId, useBranchStore } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
-import { useThemeColors } from '@/store/config.store';
+import { useConfigStore, useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
+import { canStartRefresh } from '@/utils/refreshGuard';
 
 /**
  * Pull-to-refresh compartido por todas las pantallas con scroll vertical.
@@ -24,12 +25,26 @@ import { useToastStore } from '@/store/toast.store';
  * lanza (captura su error en el store), así que `finally` solo garantiza
  * que el spinner se apague.
  */
+/**
+ * Estado COMPARTIDO entre pantallas (cada una monta su propio hook): un refresh
+ * lanzado en una no puede solaparse con otro en otra, ni repetirse dentro de la
+ * ventana anti-duplicados de `axiosRequest` (ver `utils/refreshGuard.ts`).
+ */
+let refreshInFlight = false;
+let lastRefreshEndedAt = 0;
+
 export function useRefreshControl(): ReactElement<RefreshControlProps> {
   const queryClient = useQueryClient();
   const colors = useThemeColors();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
+    if (!canStartRefresh({ now: Date.now(), inFlight: refreshInFlight, lastEndedAt: lastRefreshEndedAt })) {
+      // Sin spinner (`refreshing` sigue en false): RN lo oculta solo.
+      useToastStore.getState().show('Los datos ya están actualizados.');
+      return;
+    }
+    refreshInFlight = true;
     setRefreshing(true);
     try {
       const branchId = selectEffectiveBranchId(useBranchStore.getState());
@@ -39,8 +54,13 @@ export function useRefreshControl(): ReactElement<RefreshControlProps> {
         // El carrito no es una query: vive en Zustand. Con sesión se repone del servidor.
         branchId === null ? Promise.resolve() : useCartStore.getState().refreshFromServer(branchId),
       ]);
-      useToastStore.getState().show('Datos actualizados');
+      // `bootstrapConfig` no lanza: deja el fallo en el store.
+      useToastStore
+        .getState()
+        .show(useConfigStore.getState().isError ? 'No se pudo actualizar. Revisa tu conexión.' : 'Datos actualizados');
     } finally {
+      refreshInFlight = false;
+      lastRefreshEndedAt = Date.now();
       setRefreshing(false);
     }
   }, [queryClient]);

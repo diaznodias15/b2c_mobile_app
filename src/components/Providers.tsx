@@ -12,6 +12,7 @@ import { Toast } from '@/components/Toast';
 import { useConfigStore, useThemeColors, useBranchStore, useDepartmentStore, useAdvertisingStore, useBrandsStore } from '@/store';
 import { buildThemeColors, themeColorsToCssVars } from '@/theme';
 import { loadConfig } from '@/api';
+import { isDuplicateRequestError } from '@/api/axiosRequest';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const BANNER_SIZE = SCREEN_WIDTH - 48;
@@ -179,6 +180,12 @@ export async function bootstrapConfig() {
       setBrands(data.brands);
     }
   } catch (err) {
+    // Un duplicado descartado por `axiosRequest` (config pedida hace < 5 s) no es un
+    // fallo: la config que ya está en los stores sigue vigente.
+    if (isDuplicateRequestError(err)) {
+      setLoading(false);
+      return;
+    }
     console.error('[bootstrapConfig] FALLÓ:', err);
     setError(
       err instanceof Error ? err.message : 'No se pudo cargar la configuración'

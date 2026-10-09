@@ -21,6 +21,18 @@ const ongoing = new Map<string, Promise<unknown>>();
 const history = new Map<string, number>();
 const DEDUP_WINDOW_MS = 5_000;
 
+/** Mensaje del error que se lanza cuando un GET idéntico cae dentro de la ventana de 5 s. */
+export const DUPLICATE_REQUEST_ERROR = 'DUPLICATE_REQUEST';
+
+/**
+ * Un duplicado descartado NO es un fallo real (el dato ya se pidió hace
+ * instantes): quien lo capture no debe mostrar error ni marcar el estado como
+ * fallido.
+ */
+export function isDuplicateRequestError(err: unknown): boolean {
+  return err instanceof Error && err.message === DUPLICATE_REQUEST_ERROR;
+}
+
 let memoryToken: string | null = null;
 
 export async function getToken(): Promise<string | null> {
@@ -77,7 +89,7 @@ export async function axiosRequest<T = unknown>(
     const inFlight = ongoing.get(key);
     if (inFlight) return inFlight as Promise<T>;
     if (last && Date.now() - last < DEDUP_WINDOW_MS) {
-      throw new Error('DUPLICATE_REQUEST');
+      throw new Error(DUPLICATE_REQUEST_ERROR);
     }
   }
 
