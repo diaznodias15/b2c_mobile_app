@@ -6,6 +6,28 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before 
 rebrandeó a **"Grupo Maraplus"** — si aparece la marca vieja en un archivo
 nuevo o copiado de otro lado, corregirla.
 
+# Dónde vive la interfaz (rediseño, 2026-10-13)
+
+**Toda la UI está en `src/redesign/`** (`ui/` primitivas, `components/` por vista, `screens/` el cuerpo de
+cada pantalla). Cada archivo de `src/app/` es solo una ruta de Expo Router que reexporta su pantalla:
+`export { default } from '@/redesign/screens/HomeScreen';`. Las pantallas no pueden vivir en `src/app/`
+(cada archivo ahí es una ruta).
+
+Lo que las secciones de abajo llaman `ProductCard`, `HomeNavbar`, `bottom-tabs`, `CartSummaryCard`,
+`QuantityStepper`, etc. **sin ruta** está ahora en `src/redesign/components/` (mismo nombre). Lo que
+sigue en `src/components/` es lo compartido que no se rediseñó (Providers, Toast, Skeleton, Footer, los
+modales de sede/mapa, `ProductFiltersModal`…). La lógica de negocio (stores, hooks, utils, API) no cambió.
+
+Reglas del rediseño (detalle y justificación en `docs/redesign/DESIGN-SYSTEM.md`):
+
+- Usar las primitivas de `redesign/ui/` (`Txt`, `Surface`, `Button`, `TextField`, `Chip`…) antes de armar
+  estilos a mano. Colores solo por **rol** de `useThemeColors()` (nunca hex fijos: el whitelabel manda).
+- **Objetivos táctiles ≥48 dp y texto ≥12 px.** Un solo CTA primario por pantalla.
+- Un campo de texto siempre con **etiqueta visible** y el error junto al campo (`TextField`).
+- Respetar *reducir movimiento* (`ui/useReduceMotion`) en animaciones continuas.
+- Una pantalla nueva = archivo en `redesign/screens/` + ruta que reexporta. Lo que no se pueda probar sin
+  sesión se puede ver con datos de muestra en la galería (`maraplus_mobile_app://redesign-gallery`, solo `__DEV__`).
+
 # Arquitectura actual (actualizado 2026-10-08)
 
 ## Providers (`src/app/_layout.tsx` + `src/components/Providers.tsx`)

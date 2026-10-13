@@ -7,10 +7,6 @@ import { Banknote, ChevronLeft, Heart, Landmark, ListFilter, Search, ShoppingCar
 import { paymentMethodColorFor } from '@/components/PaymentMethodCard';
 
 import { getTopProducts } from '@/api/services/products.services';
-import { ProductCard as ProductCardV1 } from '@/components/ProductCard';
-import { ProductCardSkeleton as ProductCardSkeletonV1 } from '@/components/ProductCardSkeleton';
-import { ProductListItem as ProductListItemV1 } from '@/components/ProductListItem';
-import { ProductListItemSkeleton as ProductListItemSkeletonV1 } from '@/components/ProductListItemSkeleton';
 import { useListAddToCart } from '@/hooks/useListAddToCart';
 import { useSafePush } from '@/hooks/useSafePush';
 import { selectEffectiveBranchId, useBranchStore } from '@/store/branch.store';
@@ -18,7 +14,7 @@ import { useThemeColors } from '@/store/config.store';
 import type { Order, OrderStatus } from '@/types/orders';
 import type { Product } from '@/types/whitelabel';
 
-import { ProductCard as ProductCardV2 } from '../components/ProductCard';
+import { ProductCard as ProductCard } from '../components/ProductCard';
 import { DualCurrencyText } from '../components/DualCurrencyText';
 import { CheckoutStepHeader } from '../components/CheckoutStepHeader';
 import { AmountField, ReceiversList } from '../components/CheckoutPagoStep';
@@ -30,9 +26,9 @@ import { ProfileHeader } from '../components/ProfileHeader';
 import { OrderStatusBadge } from '../components/OrderStatusBadge';
 import { OrderStatusStepper } from '../components/OrderStatusStepper';
 import { OrdersPagination } from '../components/OrdersPagination';
-import { ProductCardSkeleton as ProductCardSkeletonV2 } from '../components/ProductCardSkeleton';
-import { ProductListItem as ProductListItemV2 } from '../components/ProductListItem';
-import { ProductListItemSkeleton as ProductListItemSkeletonV2 } from '../components/ProductListItemSkeleton';
+import { ProductCardSkeleton as ProductCardSkeleton } from '../components/ProductCardSkeleton';
+import { ProductListItem as ProductListItem } from '../components/ProductListItem';
+import { ProductListItemSkeleton as ProductListItemSkeleton } from '../components/ProductListItemSkeleton';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
@@ -45,10 +41,10 @@ import { Txt } from '../ui/Txt';
 import { TYPE, type TypeVariant } from '../ui/tokens';
 
 /**
- * Galería interna del rediseño (paso 0.3): muestra las primitivas y compara el
- * `ProductCard` actual contra el v2 con productos reales y casos límite (descuento,
- * sin stock, sin precio, nombre largo). Solo existe en desarrollo; se abre con el
- * deep link `maraplusmobileapp://redesign-gallery`.
+ * Galería interna de componentes: muestra las primitivas y los componentes de producto, órdenes,
+ * perfil y pago con productos reales y casos límite (descuento, sin stock, sin precio, nombre
+ * largo) y datos de muestra donde hace falta sesión. Solo existe en desarrollo; se abre con el
+ * deep link `maraplus_mobile_app://redesign-gallery`.
  */
 /** Órdenes sintéticas SOLO para la galería (no son datos reales). */
 const SAMPLE_ORDERS: Order[] = (['PENDING', 'PROCESSING', 'FINISHED', 'CANCELED'] as OrderStatus[]).map((status, i) => ({
@@ -179,7 +175,7 @@ export default function GalleryScreen() {
         {samples[1] && <PriceBlock product={samples[1].product} size="lg" colors={colors} />}
       </Section>
 
-      <Section title="ProductCard · actual (izquierda) vs v2 (derecha)">
+      <Section title="ProductCard (casos límite)">
         {samples.length === 0 ? (
           <Txt variant="body" color="muted" colors={colors}>
             Cargando productos de la sede…
@@ -191,13 +187,7 @@ export default function GalleryScreen() {
                 {label}
               </Txt>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-                <ProductCardV1
-                  product={product}
-                  colors={colors}
-                  onPress={handlePress}
-                  onAddToCart={handleAddToCart}
-                />
-                <ProductCardV2
+                <ProductCard
                   product={product}
                   colors={colors}
                   onPress={handlePress}
@@ -209,19 +199,13 @@ export default function GalleryScreen() {
         )}
       </Section>
 
-      <Section title="ProductListItem · actual vs v2 (arriba/abajo)">
+      <Section title="ProductListItem (casos límite)">
         {samples.map(({ label, product }) => (
           <View key={label} style={{ gap: 8 }}>
             <Txt variant="label" color="muted" colors={colors}>
               {label}
             </Txt>
-            <ProductListItemV1
-              product={product}
-              colors={colors}
-              onPress={handlePress}
-              onAddToCart={handleAddToCart}
-            />
-            <ProductListItemV2
+            <ProductListItem
               product={product}
               colors={colors}
               onPress={handlePress}
@@ -231,13 +215,11 @@ export default function GalleryScreen() {
         ))}
       </Section>
 
-      <Section title="Skeletons · actual vs v2">
+      <Section title="Skeletons">
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-          <ProductCardSkeletonV1 colors={colors} />
-          <ProductCardSkeletonV2 colors={colors} />
+          <ProductCardSkeleton colors={colors} />
         </ScrollView>
-        <ProductListItemSkeletonV1 colors={colors} />
-        <ProductListItemSkeletonV2 colors={colors} />
+        <ProductListItemSkeleton colors={colors} />
       </Section>
 
       <Section title="Órdenes (datos de muestra)">

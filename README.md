@@ -219,7 +219,6 @@ cambiado (`ipconfig`).
 | `npm test` | Vitest (una corrida) |
 | `npm run test:watch` | Vitest en watch |
 | `npm run test:coverage` | Vitest con cobertura |
-| `npm run reset-project` | Script de plantilla de Expo — **no usar** en este proyecto |
 
 ---
 
@@ -234,19 +233,25 @@ src/
 │   ├── search.tsx        # Buscar (tab)
 │   ├── cart.tsx          # Carrito (tab)
 │   ├── profile.tsx       # Perfil (vía "Ver más")
-│   ├── help.tsx          # Ayuda (placeholder)
+│   ├── help.tsx          # Ayuda (contacto y sede, leídos de la config)
 │   ├── login.tsx · register.tsx
 │   ├── orders.tsx        # Mis órdenes (desde Perfil)
 │   ├── checkout.tsx      # Checkout Lite / Full
 │   ├── product/[slug].tsx
-│   └── products/[department].tsx  # Listado + filtros por departamento
-├── components/           # UI compartida (plana). Familias:
-│                         #  Providers, bottom-tabs, Toast, FlyingCartOverlay
-│                         #  Checkout* · PhoneContactFields · PaymentMethodCard
-│                         #  Order* · ModalOrderDetail · ModalLogout
-│                         #  ModalResetPassword · Profile* · QuantityStepper
-│                         #  Product* · TopProducts · DiscountBadge
-│                         #  CartTimer · ModalCartWorkingHours · ModuleMaintenance
+│   ├── products/[department].tsx  # Listado + filtros por departamento
+│   └── redesign-gallery.tsx       # Galería de componentes (solo desarrollo)
+│                         # Cada archivo de ruta solo reexporta su pantalla de redesign/
+├── redesign/             # La interfaz (ver docs/redesign/)
+│   ├── ui/               # primitivas: Txt, Surface, Button, IconButton, Chip,
+│   │                     # Badge, TextField, SelectField, PriceBlock, StockPill…
+│   ├── components/       # componentes por vista (ProductCard, bottom-tabs,
+│   │                     # CartLineItem, CheckoutPagoStep, ModalOrderDetail…)
+│   └── screens/          # el cuerpo de cada pantalla (HomeScreen, CartScreen…)
+├── components/           # piezas compartidas que no son del rediseño:
+│                         #  Providers, Toast, FlyingCartOverlay, Skeleton, Footer,
+│                         #  ModuleMaintenance, ModalCartWorkingHours, ModalClearCart, PaymentMethodCard (solo colores),
+│                         #  BranchSelectorModal/BranchMapModal/BranchInventoryList,
+│                         #  DeliveryMapModal, ProductFiltersModal, ProductDetailMessage
 ├── api/
 │   ├── axiosRequest.ts   # wrapper: token, anti-duplicados 5 s, onUnauthorized
 │   ├── config.ts         # API_BASE_URL, timeout
@@ -254,8 +259,8 @@ src/
 │                         # products, utilities (+ un .test.ts por servicio)
 ├── store/                # Zustand: config, branch, department, advertising,
 │                         # brands, user, ui, cart, cartTimer, checkout,
-│                         # currency, flyingCart, toast
-├── hooks/                # useAddToCartFlight, useCartTimer,
+│                         # currency, flyingCart, toast, searchHistory
+├── hooks/                # useAddToCartFlight, useListAddToCart, useCartTimer,
 │                         # useDisplayCurrency, useRefreshControl,
 │                         # useSafePush, useSlowLoading, useDebouncedValue
 ├── theme/                # colors (whitelabel → ThemeColors), typography,
@@ -264,7 +269,8 @@ src/
 │                         # geo, maps, stock, cartStock, cartTimer, phone,
 │                         # orderStatus(Step), orderList, orderPayload,
 │                         # passwordChange, productDetailState, refreshGuard,
-│                         # navigation, validations, queryParams,
+│                         # navigation, validations, queryParams, contact,
+│                         # productFilters, searchHistory,
 │                         # secureStorage (.native / .web)
 ├── types/                # cart, checkout, orders, whitelabel
 ├── test/setup.ts         # setup de Vitest
@@ -273,7 +279,7 @@ patches/                  # parches de patch-package (react-native,
                           # assets-registry, expo-constants, expo-modules-core)
 ```
 
-Navegación: 5 tabs (**Inicio, Departamentos, Buscar, Carrito, Ver más**);
+Navegación: 5 tabs (**Inicio, Categorías, Buscar, Carrito, Ver más**; "Categorías" abre Departamentos);
 "Ver más" abre un modal con la moneda de precios, **Mi perfil** (o **Iniciar
 sesión** si no hay sesión) y Ayuda. Las demás pantallas (`login`, `register`,
 `orders`, `checkout`, `product/[slug]`) son rutas del stack con animación
