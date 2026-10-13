@@ -7,7 +7,7 @@ import { MIN_TOUCH, type TextColor } from './tokens';
 import { Txt } from './Txt';
 import { useColors } from './useColors';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 /**
  * Botón del rediseño: alto ≥48, estados `pressed`/`disabled`/`loading` y semántica
@@ -45,6 +45,8 @@ export function Button({
     primary: { bg: theme.primary, fg: theme.onPrimary, border: theme.primary },
     secondary: { bg: theme.primaryOverlay, fg: theme.primary, border: 'transparent' },
     ghost: { bg: 'transparent', fg: theme.foreground, border: theme.border },
+    // Texto blanco fijo: el rojo de estado es siempre lo bastante oscuro para llevarlo.
+    danger: { bg: theme.danger, fg: '#FFFFFF', border: theme.danger },
   }[variant];
 
   const fgRole: TextColor =
@@ -79,7 +81,13 @@ export function Button({
         ) : Icon ? (
           <Icon size={18} color={palette.fg} strokeWidth={2.5} />
         ) : null}
-        <Txt variant="label" color={fgRole} colors={theme} numberOfLines={1}>
+        <Txt
+          variant="label"
+          color={fgRole}
+          colors={theme}
+          numberOfLines={1}
+          style={variant === 'danger' ? { color: palette.fg } : undefined}
+        >
           {label}
         </Txt>
       </View>

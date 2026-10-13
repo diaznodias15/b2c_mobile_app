@@ -22,6 +22,7 @@ import { useUserStore } from '@/store/user.store';
 import { hexToRgba, type ThemeColors } from '@/theme/colors';
 import { hasStockIssue } from '@/utils/cartStock';
 import { formatDisplayPrice } from '@/utils/currency';
+import { buildWhatsAppUrl } from '@/utils/contact';
 import { buildLiteOrderPayload } from '@/utils/orderPayload';
 import { isAreaCodeValid, isPhoneNumberValid, VE_AREA_CODES, VE_COUNTRY_CODE } from '@/utils/phone';
 import { getCartLinePricing, getCartSummary } from '@/utils/pricing';
@@ -578,7 +579,11 @@ function CheckoutSuccess({
         </View>
 
         <Pressable
-          onPress={() => Linking.openURL(`https://wa.me/${phone.replace(/\D/g, '')}`)}
+          onPress={() => {
+            // `wa.me` exige el número internacional ("0422…" → "58422…"), ver `utils/contact.ts`.
+            const url = buildWhatsAppUrl(phone);
+            if (url) Linking.openURL(url).catch(() => undefined);
+          }}
           accessibilityRole="button"
           accessibilityLabel="Escríbenos por WhatsApp"
           style={({ pressed }) => ({

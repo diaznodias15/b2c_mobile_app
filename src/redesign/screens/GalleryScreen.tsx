@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +19,10 @@ import type { Product } from '@/types/whitelabel';
 
 import { ProductCard as ProductCardV2 } from '../components/ProductCard';
 import { DualCurrencyText } from '../components/DualCurrencyText';
+import { ModalLogout } from '../components/ModalLogout';
+import { ModalResetPassword } from '../components/ModalResetPassword';
 import { OrderRow, OrderRowSkeleton } from '../components/OrderRow';
+import { ProfileHeader } from '../components/ProfileHeader';
 import { OrderStatusBadge } from '../components/OrderStatusBadge';
 import { OrderStatusStepper } from '../components/OrderStatusStepper';
 import { OrdersPagination } from '../components/OrdersPagination';
@@ -61,6 +64,8 @@ export default function GalleryScreen() {
   const colors = useThemeColors();
   const branchId = useBranchStore(selectEffectiveBranchId);
   const handleAddToCart = useListAddToCart();
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
 
   const { data } = useQuery({
     queryKey: ['top-products', branchId, null],
@@ -245,6 +250,23 @@ export default function GalleryScreen() {
         ))}
         <OrderRowSkeleton colors={colors} />
         <OrdersPagination page={2} lastPage={5} isLoading={false} onChange={() => {}} colors={colors} />
+      </Section>
+
+      <Section title="Perfil (usuario de muestra)">
+        <ProfileHeader
+          user={{ name: 'María Fernanda Rodríguez', email: 'maria.rodriguez@ejemplo.com', created_at: '2026-03-14T10:00:00Z' } as never}
+          colors={colors}
+        />
+        <Button label="Abrir modal de cerrar sesión" variant="ghost" onPress={() => setLogoutOpen(true)} colors={colors} />
+        <Button label="Abrir modal de cambiar contraseña" variant="ghost" onPress={() => setResetOpen(true)} colors={colors} />
+        <ModalLogout
+          visible={logoutOpen}
+          isLoading={false}
+          onConfirm={() => setLogoutOpen(false)}
+          onClose={() => setLogoutOpen(false)}
+          colors={colors}
+        />
+        <ModalResetPassword visible={resetOpen} onClose={() => setResetOpen(false)} colors={colors} />
       </Section>
     </ScrollView>
   );
