@@ -10,11 +10,11 @@ import { Txt } from '../ui/Txt';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 /**
- * Mismo grid que el original (2 columnas, 24 px de margen y 12 de separación) porque
- * ese layout lo definen las pantallas (Home y Departamentos); el gutter pasará a 16
- * cuando se rediseñen esas vistas (pasos 1.7/1.8).
+ * Grid de 2 columnas con 16 px de margen lateral (el gutter del rediseño, ver
+ * `docs/redesign/DESIGN-SYSTEM.md` §4) y 12 de separación. Lo usan las vistas v2 de Home y
+ * Departamentos, que usan el mismo margen.
  */
-export const DEPARTMENT_CARD_WIDTH = (SCREEN_WIDTH - 24 * 2 - 12) / 2;
+export const DEPARTMENT_CARD_WIDTH = (SCREEN_WIDTH - 16 * 2 - 12) / 2;
 const IMAGE_HEIGHT = 112;
 /** Imagen + panel de texto (2 líneas de nombre + "Ver productos" + padding). */
 export const DEPARTMENT_CARD_HEIGHT = 192;

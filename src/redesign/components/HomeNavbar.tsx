@@ -86,8 +86,9 @@ export function HomeNavbar({ colors }: { colors: ThemeColors }) {
       </View>
 
       <Pressable
-        // `/search` es una pestaña: se navega con `replace`, igual que `bottom-tabs`.
-        onPress={() => router.replace('/search')}
+        // `/search` es una pestaña: se navega con `replace`, igual que `bottom-tabs`. `focus=1` hace que
+        // Buscar abra con el teclado listo (ver `SearchScreen`).
+        onPress={() => router.replace({ pathname: '/search', params: { focus: '1' } })}
         accessibilityRole="search"
         accessibilityLabel="Buscar productos"
         style={({ pressed }) => ({

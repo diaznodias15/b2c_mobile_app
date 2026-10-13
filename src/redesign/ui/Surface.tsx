@@ -50,5 +50,13 @@ export function Surface({
       </Pressable>
     );
   }
-  return <View style={[base, style]}>{children}</View>;
+  return (
+    <View
+      style={[base, style]}
+      accessible={accessibilityLabel ? true : undefined}
+      accessibilityLabel={accessibilityLabel}
+    >
+      {children}
+    </View>
+  );
 }

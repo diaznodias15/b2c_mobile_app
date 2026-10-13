@@ -11,7 +11,6 @@ import { Check, ChevronLeft, ShoppingCart } from 'lucide-react-native';
 import { getProductDetail } from '@/api/services/products.services';
 import { BranchInventoryList } from '@/components/BranchInventoryList';
 import { ProductDetailMessage } from '@/components/ProductDetailMessage';
-import { TopProducts } from '@/components/TopProducts';
 import { useAddToCartFlight } from '@/hooks/useAddToCartFlight';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { useRefreshControl } from '@/hooks/useRefreshControl';
@@ -28,6 +27,7 @@ import { getProductDetailView } from '@/utils/productDetailState';
 
 import { ProductDetailSkeleton, PRODUCT_DETAIL_IMAGE_HEIGHT } from '../components/ProductDetailSkeleton';
 import { QuantityStepper } from '../components/QuantityStepper';
+import { TopProducts } from '../components/TopProducts';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { PriceBlock } from '../ui/PriceBlock';
