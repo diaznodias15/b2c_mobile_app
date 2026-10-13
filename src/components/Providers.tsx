@@ -6,7 +6,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { FlyingCartOverlay } from '@/components/FlyingCartOverlay';
-import { ProductCardSkeleton } from '@/components/ProductCardSkeleton';
+import { ProductCardSkeleton } from '@/redesign/components/ProductCardSkeleton';
 import { Skeleton } from '@/components/Skeleton';
 import { Toast } from '@/components/Toast';
 import { useConfigStore, useThemeColors, useBranchStore, useDepartmentStore, useAdvertisingStore, useBrandsStore } from '@/store';

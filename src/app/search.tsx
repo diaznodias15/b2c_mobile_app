@@ -6,8 +6,8 @@ import { PackageSearch, Search as SearchIcon, X } from 'lucide-react-native';
 
 import { useSafePush } from '@/hooks/useSafePush';
 import { BottomTabs } from '@/components/bottom-tabs';
-import { ProductListItem } from '@/components/ProductListItem';
-import { ProductListItemSkeleton } from '@/components/ProductListItemSkeleton';
+import { ProductListItem } from '@/redesign/components/ProductListItem';
+import { ProductListItemSkeleton } from '@/redesign/components/ProductListItemSkeleton';
 import { getProductSearch } from '@/api/services/products.services';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useListAddToCart } from '@/hooks/useListAddToCart';

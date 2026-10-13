@@ -7,8 +7,8 @@ import { ChevronLeft, ListFilter, PackageSearch, RefreshCcw } from 'lucide-react
 
 import { getProductList } from '@/api/services/products.services';
 import { ProductFiltersModal } from '@/components/ProductFiltersModal';
-import { ProductListItem } from '@/components/ProductListItem';
-import { ProductListItemSkeleton } from '@/components/ProductListItemSkeleton';
+import { ProductListItem } from '@/redesign/components/ProductListItem';
+import { ProductListItemSkeleton } from '@/redesign/components/ProductListItemSkeleton';
 import { useListAddToCart } from '@/hooks/useListAddToCart';
 import { useRefreshControl } from '@/hooks/useRefreshControl';
 import { useSafePush } from '@/hooks/useSafePush';

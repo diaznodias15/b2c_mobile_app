@@ -3,9 +3,9 @@ import { ScrollView, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 
 import { useSafePush } from '@/hooks/useSafePush';
-import { ProductCardSkeleton } from '@/components/ProductCardSkeleton';
+import { ProductCardSkeleton } from '@/redesign/components/ProductCardSkeleton';
 import { SectionHeader } from '@/components/SectionHeader';
-import { ProductCard } from '@/components/ProductCard';
+import { ProductCard } from '@/redesign/components/ProductCard';
 import { getTopProducts } from '@/api/services/products.services';
 import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
 import { useCartStore } from '@/store/cart.store';
