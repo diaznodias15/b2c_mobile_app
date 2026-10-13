@@ -132,7 +132,7 @@ export default function HomeScreen() {
               <DepartmentCard
                 department={item}
                 colors={colors}
-                onPress={() => push('/departments')}
+                onPress={() => push(`/products/${item.tx_slug}`)}
               />
             )}
           />

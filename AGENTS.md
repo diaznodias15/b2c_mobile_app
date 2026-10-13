@@ -643,6 +643,33 @@ fila que abra una pantalla del stack usa `useSafePush()`
 por componente: cubre la animación `slide_from_right`. `router.replace`
 (tabs, login/registro) y `router.back` no lo necesitan.
 
+## Listado por departamento (`src/app/products/[department].tsx`) — doc 06 de `b2c_app/docs/mobile/`
+
+Se llega desde las cards de departamento (Home y `/departments`) con
+`useSafePush` a `/products/<tx_slug>`. Es ruta del stack (sin `BottomTabs`,
+botón de volver propio, `slide_from_right` en `_layout.tsx`). Pega a
+`GET /api/products/list` (`getProductList`, ya existía) con `useInfiniteQuery`:
+**scroll infinito** siguiendo `pagination.next_page` (no se asume tamaño de
+página; el contador sale de `pagination.total`). La sede activa va en la query
+key, así que al cambiarla re-pide con los mismos filtros.
+
+- **Filtros** (`ProductFiltersModal`, lógica pura en `utils/productFilters.ts`
+  con test): categoría/subcategoría excluyentes (elegir una borra la otra y el
+  precio) y rango de precio. **Sin slider**: son dos campos numéricos mín/máx
+  (no hay librería de rango y agregarla exige rebuild nativo). Los campos están
+  en la moneda elegida en "Ver más" y se convierten a Bs. al aplicar; la query
+  siempre va en Bs.
+- **Las categorías llegan vacías**: verificado con curl (2026-10-13),
+  `departments[].categories` es `[]` en los 5 departamentos de `/config/get`, así
+  que el modal muestra "No hay categorías disponibles" y hoy solo funciona el
+  filtro de precio. La web de referencia las lee como `sub_categories`;
+  `getDepartmentCategories` acepta `sub_categories` y `subcategories`. Sin
+  verificar contra datos reales hasta que el backend las cargue.
+- `metadata.min_price/max_price` se recalcula con el filtro de precio puesto, por
+  eso el rango "completo" se recuerda de la última respuesta sin filtro de precio.
+- `useListAddToCart()` (`hooks/`) es el `onAddToCart` compartido por Buscar y este
+  listado.
+
 ## Perfil y "Información personal" (`profile.tsx`)
 
 - **El perfil se revalida con `GET /api/auth/me`** (`useUserStore.refreshUser`): al

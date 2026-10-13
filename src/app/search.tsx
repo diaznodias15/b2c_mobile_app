@@ -10,14 +10,12 @@ import { ProductListItem } from '@/components/ProductListItem';
 import { ProductListItemSkeleton } from '@/components/ProductListItemSkeleton';
 import { getProductSearch } from '@/api/services/products.services';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useListAddToCart } from '@/hooks/useListAddToCart';
 import { useRefreshControl } from '@/hooks/useRefreshControl';
 import { useBranchStore, selectEffectiveBranchId } from '@/store/branch.store';
-import { useCartStore } from '@/store/cart.store';
 import { useThemeColors } from '@/store/config.store';
-import { useToastStore } from '@/store/toast.store';
 import type { ThemeColors } from '@/theme/colors';
 import type { Product } from '@/types/whitelabel';
-import { toAvailability } from '@/utils/cartStock';
 
 /** Mínimo de caracteres para disparar la búsqueda (mismo mínimo que valida `getProductSearch`). */
 const MIN_QUERY_LENGTH = 3;
@@ -28,8 +26,6 @@ export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const branchId = useBranchStore(selectEffectiveBranchId);
-  const addProduct = useCartStore((s) => s.addProduct);
-  const showToast = useToastStore((s) => s.show);
   const refreshControl = useRefreshControl();
 
   const [query, setQuery] = useState('');
@@ -54,35 +50,7 @@ export default function SearchScreen() {
   const products = data?.pages.flatMap((page) => page.items) ?? [];
   const showSkeleton = isQueryValid && isLoading;
 
-  // `useCallback` acá no es cosmético: esta función se pasa como prop
-  // estable a `ProductListItem` (memoizado) para toda la lista. Si fuera
-  // un arrow function normal, cambiaría de referencia en cada render de
-  // `SearchScreen` (ej. cada tecla tipeada en el buscador) y anularía el
-  // memo de todas las filas visibles.
-  const handleAddToCart = useCallback(
-    async (product: Product): Promise<boolean> => {
-      if (branchId === null) return false;
-      const added = await addProduct({
-        tx_slug: product.tx_slug,
-        product_id: product.id,
-        branch_id: branchId,
-        nb_product: product.nb_product,
-        nb_brand: product.nb_brand,
-        tx_img_url: product.tx_img_url,
-        pri_product_final_price: product.pri_product_final_price,
-        pri_product_price: product.pri_product_price,
-        qty_discount: product.qty_discount,
-        qty_tax: product.qty_tax,
-        qty_availability: toAvailability(product.qty_product),
-        qty: 1,
-      });
-      // Con sesión `added` es la respuesta de la API: el toast y la animación solo
-      // salen si el servidor aceptó el cambio (si no, `addProduct` ya avisó el motivo).
-      if (added) showToast('Producto agregado al carrito');
-      return added;
-    },
-    [branchId, addProduct, showToast]
-  );
+  const handleAddToCart = useListAddToCart();
 
   const handlePressProduct = useCallback(
     (product: Product) => push(`/product/${product.tx_slug}`),

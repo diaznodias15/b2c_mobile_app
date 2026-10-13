@@ -238,7 +238,8 @@ src/
 │   ├── login.tsx · register.tsx
 │   ├── orders.tsx        # Mis órdenes (desde Perfil)
 │   ├── checkout.tsx      # Checkout Lite / Full
-│   └── product/[slug].tsx
+│   ├── product/[slug].tsx
+│   └── products/[department].tsx  # Listado + filtros por departamento
 ├── components/           # UI compartida (plana). Familias:
 │                         #  Providers, bottom-tabs, Toast, FlyingCartOverlay
 │                         #  Checkout* · PhoneContactFields · PaymentMethodCard
