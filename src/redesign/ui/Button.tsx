@@ -60,7 +60,7 @@ export function Button({
       style={({ pressed }) => [
         {
           minHeight: height,
-          alignSelf: fullWidth ? 'stretch' : 'flex-start',
+          alignSelf: fullWidth ? 'stretch' : 'center',
           borderRadius: 12,
           borderWidth: variant === 'ghost' ? 1 : 0,
           borderColor: palette.border,
