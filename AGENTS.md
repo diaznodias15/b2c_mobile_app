@@ -178,7 +178,7 @@ data.branches
 `setAppConfig({ ...data.app_config, config_colors: data.config_colors })`.
 Si algún día un `setAppConfig` deja de reflejar colores, este es el primer
 sospechoso — confirmalo con
-`curl -s https://b2c-api.icompras360.online/api/config/get | node -e "..."`
+`curl -s https://api-maraplus.icommerce360.com/api/config/get | node -e "..."`
 y `Object.keys(j.data)` antes de asumir un bug de UI.
 
 **`app_config` HOY no trae `tx_company_name` ni `tx_company_logo_url`**
@@ -258,7 +258,7 @@ Ruta dinámica de Expo Router, alcanzada con `router.push(`/product/${tx_slug}`)
 desde `TopProducts`, `ProductListItem` (Buscar) y donde sea que se
 liste un `Product`. MVP deliberado — **quedó afuera a propósito**:
 el bloque de breakdown de IVA de la web de referencia
-(`PRODUCT-DETAIL-VIEW.md`) porque la API real hoy **no** devuelve
+(`08-detalle-producto.md`, en `b2c_app/docs/mobile/`) porque la API real hoy **no** devuelve
 `pri_product_price_with_tax`/`qty_tax_amount` — solo `qty_tax`/
 `qty_discount`. No los agregues sin confirmar antes que el backend ya
 los manda.
@@ -369,7 +369,7 @@ completo.
 
 - **`order.dt_created_at` (`GET /api/orders/my-orders/branch/:branch`)
   viene CRUDO** (`"YYYY-MM-DD HH:mm:ss"`), no pre-formateado
-  `"DD/MM/YYYY"` como sugiere MY-ORDERS-MODULE.md (ahí lo formatea el
+  `"DD/MM/YYYY"` como sugiere `16-mis-ordenes.md` (`b2c_app/docs/mobile/`) (ahí lo formatea el
   `ordersAdapter` de la web con dayjs, que no existe en mobile).
   `formatOrderListDate()` (`src/utils/orderStatus.ts`) lo parsea a mano
   con un regex — no asumir que un campo de fecha ya viene formateado
@@ -420,7 +420,7 @@ funcione (ver el comentario ahí sobre por qué el default global es
 screens: `<Text className="text-2xl font-bold text-foreground">` +
 `<BottomTabs />`) — falta implementar de verdad.
 
-## "Mis órdenes" (`src/app/orders.tsx`) — basado en MY-ORDERS-MODULE.md
+## "Mis órdenes" (`src/app/orders.tsx`) — basado en `16-mis-ordenes.md` (`b2c_app/docs/mobile/`)
 
 Lista paginada (`getMyOrders`, paginación local con `useState`, no
 URL-driven — este app no tiene URLs) + modal full-screen de detalle al
@@ -470,7 +470,7 @@ input enfocado en ambas plataformas. **Cualquier pantalla nueva con
 `TextInput`s dentro de un scroll debe usar este componente desde el
 principio**, no `ScrollView` a secas.
 
-## Carrito y checkout (`cart.tsx`, `checkout.tsx`) — basado en CHECKOUT-FLOW.md
+## Carrito y checkout (`cart.tsx`, `checkout.tsx`) — basado en `09`–`12` de `b2c_app/docs/mobile/`
 
 **Carrito (`cart.store.ts`)**: persiste en AsyncStorage y cada ítem lleva su
 `branch_id` (las pantallas filtran por la sede activa). **Sin sesión** los
