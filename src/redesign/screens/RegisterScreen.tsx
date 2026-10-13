@@ -1,15 +1,15 @@
 import { useState } from 'react';
-import { Image, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Check, ChevronLeft, CircleAlert, Mail, Send, User, UserPlus } from 'lucide-react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Check, CircleAlert, Mail, Send, User, UserPlus } from 'lucide-react-native';
 
 import { register, sendEmailVerification } from '@/api/services/auth.services';
 import { useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
-import { hexToRgba, isLightColor, type ThemeColors } from '@/theme/colors';
-import { LOGO_DARK as LOGO_DARK_URI, LOGO_LIGHT as LOGO_LIGHT_URI } from '@/utils/localImages.generated';
+import { hexToRgba, type ThemeColors } from '@/theme/colors';
 import {
   DOC_TYPES,
   GENDER_OPTIONS,
@@ -23,15 +23,15 @@ import {
 } from '@/utils/validations';
 
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter';
+import { AuthHeader } from '../components/AuthHeader';
+import { AuthTrustStrip } from '../components/AuthTrustStrip';
 import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
-import { IconButton } from '../ui/IconButton';
+import { Surface } from '../ui/Surface';
 import { TextField } from '../ui/TextField';
 import { MIN_TOUCH } from '../ui/tokens';
 import { Txt } from '../ui/Txt';
-
-const LOGO_LIGHT = { uri: LOGO_LIGHT_URI };
-const LOGO_DARK = { uri: LOGO_DARK_URI };
+import { useReduceMotion } from '../ui/useReduceMotion';
 
 const AREA_CODES = ['0412', '0414', '0416', '0422', '0424', '0426'];
 const DOC_TYPE_LABELS: Record<DocType, string> = {
@@ -65,6 +65,7 @@ export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const showToast = useToastStore((s) => s.show);
+  const reduceMotion = useReduceMotion();
 
   const [email, setEmail] = useState('');
   const [documentType, setDocumentType] = useState<DocType>('V');
@@ -196,38 +197,20 @@ export default function RegisterScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAwareScrollView
         bottomOffset={24}
-        contentContainerStyle={{
-          paddingTop: insets.top + 8,
-          paddingHorizontal: 16,
-          paddingBottom: insets.bottom + 24,
-          gap: 20,
-        }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ alignSelf: 'flex-start' }}>
-          <IconButton
-            icon={ChevronLeft}
-            label="Volver"
-            onPress={() => (router.canGoBack() ? router.back() : router.replace('/login'))}
-            colors={colors}
-          />
-        </View>
-
-        <Image
-          source={isLightColor(colors.background) ? LOGO_LIGHT : LOGO_DARK}
-          style={{ width: 120, height: 36, alignSelf: 'center' }}
-          resizeMode="contain"
+        <AuthHeader
+          title="Crea tu cuenta"
+          subtitle="Completa tus datos para poder finalizar tus compras."
+          onBack={() => (router.canGoBack() ? router.back() : router.replace('/login'))}
         />
 
-        <View style={{ gap: 6 }}>
-          <Txt variant="title" colors={colors} style={{ fontSize: 26, lineHeight: 32 }}>
-            Crear cuenta
-          </Txt>
-          <Txt variant="body" color="muted" colors={colors}>
-            Completa tus datos para poder finalizar tus compras.
-          </Txt>
-        </View>
-
+        {/* Formulario: la primera tarjeta se superpone a la cabecera */}
+        <Animated.View
+          entering={reduceMotion ? undefined : FadeInDown.duration(350)}
+          style={{ paddingHorizontal: 16, marginTop: -32, gap: 16 }}
+        >
         <Section title="Tus datos" colors={colors}>
           <TextField
             label="Nombre completo"
@@ -421,20 +404,22 @@ export default function RegisterScreen() {
             colors={colors}
           />
         </View>
+        </Animated.View>
 
-        <Pressable
-          onPress={() => router.replace('/login')}
-          accessibilityRole="button"
-          accessibilityLabel="Ya tengo cuenta"
-          style={{ minHeight: MIN_TOUCH, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Txt variant="body" color="muted" colors={colors}>
-            ¿Ya tienes cuenta?{' '}
-            <Txt variant="body" color="primary" colors={colors} style={{ fontWeight: '700' }}>
-              Inicia sesión
+        <View style={{ marginTop: 28 }}>
+          <AuthTrustStrip />
+        </View>
+
+        <View style={{ paddingHorizontal: 16, marginTop: 28, gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <Txt variant="caption" color="muted" colors={colors}>
+              ¿Ya tienes cuenta?
             </Txt>
-          </Txt>
-        </Pressable>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          </View>
+          <Button label="Iniciar sesión" variant="ghost" onPress={() => router.replace('/login')} colors={colors} />
+        </View>
       </KeyboardAwareScrollView>
     </View>
   );
@@ -450,11 +435,11 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <View style={{ gap: 14 }}>
+    <Surface colors={colors} radius={20} padding={20} style={{ gap: 16 }}>
       <Txt variant="section" colors={colors}>
         {title}
       </Txt>
       {children}
-    </View>
+    </Surface>
   );
 }

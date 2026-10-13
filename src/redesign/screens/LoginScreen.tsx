@@ -1,41 +1,27 @@
 import { useState } from 'react';
-import { Image, Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import {
-  Archive,
-  ChevronLeft,
-  CircleAlert,
-  CircleUserRound,
-  Lock,
-  LogIn,
-  Mail,
-  Send,
-  ShieldCheck,
-  type LucideIcon,
-} from 'lucide-react-native';
+import { CircleAlert, Lock, LogIn, Mail, Send } from 'lucide-react-native';
 
 import { login, sendEmailVerification } from '@/api/services/auth.services';
 import { useSafePush } from '@/hooks/useSafePush';
 import { useConfigStore, useThemeColors } from '@/store/config.store';
 import { useToastStore } from '@/store/toast.store';
 import { useUserStore } from '@/store/user.store';
-import { hexToRgba, isLightColor, type ThemeColors } from '@/theme/colors';
-import { LOGO_DARK as LOGO_DARK_URI, LOGO_LIGHT as LOGO_LIGHT_URI } from '@/utils/localImages.generated';
+import { hexToRgba } from '@/theme/colors';
 import { isEmailValid } from '@/utils/validations';
 
+import { AuthHeader } from '../components/AuthHeader';
+import { AuthTrustStrip } from '../components/AuthTrustStrip';
 import { Button } from '../ui/Button';
-import { IconButton } from '../ui/IconButton';
+import { LinkButton } from '../ui/LinkButton';
 import { Surface } from '../ui/Surface';
 import { TextField } from '../ui/TextField';
-import { MIN_TOUCH } from '../ui/tokens';
 import { Txt } from '../ui/Txt';
 import { useReduceMotion } from '../ui/useReduceMotion';
-
-const LOGO_LIGHT = { uri: LOGO_LIGHT_URI };
-const LOGO_DARK = { uri: LOGO_DARK_URI };
 
 /**
  * Mensaje EXACTO que devuelve el backend cuando el email no está verificado — se matchea por
@@ -44,13 +30,6 @@ const LOGO_DARK = { uri: LOGO_DARK_URI };
  */
 const UNVERIFIED_EMAIL_MESSAGE = 'Correo electrónico no verificado';
 
-/** Las tres promesas de la tienda que ya comunica el Home ("¿Por qué elegirnos?"). */
-const TRUST_POINTS: { icon: LucideIcon; label: string }[] = [
-  { icon: ShieldCheck, label: 'Compra segura' },
-  { icon: Archive, label: 'Stock real' },
-  { icon: CircleUserRound, label: 'Atención personalizada' },
-];
-
 /**
  * Inicio de sesión del rediseño. **Misma lógica que antes** (validación mínima: email válido y
  * contraseña no vacía — la fuerza se valida solo en el registro; `signIn` + volver atrás o ir al
@@ -58,12 +37,11 @@ const TRUST_POINTS: { icon: LucideIcon; label: string }[] = [
  *
  * Presentación, pensada para dar confianza y empujar la conversión (patrón "conversión + confianza"
  * recomendado para farmacias):
- *  - **Cabecera con la marca**: banda tintada con el color primario del whitelabel (en `primaryOverlay`,
- *    así el logo a color siempre se lee), logo, saludo y la descripción de la empresa si el backend la
- *    manda. Formas decorativas del primario, ocultas para el lector de pantalla.
+ *  - **Cabecera de marca** (`AuthHeader`, compartida con el registro), con la descripción de la empresa
+ *    si el backend la manda.
  *  - **Tarjeta de formulario** que se superpone a la cabecera, con entrada suave (sin ella si el sistema
  *    pide reducir movimiento).
- *  - **Sello de confianza** con las tres promesas de la tienda.
+ *  - **Sello de confianza** (`AuthTrustStrip`).
  *  - **Salidas claras**: "Crear cuenta" como botón (no un enlace de 14 px), "Seguir explorando sin cuenta"
  *    (se puede comprar como invitado hasta el checkout) y "Necesito ayuda para ingresar" que lleva a Ayuda
  *    (la app aún no tiene recuperación de contraseña, así que ahí están los canales de contacto).
@@ -129,39 +107,11 @@ export default function LoginScreen() {
         contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 24 }}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Cabecera de marca */}
-        <View
-          style={{
-            backgroundColor: colors.primaryOverlay,
-            borderBottomLeftRadius: 32,
-            borderBottomRightRadius: 32,
-            paddingTop: insets.top + 8,
-            paddingHorizontal: 16,
-            paddingBottom: 56,
-            overflow: 'hidden',
-          }}
-        >
-          <Decoration colors={colors} />
-
-          <View style={{ alignSelf: 'flex-start' }}>
-            <IconButton icon={ChevronLeft} label="Volver" onPress={goBack} colors={colors} />
-          </View>
-
-          <View style={{ alignItems: 'center', gap: 6, marginTop: 4 }}>
-            <Image
-              source={isLightColor(colors.background) ? LOGO_LIGHT : LOGO_DARK}
-              style={{ width: 150, height: 46 }}
-              resizeMode="contain"
-              accessibilityLabel="Logo de la tienda"
-            />
-            <Txt variant="title" colors={colors} style={{ fontSize: 28, lineHeight: 34, marginTop: 14, textAlign: 'center' }}>
-              Bienvenido de nuevo
-            </Txt>
-            <Txt variant="body" color="muted" colors={colors} style={{ textAlign: 'center' }} numberOfLines={2}>
-              {tagline ? `${tagline} Ingresa para continuar con tu compra.` : 'Ingresa para continuar con tu compra.'}
-            </Txt>
-          </View>
-        </View>
+        <AuthHeader
+          title="Bienvenido de nuevo"
+          subtitle={tagline ? `${tagline} Ingresa para continuar con tu compra.` : 'Ingresa para continuar con tu compra.'}
+          onBack={goBack}
+        />
 
         {/* Formulario: se superpone a la cabecera */}
         <Animated.View
@@ -239,31 +189,8 @@ export default function LoginScreen() {
           </Surface>
         </Animated.View>
 
-        {/* Sello de confianza */}
-        <View
-          style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 24, marginTop: 24 }}
-          accessible
-          accessibilityLabel="Compra segura, stock real y atención personalizada"
-        >
-          {TRUST_POINTS.map(({ icon: Icon, label }) => (
-            <View key={label} style={{ flex: 1, alignItems: 'center', gap: 8 }}>
-              <View
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 22,
-                  backgroundColor: colors.primaryOverlay,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Icon size={22} color={colors.primary} strokeWidth={1.8} />
-              </View>
-              <Txt variant="caption" color="muted" colors={colors} style={{ textAlign: 'center' }}>
-                {label}
-              </Txt>
-            </View>
-          ))}
+        <View style={{ marginTop: 24 }}>
+          <AuthTrustStrip />
         </View>
 
         {/* Salidas */}
@@ -288,59 +215,3 @@ export default function LoginScreen() {
   );
 }
 
-/** Formas decorativas del primario detrás de la cabecera: no aportan información, se ocultan al lector. */
-function Decoration({ colors }: { colors: ThemeColors }) {
-  return (
-    <View
-      pointerEvents="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-    >
-      <View
-        style={{
-          position: 'absolute',
-          width: 220,
-          height: 220,
-          borderRadius: 110,
-          top: -70,
-          right: -60,
-          backgroundColor: hexToRgba(colors.primary, 0.1),
-        }}
-      />
-      <View
-        style={{
-          position: 'absolute',
-          width: 140,
-          height: 140,
-          borderRadius: 70,
-          bottom: -30,
-          left: -40,
-          backgroundColor: hexToRgba(colors.primary, 0.08),
-        }}
-      />
-    </View>
-  );
-}
-
-/** Enlace de texto con área táctil de 48 dp. */
-function LinkButton({ label, onPress, colors }: { label: string; onPress: () => void; colors: ThemeColors }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={({ pressed }) => ({
-        minHeight: MIN_TOUCH,
-        paddingHorizontal: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        opacity: pressed ? 0.6 : 1,
-      })}
-    >
-      <Txt variant="label" color="primary" colors={colors}>
-        {label}
-      </Txt>
-    </Pressable>
-  );
-}
