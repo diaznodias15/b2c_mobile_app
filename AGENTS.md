@@ -149,7 +149,7 @@ coincide con esas versiones. Hay que compilar un dev-client.
   normales**: con `\` el .properties lo toma como escape y queda
   `C:AndroidSdk`). Si ya hubo un build fallido, borrar los `.cxx` de `android/`
   y de `node_modules/*/android/`: guardan la ruta mala.
-- **Metro no ve archivos nuevos copiados a `C:dev`** (error "None of these files exist" aunque el archivo esté ahí): reiniciar Metro con `--clear` (matar el proceso del puerto 8082 y volver a lanzar `expo start --dev-client --port 8082 --clear`); recargar la app no basta.
+- **Metro no ve archivos nuevos copiados a `C:\dev\`** (error "None of these files exist" aunque el archivo esté ahí): reiniciar Metro con `--clear` (matar el proceso del puerto 8082 y volver a lanzar `expo start --dev-client --port 8082 --clear`); recargar la app no basta.
 - **Poca RAM** (Gradle muere con "daemon disappeared"): compilar con
   `--no-parallel --max-workers=2` y cerrar emulador/Android Studio. Al agregar
   propiedades a `gradle.properties` con `echo`, cuidar el salto de línea (si
