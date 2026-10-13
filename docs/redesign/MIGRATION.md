@@ -95,8 +95,8 @@ verificados en el código actual; el resto se confirma al diseñar cada pieza.
 | Paso | Estado | Commit | Notas |
 |---|---|---|---|
 | 0.1 – 0.3 | hecho | ver git log | Primitivas en `src/redesign/ui/` (`Txt`, `Surface`, `Button`, `IconButton`, `Chip`, `Badge`, `PriceBlock`, `StockPill`) + `stockLevel` (con test). Galería: deep link `maraplus_mobile_app://redesign-gallery` (solo `__DEV__`). `Badge` se añadió porque el `DiscountBadge` actual usa 10 px. |
-| 1.1 | hecho, **sin activar** | ver git log | `ProductCard` v2 en `src/redesign/components/`. Para activarlo: cambiar el import en `TopProducts.tsx`. Ojo: su ancho es 164 (el original 148), así que antes hay que hacer el skeleton v2 (1.3) o el carrusel mostrará saltos. |
-| 1.2 – 1.10 | pendiente | | |
+| 1.1 – 1.3 | hecho, **sin activar** | ver git log | `ProductCard`, `ProductListItem`, `ProductCardSkeleton` y `ProductListItemSkeleton` v2 en `src/redesign/components/`, todos con el contrato del original. Activar **juntos card + su skeleton** (el card v2 mide 164 de ancho, el original 148): `TopProducts.tsx` y `Providers.tsx` (card + `ProductCardSkeleton`); `search.tsx` y `products/[department].tsx` (`ProductListItem` + `ProductListItemSkeleton`). `IconButton` ganó la prop `loading`. |
+| 1.4 – 1.10 | pendiente | | |
 | 2.1 – 2.4 | pendiente | | |
 | 3.1 – 3.3 | pendiente | | |
 | 4 | pendiente | | |

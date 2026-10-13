@@ -1,4 +1,4 @@
-import { Pressable } from 'react-native';
+import { ActivityIndicator, Pressable } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
 
 import type { ThemeColors } from '@/theme/colors';
@@ -17,6 +17,7 @@ export function IconButton({
   variant = 'soft',
   iconSize = 22,
   disabled = false,
+  loading = false,
   colors,
 }: {
   icon: LucideIcon;
@@ -25,6 +26,8 @@ export function IconButton({
   variant?: 'soft' | 'filled' | 'plain';
   iconSize?: number;
   disabled?: boolean;
+  /** Muestra un spinner y bloquea el toque (p. ej. mientras la API acepta el cambio). */
+  loading?: boolean;
   colors?: ThemeColors;
 }) {
   const theme = useColors(colors);
@@ -34,11 +37,11 @@ export function IconButton({
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled}
+      disabled={disabled || loading}
       hitSlop={4}
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
       style={({ pressed }) => ({
         width: MIN_TOUCH,
         height: MIN_TOUCH,
@@ -49,7 +52,7 @@ export function IconButton({
         opacity: disabled ? 0.45 : pressed ? 0.8 : 1,
       })}
     >
-      <Icon size={iconSize} color={fg} />
+      {loading ? <ActivityIndicator size="small" color={fg} /> : <Icon size={iconSize} color={fg} />}
     </Pressable>
   );
 }

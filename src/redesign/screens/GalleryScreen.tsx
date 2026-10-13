@@ -7,6 +7,9 @@ import { ChevronLeft, Heart, ListFilter, Search, ShoppingCart } from 'lucide-rea
 
 import { getTopProducts } from '@/api/services/products.services';
 import { ProductCard as ProductCardV1 } from '@/components/ProductCard';
+import { ProductCardSkeleton as ProductCardSkeletonV1 } from '@/components/ProductCardSkeleton';
+import { ProductListItem as ProductListItemV1 } from '@/components/ProductListItem';
+import { ProductListItemSkeleton as ProductListItemSkeletonV1 } from '@/components/ProductListItemSkeleton';
 import { useListAddToCart } from '@/hooks/useListAddToCart';
 import { useSafePush } from '@/hooks/useSafePush';
 import { selectEffectiveBranchId, useBranchStore } from '@/store/branch.store';
@@ -14,6 +17,9 @@ import { useThemeColors } from '@/store/config.store';
 import type { Product } from '@/types/whitelabel';
 
 import { ProductCard as ProductCardV2 } from '../components/ProductCard';
+import { ProductCardSkeleton as ProductCardSkeletonV2 } from '../components/ProductCardSkeleton';
+import { ProductListItem as ProductListItemV2 } from '../components/ProductListItem';
+import { ProductListItemSkeleton as ProductListItemSkeletonV2 } from '../components/ProductListItemSkeleton';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
@@ -171,6 +177,37 @@ export default function GalleryScreen() {
             </View>
           ))
         )}
+      </Section>
+
+      <Section title="ProductListItem · actual vs v2 (arriba/abajo)">
+        {samples.map(({ label, product }) => (
+          <View key={label} style={{ gap: 8 }}>
+            <Txt variant="label" color="muted" colors={colors}>
+              {label}
+            </Txt>
+            <ProductListItemV1
+              product={product}
+              colors={colors}
+              onPress={handlePress}
+              onAddToCart={handleAddToCart}
+            />
+            <ProductListItemV2
+              product={product}
+              colors={colors}
+              onPress={handlePress}
+              onAddToCart={handleAddToCart}
+            />
+          </View>
+        ))}
+      </Section>
+
+      <Section title="Skeletons · actual vs v2">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+          <ProductCardSkeletonV1 colors={colors} />
+          <ProductCardSkeletonV2 colors={colors} />
+        </ScrollView>
+        <ProductListItemSkeletonV1 colors={colors} />
+        <ProductListItemSkeletonV2 colors={colors} />
       </Section>
     </ScrollView>
   );

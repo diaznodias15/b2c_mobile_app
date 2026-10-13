@@ -130,7 +130,10 @@ export const ProductCard = memo(function ProductCard({
         {product.nb_product}
       </Txt>
 
-      <PriceBlock product={product} colors={colors} />
+      {/* Reserva la altura del tachado para que los CTA queden alineados entre cards con y sin descuento. */}
+      <View style={{ minHeight: 40, justifyContent: 'flex-end' }}>
+        <PriceBlock product={product} colors={colors} />
+      </View>
 
       <View style={{ minHeight: 16, marginTop: 6, marginBottom: 10 }}>
         {stock !== undefined && <StockPill level={stock} colors={colors} />}
