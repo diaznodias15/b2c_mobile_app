@@ -14,9 +14,15 @@ import { useListAddToCart } from '@/hooks/useListAddToCart';
 import { useSafePush } from '@/hooks/useSafePush';
 import { selectEffectiveBranchId, useBranchStore } from '@/store/branch.store';
 import { useThemeColors } from '@/store/config.store';
+import type { Order, OrderStatus } from '@/types/orders';
 import type { Product } from '@/types/whitelabel';
 
 import { ProductCard as ProductCardV2 } from '../components/ProductCard';
+import { DualCurrencyText } from '../components/DualCurrencyText';
+import { OrderRow, OrderRowSkeleton } from '../components/OrderRow';
+import { OrderStatusBadge } from '../components/OrderStatusBadge';
+import { OrderStatusStepper } from '../components/OrderStatusStepper';
+import { OrdersPagination } from '../components/OrdersPagination';
 import { ProductCardSkeleton as ProductCardSkeletonV2 } from '../components/ProductCardSkeleton';
 import { ProductListItem as ProductListItemV2 } from '../components/ProductListItem';
 import { ProductListItemSkeleton as ProductListItemSkeletonV2 } from '../components/ProductListItemSkeleton';
@@ -36,6 +42,18 @@ import { TYPE, type TypeVariant } from '../ui/tokens';
  * sin stock, sin precio, nombre largo). Solo existe en desarrollo; se abre con el
  * deep link `maraplusmobileapp://redesign-gallery`.
  */
+/** Órdenes sintéticas SOLO para la galería (no son datos reales). */
+const SAMPLE_ORDERS: Order[] = (['PENDING', 'PROCESSING', 'FINISHED', 'CANCELED'] as OrderStatus[]).map((status, i) => ({
+  tx_order_number: String(1040 + i),
+  tx_status: status,
+  qty_total_amount: String(1250.5 * (i + 1)),
+  dt_created_at: '2026-10-' + String(10 + i) + ' 14:32:00',
+  qty_items: String(i + 1),
+  qty_units: String(i + 3),
+  amt_exchange_rate: '876.80',
+  tx_branch_alias: 'SEDE NORTE',
+}));
+
 export default function GalleryScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -208,6 +226,25 @@ export default function GalleryScreen() {
         </ScrollView>
         <ProductListItemSkeletonV1 colors={colors} />
         <ProductListItemSkeletonV2 colors={colors} />
+      </Section>
+
+      <Section title="Órdenes (datos de muestra)">
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {(['PENDING', 'APPROVED', 'PROCESSING', 'PROCESSED', 'FINISHED', 'CANCELED'] as OrderStatus[]).map((st) => (
+            <OrderStatusBadge key={st} status={st} colors={colors} />
+          ))}
+        </View>
+        <Surface colors={colors} style={{ gap: 14 }}>
+          <OrderStatusStepper active={0} colors={colors} />
+          <OrderStatusStepper active={2} colors={colors} />
+          <OrderStatusStepper active={4} colors={colors} />
+        </Surface>
+        <DualCurrencyText value={3511.2} amtExchangeRate={876.8} colors={colors} size={16} />
+        {SAMPLE_ORDERS.map((order) => (
+          <OrderRow key={order.tx_order_number} order={order} onPress={() => {}} colors={colors} />
+        ))}
+        <OrderRowSkeleton colors={colors} />
+        <OrdersPagination page={2} lastPage={5} isLoading={false} onChange={() => {}} colors={colors} />
       </Section>
     </ScrollView>
   );
