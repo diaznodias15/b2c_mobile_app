@@ -3,7 +3,8 @@ import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, Heart, ListFilter, Search, ShoppingCart } from 'lucide-react-native';
+import { Banknote, ChevronLeft, Heart, Landmark, ListFilter, Search, ShoppingCart, Smartphone } from 'lucide-react-native';
+import { paymentMethodColorFor } from '@/components/PaymentMethodCard';
 
 import { getTopProducts } from '@/api/services/products.services';
 import { ProductCard as ProductCardV1 } from '@/components/ProductCard';
@@ -19,7 +20,10 @@ import type { Product } from '@/types/whitelabel';
 
 import { ProductCard as ProductCardV2 } from '../components/ProductCard';
 import { DualCurrencyText } from '../components/DualCurrencyText';
+import { CheckoutStepHeader } from '../components/CheckoutStepHeader';
+import { AmountField, ReceiversList } from '../components/CheckoutPagoStep';
 import { ModalLogout } from '../components/ModalLogout';
+import { PaymentMethodCard } from '../components/PaymentMethodCard';
 import { ModalResetPassword } from '../components/ModalResetPassword';
 import { OrderRow, OrderRowSkeleton } from '../components/OrderRow';
 import { ProfileHeader } from '../components/ProfileHeader';
@@ -32,6 +36,7 @@ import { ProductListItemSkeleton as ProductListItemSkeletonV2 } from '../compone
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
+import { SelectField } from '../ui/SelectField';
 import { IconButton } from '../ui/IconButton';
 import { PriceBlock } from '../ui/PriceBlock';
 import { StockPill } from '../ui/StockPill';
@@ -66,6 +71,8 @@ export default function GalleryScreen() {
   const handleAddToCart = useListAddToCart();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  const [bank, setBank] = useState('');
+  const [method, setMethod] = useState<'PAGOMOVIL' | 'ZELLE' | null>('PAGOMOVIL');
 
   const { data } = useQuery({
     queryKey: ['top-products', branchId, null],
@@ -267,6 +274,28 @@ export default function GalleryScreen() {
           colors={colors}
         />
         <ModalResetPassword visible={resetOpen} onClose={() => setResetOpen(false)} colors={colors} />
+      </Section>
+
+      <Section title="Pago modo Full (datos de muestra)">
+        <CheckoutStepHeader step={2} totalSteps={2} title="¿Cómo prefieres pagar?" subtitle="Elige un método." colors={colors} />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          <PaymentMethodCard label="Pago móvil" subtitle="Bs." icon={Smartphone} {...paymentMethodColorFor('PAGOMOVIL', colors)} selected={method === 'PAGOMOVIL'} onPress={() => setMethod('PAGOMOVIL')} colors={colors} />
+          <PaymentMethodCard label="Zelle" subtitle="USD · IGTF 3%" icon={Banknote} {...paymentMethodColorFor('ZELLE', colors)} selected={method === 'ZELLE'} onPress={() => setMethod('ZELLE')} colors={colors} />
+          <PaymentMethodCard label="Transferencia" subtitle="Cuenta bancaria" icon={Landmark} {...paymentMethodColorFor('TRANSFERENCIA', colors)} selected={false} onPress={() => {}} colors={colors} />
+        </View>
+        <ReceiversList
+          colors={colors}
+          items={[[['Banco', 'Banco de ejemplo'], ['RIF', 'J-12345678-9'], ['Teléfono', '0414-1234567']]]}
+        />
+        <SelectField
+          label="Banco de origen"
+          placeholder="Selecciona tu banco"
+          value={bank}
+          options={Array.from({ length: 12 }, (_, i) => ({ value: String(i), label: 'Banco de muestra ' + (i + 1) }))}
+          onChange={setBank}
+          colors={colors}
+        />
+        <AmountField amount={1250.5} onChange={() => {}} currency="Bs." colors={colors} />
       </Section>
     </ScrollView>
   );

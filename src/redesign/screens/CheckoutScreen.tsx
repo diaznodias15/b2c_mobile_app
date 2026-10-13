@@ -6,8 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check, ChevronLeft, CircleCheck, Info, MessageCircle, ShoppingBag } from 'lucide-react-native';
 
 import { createOrder } from '@/api/services/orders.services';
-import { CheckoutEntregaStep } from '@/components/CheckoutEntregaStep';
-import { CheckoutPagoStep } from '@/components/CheckoutPagoStep';
 import { ModuleMaintenance } from '@/components/ModuleMaintenance';
 import { useCartTimer } from '@/hooks/useCartTimer';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
@@ -29,6 +27,8 @@ import { getCartLinePricing, getCartSummary } from '@/utils/pricing';
 
 import { CartSummaryCard } from '../components/CartSummaryCard';
 import { CartTimer } from '../components/CartTimer';
+import { CheckoutEntregaStep } from '../components/CheckoutEntregaStep';
+import { CheckoutPagoStep } from '../components/CheckoutPagoStep';
 import { PhoneContactFields } from '../components/PhoneContactFields';
 import { Button } from '../ui/Button';
 import { IconButton } from '../ui/IconButton';
@@ -82,9 +82,8 @@ export default function CheckoutScreen() {
  *    éxito. Se manda `fulfillment_type: 'TBD'`, `tx_payment_method: 'EXPRESS'`, `is_lite: 1`
  *    y el teléfono en 3 partes (el backend lo exige aun en retiro: sin él responde 400 "El
  *    código del país es requerido."). Un asesor coordina pago y entrega por WhatsApp.
- *  - **Full**: 2 pasos (Entrega → Pago) con estado en `useCheckoutStore`. **Sus pasos siguen
- *    siendo los de v1** (`CheckoutEntregaStep`/`CheckoutPagoStep`): rediseñarlos es un
- *    subpaso aparte (ver `docs/redesign/MIGRATION.md`, 2.3b).
+ *  - **Full**: 2 pasos (Entrega → Pago) con estado en `useCheckoutStore`; sus pasos son los v2
+ *    (`CheckoutEntregaStep`/`CheckoutPagoStep` de `redesign/components`).
  */
 function CheckoutFlow() {
   const insets = useSafeAreaInsets();
