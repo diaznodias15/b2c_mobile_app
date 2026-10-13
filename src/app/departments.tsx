@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PackageSearch, RefreshCcw } from 'lucide-react-native';
 
 import { useSafePush } from '@/hooks/useSafePush';
-import { BottomTabs } from '@/components/bottom-tabs';
+import { BottomTabs } from '@/redesign/components/bottom-tabs';
 import { DepartmentCard, DEPARTMENT_CARD_HEIGHT, DEPARTMENT_CARD_WIDTH } from '@/redesign/components/DepartmentCard';
 import { bootstrapConfig } from '@/components/Providers';
 import { Skeleton } from '@/components/Skeleton';

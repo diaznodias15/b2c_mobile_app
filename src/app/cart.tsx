@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Info, ShoppingBag, ShoppingCart, Trash2 } from 'lucide-react-native';
 
 import { useSafePush } from '@/hooks/useSafePush';
-import { BottomTabs } from '@/components/bottom-tabs';
+import { BottomTabs } from '@/redesign/components/bottom-tabs';
 import { ModuleMaintenance } from '@/components/ModuleMaintenance';
 import { CartSummaryCard } from '@/components/CartSummaryCard';
 import { CartTimer } from '@/components/CartTimer';

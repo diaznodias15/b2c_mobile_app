@@ -5,7 +5,7 @@ import { KeyRound, LogIn, LogOut, Package, User } from 'lucide-react-native';
 
 import { useSafePush } from '@/hooks/useSafePush';
 import { logout as logoutRequest } from '@/api/services/auth.services';
-import { BottomTabs } from '@/components/bottom-tabs';
+import { BottomTabs } from '@/redesign/components/bottom-tabs';
 import { ModalLogout } from '@/components/ModalLogout';
 import { ModuleMaintenance } from '@/components/ModuleMaintenance';
 import { ModalResetPassword } from '@/components/ModalResetPassword';

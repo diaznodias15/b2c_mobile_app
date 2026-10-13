@@ -5,7 +5,7 @@ import { useSharedValue } from 'react-native-reanimated';
 import { Carousel, Pagination } from 'react-native-reanimated-carousel';
 
 import { useSafePush } from '@/hooks/useSafePush';
-import { BottomTabs } from '@/components/bottom-tabs';
+import { BottomTabs } from '@/redesign/components/bottom-tabs';
 import { BrandsMarquee } from '@/components/BrandsMarquee';
 import { DeliveryBanner } from '@/components/DeliveryBanner';
 import { DepartmentCard } from '@/redesign/components/DepartmentCard';

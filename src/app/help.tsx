@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BottomTabs } from '@/components/bottom-tabs';
+import { BottomTabs } from '@/redesign/components/bottom-tabs';
 import { useThemeColors } from '@/store/config.store';
 
 export default function HelpScreen() {

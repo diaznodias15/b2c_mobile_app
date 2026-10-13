@@ -5,7 +5,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { PackageSearch, Search as SearchIcon, X } from 'lucide-react-native';
 
 import { useSafePush } from '@/hooks/useSafePush';
-import { BottomTabs } from '@/components/bottom-tabs';
+import { BottomTabs } from '@/redesign/components/bottom-tabs';
 import { ProductListItem } from '@/redesign/components/ProductListItem';
 import { ProductListItemSkeleton } from '@/redesign/components/ProductListItemSkeleton';
 import { getProductSearch } from '@/api/services/products.services';

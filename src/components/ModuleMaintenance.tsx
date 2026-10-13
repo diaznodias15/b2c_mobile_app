@@ -2,7 +2,7 @@ import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Wrench } from 'lucide-react-native';
 
-import { BottomTabs } from '@/components/bottom-tabs';
+import { BottomTabs } from '@/redesign/components/bottom-tabs';
 import { hexToRgba, type ThemeColors } from '@/theme/colors';
 
 /**
