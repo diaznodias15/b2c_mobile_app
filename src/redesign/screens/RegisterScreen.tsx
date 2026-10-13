@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -152,43 +152,74 @@ export default function RegisterScreen() {
   if (isRegistered) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
-          <View
-            style={{
-              width: 96,
-              height: 96,
-              borderRadius: 48,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: colors.primaryOverlay,
-              marginBottom: 20,
-            }}
-          >
-            <Mail size={42} color={colors.primary} strokeWidth={1.6} />
-          </View>
-          <Txt variant="title" colors={colors} style={{ textAlign: 'center', marginBottom: 8 }}>
-            Te enviamos un email
-          </Txt>
-          <Txt variant="body" color="muted" colors={colors} style={{ textAlign: 'center', marginBottom: 28 }}>
-            Revisa tu bandeja de entrada (y spam) para verificar tu cuenta antes de iniciar sesión.
-          </Txt>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 24 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <AuthHeader
+            title="Revisa tu correo"
+            subtitle="Tu cuenta está casi lista: falta verificar tu correo."
+            // La cuenta ya se creó; volver llevaría al formulario vacío, así que "atrás" va al login.
+            onBack={() => router.replace('/login')}
+          />
 
-          <View style={{ width: '100%', gap: 10 }}>
-            <Button
-              label={isResending ? 'Enviando…' : 'Reenviar email'}
-              variant="secondary"
-              icon={Send}
-              loading={isResending}
-              onPress={handleResendVerification}
-              colors={colors}
-            />
-            <Button
-              label="Ya verifiqué, iniciar sesión"
-              onPress={() => router.replace('/login')}
-              colors={colors}
-            />
+          <Animated.View
+            entering={reduceMotion ? undefined : FadeInDown.duration(350)}
+            style={{ paddingHorizontal: 16, marginTop: -32, gap: 16 }}
+          >
+            <Surface colors={colors} radius={20} padding={20} style={{ gap: 18 }}>
+              <View style={{ alignItems: 'center', gap: 10 }}>
+                <View
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 36,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: colors.primaryOverlay,
+                  }}
+                >
+                  <Mail size={34} color={colors.primary} strokeWidth={1.6} />
+                </View>
+                <Txt variant="body" color="muted" colors={colors} style={{ textAlign: 'center' }}>
+                  Te enviamos un email a
+                </Txt>
+                <Txt variant="label" colors={colors} style={{ fontSize: 16, fontWeight: '800', textAlign: 'center' }} selectable>
+                  {email.trim()}
+                </Txt>
+              </View>
+
+              <View style={{ height: 1, backgroundColor: colors.border }} />
+
+              <View style={{ gap: 14 }}>
+                <Step index={1} text="Abre el correo (revisa también la carpeta de spam)." colors={colors} />
+                <Step index={2} text="Toca el enlace para verificar tu cuenta." colors={colors} />
+                <Step index={3} text="Vuelve aquí e inicia sesión para comprar." colors={colors} />
+              </View>
+
+              <View style={{ gap: 10 }}>
+                <Button
+                  label="Ya verifiqué, iniciar sesión"
+                  height={52}
+                  onPress={() => router.replace('/login')}
+                  colors={colors}
+                />
+                <Button
+                  label={isResending ? 'Enviando…' : '¿No te llegó? Reenviar email'}
+                  variant="secondary"
+                  icon={Send}
+                  loading={isResending}
+                  onPress={handleResendVerification}
+                  colors={colors}
+                />
+              </View>
+            </Surface>
+          </Animated.View>
+
+          <View style={{ marginTop: 28 }}>
+            <AuthTrustStrip />
           </View>
-        </View>
+        </ScrollView>
       </View>
     );
   }
@@ -441,5 +472,32 @@ function Section({
       </Txt>
       {children}
     </Surface>
+  );
+}
+
+/** Paso numerado de la pantalla "Revisa tu correo". */
+function Step({ index, text, colors }: { index: number; text: string; colors: ThemeColors }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <View
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: 14,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: colors.primaryOverlay,
+        }}
+      >
+        <Txt variant="caption" color="primary" colors={colors} style={{ fontWeight: '800' }}>
+          {index}
+        </Txt>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Txt variant="label" colors={colors} style={{ fontWeight: '500', lineHeight: 20 }}>
+          {text}
+        </Txt>
+      </View>
+    </View>
   );
 }
