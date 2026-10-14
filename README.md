@@ -147,7 +147,7 @@ npm test
 > (por ejemplo, uno que compilaste con `npm run build:apk`), la app lleva el
 > JavaScript embebido e **ignora Metro**: nunca verás tus cambios. Necesitas
 > el dev-client (`npx expo run:android`). Para comprobarlo:
-> `adb shell run-as com.diaznodias.b2c_mobile_app id` falla con "package not
+> `adb shell run-as com.maraplus.app id` falla con "package not
 > debuggable" en un release.
 
 ### Alternativa: dev build en la nube (EAS)

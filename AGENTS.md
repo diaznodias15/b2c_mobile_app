@@ -635,9 +635,10 @@ Router, Reanimated, `lucide-react-native` o el dev-client: **no los quites**.
 
 Con RN 0.86 la new architecture es obligatoria (y Reanimated 4 la
 requiere), por eso `app.json` ya **no** define `newArchEnabled`. El
-`ios.bundleIdentifier` es `com.diaznodias.b2c_mobile_app` (igual al
-package de Android); es provisional — definir el definitivo antes de
-publicar en iOS.
+`ios.bundleIdentifier` y el `package` de Android son
+`com.maraplus.app` (definitivo desde 2026-10-14; no cambiar tras publicar).
+El `android/` generado y el APK instalado en el emulador conservan el id
+viejo hasta repetir `npx expo prebuild --clean` y `npx expo run:android`.
 
 ## Tamaño del APK y arquitecturas (2026-10-08)
 
