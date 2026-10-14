@@ -15,14 +15,17 @@ import {
   House,
   LayoutGrid,
   LogIn,
+  MapPin,
   Search,
   ShoppingCart,
   UserRound,
   type LucideIcon,
 } from 'lucide-react-native';
 
+import { BranchSelectorModal } from '@/components/BranchSelectorModal';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { useSafePush } from '@/hooks/useSafePush';
+import { selectEffectiveBranch, useBranchStore } from '@/store/branch.store';
 import { useCartStore, selectCartCount } from '@/store/cart.store';
 import { useThemeColors } from '@/store/config.store';
 import { useCurrencyStore, type DisplayCurrency } from '@/store/currency.store';
@@ -86,6 +89,9 @@ export function BottomTabs() {
   const setCartIconPosition = useFlyingCartStore((s) => s.setCartIconPosition);
   const bounceSignal = useFlyingCartStore((s) => s.bounceSignal);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isBranchOpen, setIsBranchOpen] = useState(false);
+  const branch = useBranchStore(selectEffectiveBranch);
+  const branchName = branch ? (branch.tx_alias ?? branch.label) : null;
   // `useState` con inicializador (y no `useRef(...).current`): el valor animado se crea una sola
   // vez sin leer un ref durante el render.
   const [backdropOpacity] = useState(() => new Animated.Value(0));
@@ -269,6 +275,45 @@ export function BottomTabs() {
             Más opciones
           </Txt>
 
+          {branchName && (
+            <Pressable
+              onPress={() => {
+                // Se cierra la hoja antes de abrir el selector: dos `Modal` de RN a la vez
+                // se tapan o no se muestran bien en iOS.
+                setIsMoreOpen(false);
+                setIsBranchOpen(true);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`Sede actual: ${branchName}. Cambiar de sede`}
+              style={({ pressed }) => ({
+                minHeight: 56,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+                paddingHorizontal: 12,
+                marginBottom: 16,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: colors.border,
+                backgroundColor: colors.section,
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <MapPin size={22} color={colors.primary} />
+              <View style={{ flex: 1 }}>
+                <Txt variant="caption" color="muted" colors={colors}>
+                  Sede actual
+                </Txt>
+                <Txt variant="label" colors={colors} numberOfLines={1}>
+                  {branchName}
+                </Txt>
+              </View>
+              <Txt variant="label" colors={colors} style={{ color: colors.primary }}>
+                Cambiar
+              </Txt>
+            </Pressable>
+          )}
+
           <Txt variant="label" color="muted" colors={colors} style={{ marginBottom: 8 }}>
             Moneda de precios
           </Txt>
@@ -336,6 +381,12 @@ export function BottomTabs() {
           </View>
         </Animated.View>
       </Modal>
+
+      <BranchSelectorModal
+        visible={isBranchOpen}
+        onClose={() => setIsBranchOpen(false)}
+        colors={colors}
+      />
     </View>
   );
 }
