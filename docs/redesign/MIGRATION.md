@@ -113,3 +113,21 @@ probar).
 | 3.2 | hecho y **activado** | ver git log | `ProfileScreen` v2 (reexportada desde `src/app/profile.tsx`) + `ProfileHeader`, `ModalLogout` y `ModalResetPassword` v2. Lógica copiada sin cambios (revalidación con `refreshUser`, cierre de sesión local pase lo que pase con el backend, política de contraseña con `getPasswordChangeIssues`, `is_show_user`). Cabecera compacta; los 3 botones-tarjeta (uno no hacía nada) pasan a una lista de filas de 64 dp ("Mis órdenes", "Cambiar contraseña"); información personal como lista etiquetada; "Cerrar sesión" como botón propio al final; modal de logout con acción `danger` y "Cancelar" de 48 dp; el modal de contraseña usa `TextField` y conserva `statusBarTranslucent`/`navigationBarTranslucent` (necesarios para `keyboard-controller` en Android). `Button` gana la variante `danger`. **Probado en emulador:** el modal de contraseña y la cabecera con un usuario de muestra (galería) y el estado sin sesión. **Sin probar con sesión real:** la pantalla completa, cerrar sesión y cambiar la contraseña. |
 | 3.3 | hecho y **activado** | ver git log | `HelpScreen` (reexportada desde `src/app/help.tsx`; antes solo mostraba el título). Muestra WhatsApp, teléfono y correo de la empresa y los datos de la sede activa, **leídos de la config del backend** (cada canal solo aparece si existe). Nueva `utils/contact.ts` (con tests) que normaliza el teléfono a formato internacional para `wa.me`: **bug corregido** — el checkout convertía `0422-9876543` en `wa.me/04229876543` (número inválido); ahora `wa.me/584229876543`. **Ojo con los datos:** la config de producción trae valores de relleno (`example@example.com`, `Calle 77`, teléfono `0422-9876543`); hay que cargar los reales en el admin. Sin enlaces a términos/privacidad: la app no tiene esas pantallas todavía. |
 | 4 | pendiente | | |
+
+## Paridad con la web (novedades de sept–oct 2026, portadas el 2026-10-26)
+
+Fuente: `b2c_app/docs/novedades-features.md` (la app web). Cada fila es un commit propio en `developer`.
+
+| Origen (web) | Estado | Notas |
+|---|---|---|
+| G9 Banners completos | hecho | **Corrige un bug**: el backend ya no manda `tx_img_url_mobile`; el Home usa `tx_img_url_web` (2:1, `contain` sobre copia desenfocada). El skeleton del arranque (`Providers.tsx`) usa la misma proporción. |
+| G10 Símbolos de contraseña | hecho | `PASSWORD_SYMBOLS` = ASCII imprimible; sin espacios ni acentos. **Falta confirmar con el backend** que acepta `_ ~ / …` y qué pasa con la contraseña *actual* al cambiarla. |
+| G12 Validación del merge | hecho | `utils/cartMerge.ts`; toast si falla, el carrito local se conserva. |
+| G7 Recordar sede | hecho | La persistida se resuelve contra `/config/get` (`reconcileSelectedBranch`). |
+| G8 Error 429 | hecho | GET con reintentos y `Retry-After`; nunca POST/PUT/DELETE. |
+| 2 Repetir pedido | hecho y probado con sesión | Botón en `ModalOrderDetail`; resumen compartido con favoritos (`utils/cartBulkResult.ts`). |
+| 1 Favoritos | hecho y probado con sesión | `FavoriteButton`, `favorites.store`, ruta `/favorites` desde Perfil. En las filas el corazón va junto al botón "+" (arriba chocaba con el nombre). Pendiente: animación "pop" (respetando *reducir movimiento*). |
+| G3 Variantes | hecho, **sin probar con datos reales** | Producción aún no manda `family` ni `variants_count`. No se soporta `VARIANTS_COLLAPSE_CATALOG`. |
+| G4 Escáner de barras | hecho, lectura real sin probar | `expo-camera` (nativo: rebuild). Probado en emulador el permiso, la cámara y la entrada manual; falta un teléfono real o una imagen con código en la cámara virtual. |
+| G5 Lite + `TBD` | ya estaba | Sigue bloqueado por el backend (debe aceptar `TBD`). |
+| 6 Variantes de diseño, 11 Kiosko | no aplican | Son de la web. |

@@ -15,7 +15,9 @@ import { loadConfig } from '@/api';
 import { isDuplicateRequestError } from '@/api/axiosRequest';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const BANNER_SIZE = SCREEN_WIDTH - 48;
+/** Igual que el banner del Home: margen de 16 por lado y proporción 2:1. */
+const BANNER_WIDTH = SCREEN_WIDTH - 32;
+const BANNER_HEIGHT = Math.round(BANNER_WIDTH / 2);
 const DEPARTMENT_CARD_HEIGHT = 168;
 const DEPARTMENT_CARD_WIDTH = (SCREEN_WIDTH - 48 - 12) / 2;
 
@@ -107,7 +109,7 @@ function HomeSkeleton() {
       </View>
 
       <View style={{ alignItems: 'center', paddingTop: 8 }}>
-        <Skeleton width={BANNER_SIZE} height={BANNER_SIZE} borderRadius={18} colors={colors} />
+        <Skeleton width={BANNER_WIDTH} height={BANNER_HEIGHT} borderRadius={18} colors={colors} />
       </View>
 
       <View style={{ marginTop: 24, alignItems: 'center', gap: 6 }}>
