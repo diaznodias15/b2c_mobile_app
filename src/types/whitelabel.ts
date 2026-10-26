@@ -10,6 +10,7 @@
  */
 
 import type { AppConfig } from '@/store';
+import type { ProductFamily } from '@/utils/variants';
 import type { ConfigColors } from '@/theme';
 
 /** Envelope genérico de la API. */
@@ -116,6 +117,13 @@ export type Product = {
   pri_product_price: string;
   /** Precio final con impuestos en Bs. (string). Ver `pri_product_price`. */
   pri_product_final_price: string;
+  /**
+   * Opciones ADICIONALES de la ficha a la que pertenece el producto (sin contarse a sí mismo).
+   * Ausente si el producto es suelto o su ficha no tiene otras variantes activas.
+   */
+  variants_count?: number;
+  /** Etiqueta de la variante ("L / Verde"); `null` si no es una variante. */
+  tx_variant_label?: string | null;
 };
 
 /** Alias de compatibilidad con código previo. */
@@ -151,6 +159,8 @@ export type ProductDetail = {
   product_img?: { tx_img_url: string }[] | null;
   product_features?: ProductFeature[] | null;
   availability_per_branch?: AvailabilityByBranch[];
+  /** Selectores de la ficha (ya normalizados). Ausente si el producto no pertenece a una. */
+  family?: ProductFamily;
 };
 
 export type ProductFeature = {

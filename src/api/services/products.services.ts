@@ -7,6 +7,7 @@ import type {
   ProductDetail,
 } from '@/types/whitelabel';
 import { toQueryString } from '@/utils/queryParams';
+import { familyAdapter } from '@/utils/variants';
 
 const TOP_PRODUCTS = '/api/products/top-products';
 const LIST = '/api/products/list';
@@ -158,5 +159,9 @@ export async function getProductDetail(
     url,
     signal: params.signal,
   });
-  return envelope.data;
+  // `family` solo viene si el producto pertenece a una ficha; se normaliza (o se descarta si
+  // viene mal formado) para que el detalle sea el de siempre.
+  const { family: rawFamily, ...detail } = envelope.data as ProductDetail & { family?: unknown };
+  const family = familyAdapter(rawFamily);
+  return family ? { ...detail, family } : detail;
 }

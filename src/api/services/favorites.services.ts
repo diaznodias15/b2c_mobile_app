@@ -24,6 +24,7 @@ export type FavoriteProduct = {
   qty_discount?: number | string;
   qty_tax?: number | string;
   tx_img_url?: string | null;
+  tx_variant_label?: string | null;
   dt_favorite_at?: string;
 };
 

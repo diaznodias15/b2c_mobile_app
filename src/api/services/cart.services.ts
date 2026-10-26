@@ -46,6 +46,7 @@ export type CartItemFromBackend = {
   qty_discount?: number | string;
   qty_tax?: number | string;
   tx_img_url?: string | null;
+  tx_variant_label?: string | null;
   pri_product_price: string;
   pri_product_final_price: string;
 };

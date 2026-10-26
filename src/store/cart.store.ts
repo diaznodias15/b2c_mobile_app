@@ -93,6 +93,7 @@ function mapBackendItem(branchId: number, item: CartItemFromBackend): CartItem {
     nb_product: item.nb_product,
     nb_brand: item.nb_brand,
     tx_img_url: item.tx_img_url,
+    tx_variant_label: item.tx_variant_label,
     pri_product_final_price: item.pri_product_final_price,
     pri_product_price: item.pri_product_price,
     qty_discount: item.qty_discount,

@@ -28,6 +28,7 @@ export function useListAddToCart(): (product: Product) => Promise<boolean> {
         nb_product: product.nb_product,
         nb_brand: product.nb_brand,
         tx_img_url: product.tx_img_url,
+        tx_variant_label: product.tx_variant_label,
         pri_product_final_price: product.pri_product_final_price,
         pri_product_price: product.pri_product_price,
         qty_discount: product.qty_discount,

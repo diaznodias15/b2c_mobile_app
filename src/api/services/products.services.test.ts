@@ -184,4 +184,30 @@ describe('getProductDetail', () => {
       '/api/products/detail/producto-con-slug'
     );
   });
+
+  it('normaliza el bloque family cuando viene', async () => {
+    mockAxios.mockResolvedValueOnce({
+      status: 'OK',
+      data: {
+        id: 1,
+        tx_slug: 's',
+        family: {
+          name: 'Bata',
+          selected_slug: 's',
+          axes: [{ attribute_id: 1, nb_attribute: 'Talla', tx_slug: 'talla', tx_type: 'TEXT', values: [{ value_id: 10, tx_value: 'S' }] }],
+          variants: [{ tx_slug: 's', is_selected: true, is_active: true, is_available: true, values: [{ attribute_id: 1, value_id: 10 }] }],
+        },
+      } as any,
+    });
+    const d = await getProductDetail('s', { branch: 1 });
+    expect(d.family?.name).toBe('Bata');
+    expect(d.family?.axes[0].values[0].tx_hex).toBeNull();
+  });
+
+  it('descarta un family mal formado o ausente (el detalle es el de siempre)', async () => {
+    mockAxios.mockResolvedValueOnce({ status: 'OK', data: { id: 1, tx_slug: 's', family: { axes: [], variants: [] } } as any });
+    expect('family' in (await getProductDetail('s', { branch: 1 }))).toBe(false);
+    mockAxios.mockResolvedValueOnce({ status: 'OK', data: { id: 2, tx_slug: 't' } as any });
+    expect('family' in (await getProductDetail('t', { branch: 1 }))).toBe(false);
+  });
 });

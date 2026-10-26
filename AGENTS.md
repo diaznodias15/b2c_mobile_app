@@ -446,6 +446,14 @@ completo.
   `utils/notifyCartBulkResult.ts`): toast si todo entró, diálogo con el motivo de cada producto
   incompleto. Siempre se repone el carrito con `refreshFromServer` antes de abrirlo.
 
+- **Variantes de producto (fichas)**: `getProductDetail` normaliza el bloque opcional `family` con
+  `familyAdapter` (`utils/variants.ts`, portado de la web, con tests); sin `family` el detalle es
+  el de siempre. `VariantSelector` navega con `router.replace` al `tx_slug` de la variante elegida
+  (conserva los demás ejes). Las cards muestran "+N opciones" con `variants_count` (opciones
+  ADICIONALES) y carrito/favoritos muestran `tx_variant_label`. El modo de servidor
+  `VARIANTS_COLLAPSE_CATALOG` (`price_from`/`price_to`) NO se soporta. **Al 2026-10-26 producción
+  aún no manda `family` ni `variants_count`** (verificado con curl): sin probar con datos reales.
+
 ## Mapa de rutas y BottomTabs (`src/redesign/components/bottom-tabs.tsx`)
 
 5 tabs: **Inicio** (`/`), **Departamentos** (`/departments`; la tab se

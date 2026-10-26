@@ -19,6 +19,8 @@ export type CartItem = {
   nb_product: string;
   nb_brand: string;
   tx_img_url?: string | null;
+  /** Etiqueta de la variante ("L / Verde"); `null`/ausente si no es una variante. */
+  tx_variant_label?: string | null;
   /** Precio unitario FINAL (con impuestos y descuento aplicados) en Bs. — ver `Product.pri_product_price`. */
   pri_product_final_price: string;
   /**

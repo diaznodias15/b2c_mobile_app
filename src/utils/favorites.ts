@@ -19,6 +19,7 @@ export function favoriteToProduct(f: FavoriteProduct): Product {
     qty_discount: f.qty_discount,
     qty_tax: f.qty_tax,
     tx_img_url: f.tx_img_url,
+    tx_variant_label: f.tx_variant_label,
     pri_product_price: String(f.pri_product_price),
     pri_product_final_price: String(f.pri_product_final_price),
   };

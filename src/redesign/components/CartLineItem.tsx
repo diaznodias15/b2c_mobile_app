@@ -106,6 +106,11 @@ export function CartLineItem({ item, colors }: { item: CartItem; colors: ThemeCo
           <Txt variant="label" colors={colors} numberOfLines={2}>
             {item.nb_product}
           </Txt>
+          {item.tx_variant_label ? (
+            <Txt variant="caption" color="muted" colors={colors} numberOfLines={1}>
+              {item.tx_variant_label}
+            </Txt>
+          ) : null}
         </View>
 
         <View>

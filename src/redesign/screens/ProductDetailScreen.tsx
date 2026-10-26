@@ -22,10 +22,12 @@ import { useToastStore } from '@/store/toast.store';
 import { toAvailability } from '@/utils/cartStock';
 import { formatDisplayPrice } from '@/utils/currency';
 import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
+import { getSelectedVariant } from '@/utils/variants';
 import { getProductPricing } from '@/utils/pricing';
 import { getProductDetailView } from '@/utils/productDetailState';
 
 import { FavoriteButton } from '../components/FavoriteButton';
+import { VariantSelector } from '../components/VariantSelector';
 import { ProductDetailSkeleton, PRODUCT_DETAIL_IMAGE_HEIGHT } from '../components/ProductDetailSkeleton';
 import { QuantityStepper } from '../components/QuantityStepper';
 import { TopProducts } from '../components/TopProducts';
@@ -72,7 +74,11 @@ export default function ProductDetailScreen() {
   const { displayCurrency, exchangeRate } = useDisplayCurrency();
   const refreshControl = useRefreshControl();
 
-  const [quantity, setQuantity] = useState(1);
+  // La cantidad va ligada al slug: al cambiar de variante la ruta puede reutilizar esta pantalla
+  // y la cantidad de la anterior no se arrastra (sin efecto, que re-renderizaría en cascada).
+  const [quantityState, setQuantityState] = useState({ slug, value: 1 });
+  const quantity = quantityState.slug === slug ? quantityState.value : 1;
+  const setQuantity = (value: number) => setQuantityState({ slug, value });
   const [descriptionOpen, setDescriptionOpen] = useState(false);
   const { imageRef, isAdding, isSubmitting, addWithFlight } = useAddToCartFlight();
 
@@ -158,6 +164,7 @@ export default function ProductDetailScreen() {
   const canAddToCart = hasPrice && unitsAvailable > 0;
   const atMax = canAddToCart && quantity >= maxQty;
   const savings = hasDiscount ? basePrice - finalPrice : 0;
+  const selectedVariantLabel = product.family ? getSelectedVariant(product.family)?.tx_variant_label || null : null;
 
   const handleAddToCart = () => {
     if (branchId === null || !canAddToCart) return;
@@ -169,6 +176,7 @@ export default function ProductDetailScreen() {
         nb_product: product.nb_product,
         nb_brand: product.nb_brand,
         tx_img_url: images[0] ?? null,
+        tx_variant_label: selectedVariantLabel,
         pri_product_final_price: product.pri_product_final_price,
         pri_product_price: product.pri_product_price,
         qty_discount: product.qty_discount,
@@ -230,9 +238,18 @@ export default function ProductDetailScreen() {
               {product.nb_brand}
             </Txt>
             <Txt variant="title" colors={colors} style={{ marginTop: 2 }}>
-              {product.nb_product}
+              {product.family?.name || product.nb_product}
             </Txt>
           </View>
+
+          {product.family ? (
+            // `replace`: cambiar de talla/color no apila una pantalla por opción.
+            <VariantSelector
+              family={product.family}
+              colors={colors}
+              onSelect={(variantSlug) => router.replace(`/product/${variantSlug}`)}
+            />
+          ) : null}
 
           <Surface colors={colors} padding={16} style={{ gap: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>

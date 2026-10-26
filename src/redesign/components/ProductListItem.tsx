@@ -14,6 +14,7 @@ import { getProductPricing } from '@/utils/pricing';
 import { Badge } from '../ui/Badge';
 import { IconButton } from '../ui/IconButton';
 import { FavoriteButton } from './FavoriteButton';
+import { VariantsHint } from './VariantsHint';
 import { PriceBlock } from '../ui/PriceBlock';
 import { StockPill } from '../ui/StockPill';
 import { getStockLevel } from '../ui/stockLevel';
@@ -141,6 +142,12 @@ export const ProductListItem = memo(function ProductListItem({
         <Txt variant="label" colors={colors} numberOfLines={2} style={{ marginTop: 2 }}>
           {product.nb_product}
         </Txt>
+        {product.tx_variant_label ? (
+          <Txt variant="caption" color="muted" colors={colors} numberOfLines={1}>
+            {product.tx_variant_label}
+          </Txt>
+        ) : null}
+        <VariantsHint count={product.variants_count} colors={colors} />
 
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 6, minHeight: 48 }}>
           <View style={{ flex: 1, justifyContent: 'flex-end' }}>

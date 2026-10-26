@@ -13,6 +13,7 @@ import { getProductPricing } from '@/utils/pricing';
 
 import { Badge } from '../ui/Badge';
 import { FavoriteButton } from './FavoriteButton';
+import { VariantsHint } from './VariantsHint';
 import { Button } from '../ui/Button';
 import { PriceBlock } from '../ui/PriceBlock';
 import { StockPill } from '../ui/StockPill';
@@ -139,8 +140,9 @@ export const ProductCard = memo(function ProductCard({
         <PriceBlock product={product} colors={colors} />
       </View>
 
-      <View style={{ minHeight: 16, marginTop: 6, marginBottom: 10 }}>
+      <View style={{ minHeight: 16, marginTop: 6, marginBottom: 10, gap: 2 }}>
         {stock !== undefined && <StockPill level={stock} colors={colors} />}
+        <VariantsHint count={product.variants_count} colors={colors} />
       </View>
 
       <Button
