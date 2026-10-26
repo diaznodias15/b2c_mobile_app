@@ -451,8 +451,10 @@ completo.
   el de siempre. `VariantSelector` navega con `router.replace` al `tx_slug` de la variante elegida
   (conserva los demás ejes). Las cards muestran "+N opciones" con `variants_count` (opciones
   ADICIONALES) y carrito/favoritos muestran `tx_variant_label`. El modo de servidor
-  `VARIANTS_COLLAPSE_CATALOG` (`price_from`/`price_to`) NO se soporta. **Al 2026-10-26 producción
-  aún no manda `family` ni `variants_count`** (verificado con curl): sin probar con datos reales.
+  `VARIANTS_COLLAPSE_CATALOG` (`price_from`/`price_to`) NO se soporta. **Probado con datos reales de
+  producción (2026-10-26, emulador con sesión):** «Duroval 100 mg / 50 mg» muestra el selector «MG»
+  con dos chips; al tocar uno cambian título, imagen, precio, stock, el corazón y la etiqueta bajo
+  el nombre en el carrito. Los destacados (`/top-products`) aún no traen `variants_count`.
 
 - **Escáner de código de barras** (`BarcodeScannerModal`, botón en Buscar): `expo-camera` (paquete
   NATIVO: instalarlo exigió rebuild del dev-client y copiarlo a `C:\dev` con `npm install`). Lee
