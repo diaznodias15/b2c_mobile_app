@@ -24,7 +24,8 @@ export type Advertising = {
   id?: number;
   nb_advertising: string;
   tx_img_url_web: string;
-  tx_img_url_mobile: string;
+  /** El backend ya no lo envía (verificado 2026-10-26): usar `tx_img_url_web`. */
+  tx_img_url_mobile?: string;
   seq_order?: number;
   seq_importance?: number;
 };

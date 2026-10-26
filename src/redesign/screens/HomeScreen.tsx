@@ -27,25 +27,45 @@ import { WhyChooseUs } from '../components/WhyChooseUs';
 import { Txt } from '../ui/Txt';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-/** La publicidad mobile de la API (`tx_img_url_mobile`) viene en formato 1:1. Margen de 16 a cada lado. */
-const BANNER_SIZE = SCREEN_WIDTH - 32;
+/** Margen de 16 a cada lado. El banner es 2:1 (el backend solo manda `tx_img_url_web`). */
+const BANNER_WIDTH = SCREEN_WIDTH - 32;
+const BANNER_HEIGHT = Math.round(BANNER_WIDTH / 2);
 
-/** Banner del carrusel con skeleton propio mientras carga su imagen. */
+/**
+ * Banner del carrusel con skeleton propio mientras carga su imagen. Se muestra entero
+ * (`contain`) sobre una copia desenfocada de sí mismo, así acepta cualquier proporción sin
+ * recortes ni franjas vacías. La copia es decorativa: no se anuncia al lector de pantalla.
+ */
 function AdvertisingBanner({ item, colors }: { item: Advertising; colors: ThemeColors }) {
   const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const uri = item.tx_img_url_web || item.tx_img_url_mobile;
 
   return (
-    <View style={{ width: '100%', height: '100%' }}>
-      {!loaded && (
+    <View style={{ width: '100%', height: '100%', borderRadius: 18, overflow: 'hidden', backgroundColor: colors.section }}>
+      {!loaded && !failed && (
         <Skeleton width="100%" height="100%" borderRadius={18} colors={colors} style={{ position: 'absolute' }} />
       )}
-      <Image
-        source={{ uri: item.tx_img_url_mobile }}
-        style={{ width: '100%', height: '100%', borderRadius: 18, backgroundColor: colors.section }}
-        contentFit="cover"
-        accessibilityLabel={item.nb_advertising}
-        onLoad={() => setLoaded(true)}
-      />
+      {uri && !failed ? (
+        <>
+          <Image
+            source={{ uri }}
+            style={{ position: 'absolute', width: '100%', height: '100%' }}
+            contentFit="cover"
+            blurRadius={20}
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+          />
+          <Image
+            source={{ uri }}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="contain"
+            accessibilityLabel={item.nb_advertising}
+            onLoad={() => setLoaded(true)}
+            onError={() => setFailed(true)}
+          />
+        </>
+      ) : null}
     </View>
   );
 }
@@ -86,7 +106,7 @@ export default function HomeScreen() {
         {advertising.length > 0 && (
           <View style={{ alignItems: 'center', marginTop: 12 }}>
             <Carousel
-              style={{ width: BANNER_SIZE, height: BANNER_SIZE }}
+              style={{ width: BANNER_WIDTH, height: BANNER_HEIGHT }}
               data={advertising}
               loop={advertising.length > 1}
               autoplay={advertising.length > 1}
