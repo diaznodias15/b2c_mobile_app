@@ -10,10 +10,14 @@ import { summarizeBulkResult } from './cartBulkResult';
  * completo; si algo se recortó u omitió (o no entró nada), un diálogo que lista cada producto
  * afectado con su motivo. Devuelve si se agregó al menos un producto.
  */
-export function notifyCartBulkResult(result: CartBulkResult): boolean {
-  const summary = summarizeBulkResult(result);
+export function notifyCartBulkResult(
+  result: CartBulkResult,
+  texts: { message?: string | null; emptyMessage?: string } = {}
+): boolean {
+  const summary = summarizeBulkResult(result, texts);
   if (summary.hasIssues || !summary.anyAdded) {
-    Alert.alert(summary.title, summary.lines.join('\n') || undefined);
+    const body = [summary.detail, ...summary.lines].filter(Boolean).join('\n');
+    Alert.alert(summary.title, body || undefined);
   } else {
     useToastStore.getState().show(summary.title);
   }

@@ -72,7 +72,7 @@ export const FavoriteButton = memo(function FavoriteButton({
 
   const handlePress = () => {
     if (!isAuthenticated) {
-      useToastStore.getState().show('Inicia sesión para guardar tus favoritos.');
+      useToastStore.getState().show('Inicia sesión para guardar tus productos favoritos.');
       return;
     }
     void useFavoritesStore.getState().toggle(slug);

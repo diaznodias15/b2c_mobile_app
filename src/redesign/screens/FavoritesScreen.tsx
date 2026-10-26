@@ -49,7 +49,8 @@ export default function FavoritesScreen() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['favorites', branchId],
-    queryFn: () => getFavorites(branchId as number),
+    // `signal`: al cambiar de sede se cancela la petición anterior (una respuesta vieja no pisa a la nueva).
+    queryFn: ({ signal }) => getFavorites(branchId as number, { signal }),
     enabled: isAuthenticated && branchId !== null,
     // Al volver de otra pantalla puede haber cambiado (corazones, sede): se relee siempre.
     staleTime: 0,
@@ -65,8 +66,11 @@ export default function FavoritesScreen() {
     if (addingAll || branchId === null) return;
     setAddingAll(true);
     try {
-      const { data: result } = await addFavoritesToCart(branchId);
-      const added = notifyCartBulkResult(result);
+      const { data: result, message } = await addFavoritesToCart(branchId);
+      const added = notifyCartBulkResult(result, {
+        message,
+        emptyMessage: 'Ninguno de tus favoritos está disponible en esta sede.',
+      });
       await useCartStore.getState().refreshFromServer(branchId);
       if (added) router.replace('/cart');
     } catch (err) {
@@ -153,8 +157,8 @@ export default function FavoritesScreen() {
             <EmptyState
               colors={colors}
               title="Aún no tienes favoritos"
-              message="Toca el corazón de un producto para guardarlo aquí."
-              action={{ label: 'Explorar productos', onPress: () => router.replace('/') }}
+              message="Toca el corazón en un producto para guardarlo aquí."
+              action={{ label: 'Ir al inicio', onPress: () => router.replace('/') }}
             />
           )
         }

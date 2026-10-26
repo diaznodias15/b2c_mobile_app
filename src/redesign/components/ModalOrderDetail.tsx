@@ -158,8 +158,11 @@ export function ModalOrderDetail({
     if (repeating || !txOrderNumber || branchId === null) return;
     setRepeating(true);
     try {
-      const { data: result } = await repeatOrder(txOrderNumber, branchId);
-      const added = notifyCartBulkResult(result);
+      const { data: result, message } = await repeatOrder(txOrderNumber, branchId);
+      const added = notifyCartBulkResult(result, {
+        message,
+        emptyMessage: 'Ninguno de los productos de la orden está disponible en esta sede.',
+      });
       await useCartStore.getState().refreshFromServer(branchId);
       if (added) {
         onClose();
