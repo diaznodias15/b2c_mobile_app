@@ -5,6 +5,7 @@ import * as SecureStore from '@/utils/secureStorage';
 import { setToken, getToken } from '@/api/axiosRequest';
 import { me } from '@/api/services/auth.services';
 import { useCartStore } from '@/store/cart.store';
+import { useFavoritesStore } from '@/store/favorites.store';
 
 /**
  * Perfil del usuario autenticado. Forma real de `data` en
@@ -67,11 +68,14 @@ export const useUserStore = create<UserState>()(
         // login si falla (el carrito local sigue sirviendo mientras tanto).
         useCartStore.getState().setSyncEnabled(true);
         void useCartStore.getState().syncOnLogin();
+        // Corazones del catálogo: una sola petición por sesión.
+        void useFavoritesStore.getState().load();
       },
       signOut: async () => {
         await setToken(null);
         set({ user: null, isAuthenticated: false, isLoading: false });
         useCartStore.getState().setSyncEnabled(false);
+        useFavoritesStore.getState().reset();
       },
       rehydrateAuth: async () => {
         // Leemos directamente de SecureStore para no depender del
@@ -93,6 +97,7 @@ export const useUserStore = create<UserState>()(
         // local ya persiste entre reinicios y ya se sincronizó cuando
         // se creó.
         useCartStore.getState().setSyncEnabled(true);
+        void useFavoritesStore.getState().load();
         // Datos del perfil al día (y detecta un token ya vencido) sin bloquear el arranque.
         void get().refreshUser();
         return true;

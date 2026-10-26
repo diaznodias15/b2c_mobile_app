@@ -10,6 +10,7 @@ const REMOVE = (slug: string, branchId: number) =>
   `/api/cart/remove-product/${slug}/branch/${branchId}`;
 const CLEAR = (branchId: number) => `/api/cart/clear/branch/${branchId}`;
 const MERGE = (branch: number) => `/api/cart/merge/branch/${branch}`;
+const REPEAT_ORDER = (order: string, branch: number) => `/api/cart/repeat-order/${order}/branch/${branch}`;
 
 export type AddProductPayload = {
   branch_id: number;
@@ -142,4 +143,49 @@ export async function mergeLocalCart(
     url: MERGE(branchId),
     data: { products: items },
   });
+}
+
+/* ============================================================
+ * REPETIR PEDIDO (FRONTEND_REPEAT_ORDER.md)
+ * ============================================================ */
+
+export type CartBulkStatus = 'ADDED' | 'ADJUSTED' | 'SKIPPED';
+export type CartBulkReason =
+  | 'PRODUCT_UNAVAILABLE'
+  | 'OUT_OF_STOCK'
+  | 'ALREADY_MAX_IN_CART'
+  | 'INVALID_QUANTITY';
+
+/** Resultado por producto, igual en "repetir pedido" y en "agregar todos los favoritos". */
+export type CartBulkLine = {
+  tx_slug: string;
+  nb_product: string;
+  qty_requested: number;
+  qty_added: number;
+  status: CartBulkStatus;
+  reason: CartBulkReason | null;
+};
+
+export type CartBulkResult = {
+  added: number;
+  adjusted: number;
+  skipped: number;
+  /** Contador actualizado del carrito de la sede. */
+  cart_items: number;
+  items: CartBulkLine[];
+};
+
+/**
+ * Suma al carrito de la sede los productos de una orden propia. El backend recorta al stock y usa
+ * los precios vigentes; el carrito local se repone con `refreshFromServer` después.
+ */
+export async function repeatOrder(
+  txOrderNumber: string,
+  branchId: number
+): Promise<{ message: string; data: CartBulkResult }> {
+  const res = await axiosRequest<Envelope<CartBulkResult>>({
+    method: 'POST',
+    url: REPEAT_ORDER(txOrderNumber, branchId),
+  });
+  return { message: res.message, data: res.data };
 }

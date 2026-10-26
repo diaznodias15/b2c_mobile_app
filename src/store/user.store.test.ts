@@ -10,6 +10,12 @@ vi.mock('@/api/services/cart.services', () => ({
   getCartItems: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock('@/api/services/favorites.services', () => ({
+  getFavoriteSlugs: vi.fn().mockResolvedValue([]),
+  addFavorite: vi.fn(),
+  removeFavorite: vi.fn(),
+}));
+
 vi.mock('@/api/services/auth.services', () => ({
   me: vi.fn().mockResolvedValue(undefined),
 }));
