@@ -151,6 +151,31 @@ describe('getProductSearch', () => {
     expect(mockAxios.mock.calls[0][0].url).toContain('page=3');
   });
 
+  it('manda exact=1 solo cuando se pide', async () => {
+    mockAxios.mockResolvedValue({ status: 'OK', data: [], pagination: {} });
+    await getProductSearch({ branch: 1, product: 'x' });
+    expect(mockAxios.mock.calls[0][0].url).not.toContain('exact');
+    await getProductSearch({ branch: 1, product: 'x', exact: true });
+    expect(mockAxios.mock.calls[1][0].url).toContain('exact=1');
+  });
+
+  it('devuelve la aproximación cuando el backend la avisa', async () => {
+    mockAxios.mockResolvedValueOnce({
+      status: 'OK',
+      data: [sampleProduct],
+      pagination: { total: 1, last_page: 1 },
+      metadata: { min_price: 1, max_price: 2, approximate: true, original_term: 'CAPSULAX', matched_term: 'CAPSUL' },
+    } as any);
+    const res = await getProductSearch({ branch: 1, product: 'capsulax' });
+    expect(res.approximation).toEqual({ original_term: 'CAPSULAX', matched_term: 'CAPSUL' });
+    expect(res.metadata).toMatchObject({ min_price: 1, max_price: 2 });
+  });
+
+  it('approximation es null si no hubo aproximación', async () => {
+    mockAxios.mockResolvedValueOnce({ status: 'OK', data: [sampleProduct], pagination: {}, metadata: { min_price: 1 } } as any);
+    expect((await getProductSearch({ branch: 1, product: 'x' })).approximation).toBeNull();
+  });
+
   it('propaga AbortSignal', async () => {
     mockAxios.mockResolvedValueOnce({ status: 'OK', data: [], pagination: {} });
     const ctrl = new AbortController();

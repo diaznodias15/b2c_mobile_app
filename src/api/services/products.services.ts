@@ -7,6 +7,7 @@ import type {
   ProductDetail,
 } from '@/types/whitelabel';
 import { toQueryString } from '@/utils/queryParams';
+import { adaptSearchApproximation, type SearchApproximation } from '@/utils/searchApproximation';
 import { familyAdapter } from '@/utils/variants';
 
 const TOP_PRODUCTS = '/api/products/top-products';
@@ -19,6 +20,11 @@ export type PaginatedProducts = {
   items: Product[];
   pagination: Pagination;
   metadata?: PriceMetadata;
+  /**
+   * Solo en `getProductSearch`: `null` si lo escrito dio resultados; con datos si el backend
+   * mostró productos similares (hay que avisarlo, y esa respuesta es de una sola página).
+   */
+  approximation?: SearchApproximation | null;
 };
 
 /* ============================================================
@@ -103,6 +109,8 @@ export type GetProductSearchParams = {
   page?: number;
   min_price?: number;
   max_price?: number;
+  /** Pide exactamente lo escrito, sin aproximar (el backend solo acepta `1`/`true`). */
+  exact?: boolean;
   signal?: AbortSignal;
 };
 
@@ -120,9 +128,10 @@ export async function getProductSearch(
   if (params.page != null) qs.page = params.page;
   if (params.min_price != null) qs.min_price = params.min_price;
   if (params.max_price != null) qs.max_price = params.max_price;
+  if (params.exact) qs.exact = 1;
 
   const envelope = await axiosRequest<
-    Envelope<Product[]> & { pagination?: Pagination; metadata?: PriceMetadata }
+    Envelope<Product[]> & { pagination?: Pagination; metadata?: unknown }
   >({
     method: 'GET',
     url: `${SEARCH}${toQueryString(qs)}`,
@@ -132,7 +141,8 @@ export async function getProductSearch(
   return {
     items: envelope.data ?? [],
     pagination: envelope.pagination ?? {},
-    metadata: envelope.metadata,
+    metadata: envelope.metadata as PriceMetadata | undefined,
+    approximation: adaptSearchApproximation(envelope.metadata),
   };
 }
 
