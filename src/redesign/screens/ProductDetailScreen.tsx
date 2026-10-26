@@ -25,6 +25,7 @@ import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
 import { getProductPricing } from '@/utils/pricing';
 import { getProductDetailView } from '@/utils/productDetailState';
 
+import { FavoriteButton } from '../components/FavoriteButton';
 import { ProductDetailSkeleton, PRODUCT_DETAIL_IMAGE_HEIGHT } from '../components/ProductDetailSkeleton';
 import { QuantityStepper } from '../components/QuantityStepper';
 import { TopProducts } from '../components/TopProducts';
@@ -329,6 +330,9 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       <BackButton onPress={() => router.back()} top={insets.top} />
+      <View style={{ position: 'absolute', top: insets.top + 6, right: 8 }}>
+        <FavoriteButton slug={product.tx_slug} productName={product.nb_product} colors={colors} />
+      </View>
 
       <View
         style={{

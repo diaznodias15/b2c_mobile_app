@@ -13,19 +13,25 @@ import {
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronDown, CircleAlert, CircleCheck, CircleX, X } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { ChevronDown, CircleAlert, CircleCheck, CircleX, RotateCcw, X } from 'lucide-react-native';
 
 import type { PaginatedOrders } from '@/api/services/orders.services';
+import { repeatOrder } from '@/api/services/cart.services';
 import { getOrderDetail } from '@/api/services/orders.services';
 import { Skeleton } from '@/components/Skeleton';
+import { selectEffectiveBranchId, useBranchStore } from '@/store/branch.store';
+import { useCartStore } from '@/store/cart.store';
 import { hexToRgba, type ThemeColors } from '@/theme/colors';
 import type { OrderDetail, OrderProductItem } from '@/types/orders';
 import { formatPrice } from '@/utils/currency';
+import { notifyCartBulkResult } from '@/utils/notifyCartBulkResult';
 import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
 import { describeStatusRefresh, patchOrderStatusInPage } from '@/utils/orderList';
 import { FULFILLMENT_LABELS, getOrderStatusConfig, PAYMENT_METHOD_LABELS } from '@/utils/orderStatus';
 import { getOrderStatusStep } from '@/utils/orderStatusStep';
 
+import { Button } from '../ui/Button';
 import { IconButton } from '../ui/IconButton';
 import { Surface } from '../ui/Surface';
 import { MIN_TOUCH } from '../ui/tokens';
@@ -85,7 +91,10 @@ export function ModalOrderDetail({
   colors: ThemeColors;
 }) {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const queryClient = useQueryClient();
+  const branchId = useBranchStore(selectEffectiveBranchId);
+  const [repeating, setRepeating] = useState(false);
   // `true` solo durante una recarga voluntaria: salta el anti-duplicados de `axiosRequest`.
   const freshRef = useRef(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -137,6 +146,33 @@ export function ModalOrderDetail({
     } finally {
       freshRef.current = false;
       setRefreshing(false);
+    }
+  };
+
+  /**
+   * "Repetir pedido": suma al carrito de la sede ACTUAL los productos de esta orden. El backend
+   * recorta al stock y usa los precios vigentes, así que se avisa qué quedó incompleto y se repone
+   * el carrito local desde el servidor antes de abrirlo.
+   */
+  const handleRepeat = async () => {
+    if (repeating || !txOrderNumber || branchId === null) return;
+    setRepeating(true);
+    try {
+      const { data: result } = await repeatOrder(txOrderNumber, branchId);
+      const added = notifyCartBulkResult(result);
+      await useCartStore.getState().refreshFromServer(branchId);
+      if (added) {
+        onClose();
+        router.replace('/cart');
+      }
+    } catch (err) {
+      showNote(
+        txOrderNumber,
+        err instanceof Error && err.message ? err.message : 'No se pudo repetir el pedido. Inténtalo de nuevo.',
+        true
+      );
+    } finally {
+      setRepeating(false);
     }
   };
 
@@ -271,6 +307,15 @@ export function ModalOrderDetail({
               <OrderProductsList items={data.product_items} colors={colors} />
 
               <OrderTotals data={data} colors={colors} />
+
+              <Button
+                label="Repetir pedido"
+                icon={RotateCcw}
+                onPress={() => void handleRepeat()}
+                loading={repeating}
+                disabled={branchId === null}
+                colors={colors}
+              />
             </>
           )}
         </ScrollView>

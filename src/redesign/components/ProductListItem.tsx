@@ -13,6 +13,7 @@ import { getProductPricing } from '@/utils/pricing';
 
 import { Badge } from '../ui/Badge';
 import { IconButton } from '../ui/IconButton';
+import { FavoriteButton } from './FavoriteButton';
 import { PriceBlock } from '../ui/PriceBlock';
 import { StockPill } from '../ui/StockPill';
 import { getStockLevel } from '../ui/stockLevel';
@@ -131,6 +132,10 @@ export const ProductListItem = memo(function ProductListItem({
             </Txt>
           </View>
           {stock !== undefined && <StockPill level={stock} colors={colors} />}
+          {/* Márgenes negativos: el botón de 48 dp no engorda la fila de la marca. */}
+          <View style={{ marginVertical: -16, marginRight: -8 }}>
+            <FavoriteButton slug={product.tx_slug} productName={product.nb_product} colors={colors} />
+          </View>
         </View>
 
         <Txt variant="label" colors={colors} numberOfLines={2} style={{ marginTop: 2 }}>

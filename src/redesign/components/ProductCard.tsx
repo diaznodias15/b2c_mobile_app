@@ -12,6 +12,7 @@ import { UNAVAILABLE_PRODUCT_IMAGE } from '@/utils/localImages.generated';
 import { getProductPricing } from '@/utils/pricing';
 
 import { Badge } from '../ui/Badge';
+import { FavoriteButton } from './FavoriteButton';
 import { Button } from '../ui/Button';
 import { PriceBlock } from '../ui/PriceBlock';
 import { StockPill } from '../ui/StockPill';
@@ -116,6 +117,9 @@ export const ProductCard = memo(function ProductCard({
             <Badge label={`-${Number(product.qty_discount)}%`} colors={colors} />
           </View>
         )}
+        <View style={{ position: 'absolute', top: 0, right: 0 }}>
+          <FavoriteButton slug={product.tx_slug} productName={product.nb_product} colors={colors} />
+        </View>
       </View>
 
       <Txt variant="caption" color="muted" colors={colors} numberOfLines={1}>
