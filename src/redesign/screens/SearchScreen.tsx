@@ -3,7 +3,7 @@ import { ActivityIndicator, FlatList, Pressable, TextInput, View } from 'react-n
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Clock, PackageSearch, ScanBarcode, Search as SearchIcon, X } from 'lucide-react-native';
+import { Clock, PackageSearch, ScanBarcode, Search as SearchIcon, TriangleAlert, X } from 'lucide-react-native';
 
 import { getProductSearch } from '@/api/services/products.services';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
@@ -14,8 +14,9 @@ import { selectEffectiveBranchId, useBranchStore } from '@/store/branch.store';
 import { useThemeColors } from '@/store/config.store';
 import { useDepartmentStore } from '@/store/department.store';
 import { useSearchHistoryStore } from '@/store/searchHistory.store';
-import type { ThemeColors } from '@/theme/colors';
+import { hexToRgba, type ThemeColors } from '@/theme/colors';
 import type { Product } from '@/types/whitelabel';
+import { getApproximationNotice } from '@/utils/searchApproximation';
 
 import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
 import { BottomTabs } from '../components/bottom-tabs';
@@ -72,6 +73,9 @@ export default function SearchScreen() {
   const products = data?.pages.flatMap((page) => page.items) ?? [];
   const total = data?.pages[0]?.pagination.total;
   const showSkeleton = isQueryValid && isLoading;
+  // El backend mostró productos similares porque lo escrito no dio resultados: se avisa SIEMPRE y
+  // esa respuesta es de una sola página (no se pagina).
+  const approximation = isQueryValid ? (data?.pages[0]?.approximation ?? null) : null;
 
   // Estable con `useCallback`: las filas están memoizadas y reciben estas funciones como props.
   const handlePressProduct = useCallback(
@@ -153,11 +157,31 @@ export default function SearchScreen() {
         keyboardShouldPersistTaps="handled"
         onEndReachedThreshold={0.5}
         onEndReached={() => {
-          if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+          if (hasNextPage && !isFetchingNextPage && !approximation) void fetchNextPage();
         }}
         renderItem={renderItem}
         ListHeaderComponent={
-          isQueryValid && !showSkeleton && total != null && products.length > 0 ? (
+          approximation && !showSkeleton && products.length > 0 ? (
+            <View
+              accessibilityRole="alert"
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+                padding: 12,
+                borderRadius: 12,
+                backgroundColor: hexToRgba(colors.warning, 0.14),
+                marginBottom: 2,
+              }}
+            >
+              <TriangleAlert size={18} color={colors.warning} />
+              <View style={{ flex: 1 }}>
+                <Txt variant="label" colors={colors} style={{ fontWeight: '500' }}>
+                  {getApproximationNotice(approximation, query)}
+                </Txt>
+              </View>
+            </View>
+          ) : isQueryValid && !showSkeleton && total != null && products.length > 0 ? (
             <Txt variant="caption" color="muted" colors={colors} style={{ marginBottom: 2 }}>
               {total} {total === 1 ? 'resultado' : 'resultados'} para «{debouncedQuery}»
             </Txt>
