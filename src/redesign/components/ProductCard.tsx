@@ -118,7 +118,7 @@ export const ProductCard = memo(function ProductCard({
             <Badge label={`-${Number(product.qty_discount)}%`} colors={colors} />
           </View>
         )}
-        <View style={{ position: 'absolute', top: 0, right: 0 }}>
+        <View style={{ position: 'absolute', top: 6, right: 6 }}>
           <FavoriteButton slug={product.tx_slug} productName={product.nb_product} colors={colors} />
         </View>
       </View>

@@ -347,8 +347,9 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       <BackButton onPress={() => router.back()} top={insets.top} />
-      <View style={{ position: 'absolute', top: insets.top + 6, right: 8 }}>
-        <FavoriteButton slug={product.tx_slug} productName={product.nb_product} colors={colors} />
+      {/* Mismo tamaño y altura que el botón de volver (44), simétricos a ambos lados. */}
+      <View style={{ position: 'absolute', top: insets.top + 8, right: 12 }}>
+        <FavoriteButton slug={product.tx_slug} productName={product.nb_product} colors={colors} size={44} />
       </View>
 
       <View

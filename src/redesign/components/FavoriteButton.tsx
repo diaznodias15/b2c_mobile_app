@@ -9,10 +9,17 @@ import { hexToRgba, type ThemeColors } from '@/theme/colors';
 
 import { MIN_TOUCH } from '../ui/tokens';
 
+/** Círculo visible de 36: sobre la foto de una card pesaba demasiado a 48. */
+const DEFAULT_SIZE = 36;
+
 /**
  * Corazón de favoritos (solo clientes con sesión). El favorito es el **producto**, no depende de
  * la sede. Sin sesión avisa que hay que iniciarla. No es optimista: se rellena cuando el backend
  * confirma; mientras tanto se atenúa y ignora toques repetidos (ver `favorites.store`).
+ *
+ * Tamaño: el círculo visible es de 36 (ícono de 20), pero el área táctil sigue siendo de 48 dp
+ * porque `hitSlop` rellena la diferencia (mínimo de Android). Sobre una foto lleva un fondo claro
+ * casi opaco con borde fino, para que el corazón se lea sobre cualquier imagen.
  *
  * Al pasar a favorito (ya confirmado) el corazón da un "pop" breve. Es la única animación y se
  * omite con *reducir movimiento*: se consulta solo en ese momento (no hay un listener por cada
@@ -25,12 +32,15 @@ export const FavoriteButton = memo(function FavoriteButton({
   productName,
   colors,
   plain = false,
+  size = DEFAULT_SIZE,
 }: {
   slug: string;
   productName: string;
   colors: ThemeColors;
   /** Sin fondo: para filas donde el botón no va sobre una imagen. */
   plain?: boolean;
+  /** Lado VISIBLE del círculo; el área táctil se completa hasta 48 dp con `hitSlop`. */
+  size?: number;
 }) {
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const isFavorite = useFavoritesStore((s) => s.slugs.includes(slug));
@@ -72,24 +82,27 @@ export const FavoriteButton = memo(function FavoriteButton({
     <Pressable
       onPress={handlePress}
       disabled={isPending}
+      hitSlop={Math.max(0, (MIN_TOUCH - size) / 2)}
       accessibilityRole="button"
       accessibilityLabel={
         isFavorite ? `Quitar ${productName} de favoritos` : `Agregar ${productName} a favoritos`
       }
       accessibilityState={{ selected: isFavorite, busy: isPending }}
       style={({ pressed }) => ({
-        width: MIN_TOUCH,
-        height: MIN_TOUCH,
-        borderRadius: MIN_TOUCH / 2,
+        width: size,
+        height: size,
+        borderRadius: size / 2,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: plain ? 'transparent' : hexToRgba(colors.background, 0.85),
+        backgroundColor: plain ? 'transparent' : hexToRgba(colors.productCard, 0.92),
+        borderWidth: plain ? 0 : 1,
+        borderColor: hexToRgba(colors.border, 0.8),
         opacity: isPending ? 0.5 : pressed ? 0.8 : 1,
       })}
     >
       <Animated.View style={{ transform: [{ scale }] }}>
         <Heart
-          size={22}
+          size={Math.round(size * 0.55)}
           color={isFavorite ? colors.danger : colors.muted}
           fill={isFavorite ? colors.danger : 'transparent'}
         />
