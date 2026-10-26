@@ -134,8 +134,8 @@ export const ProductListItem = memo(function ProductListItem({
           </View>
           {stock !== undefined && <StockPill level={stock} colors={colors} />}
           {/* Márgenes negativos: el botón de 48 dp no engorda la fila de la marca. */}
-          <View style={{ marginVertical: -16, marginRight: -8 }}>
-            <FavoriteButton slug={product.tx_slug} productName={product.nb_product} colors={colors} />
+          <View style={{ marginVertical: -14, marginRight: -10 }}>
+            <FavoriteButton slug={product.tx_slug} productName={product.nb_product} colors={colors} plain />
           </View>
         </View>
 

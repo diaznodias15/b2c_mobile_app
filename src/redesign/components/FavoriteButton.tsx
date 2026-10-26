@@ -20,10 +20,13 @@ export const FavoriteButton = memo(function FavoriteButton({
   slug,
   productName,
   colors,
+  plain = false,
 }: {
   slug: string;
   productName: string;
   colors: ThemeColors;
+  /** Sin fondo: para filas donde el botón no va sobre una imagen. */
+  plain?: boolean;
 }) {
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const isFavorite = useFavoritesStore((s) => s.slugs.includes(slug));
@@ -52,7 +55,7 @@ export const FavoriteButton = memo(function FavoriteButton({
         borderRadius: MIN_TOUCH / 2,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: hexToRgba(colors.background, 0.85),
+        backgroundColor: plain ? 'transparent' : hexToRgba(colors.background, 0.85),
         opacity: isPending ? 0.5 : pressed ? 0.8 : 1,
       })}
     >
