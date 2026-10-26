@@ -7,6 +7,7 @@ import type { CartItemFromBackend } from '@/api/services/cart.services';
 import { useToastStore } from '@/store/toast.store';
 import type { CartItem } from '@/types/cart';
 import { clampToAvailability, getAvailableUnits } from '@/utils/cartStock';
+import { toMergeItems } from '@/utils/cartMerge';
 
 /**
  * Carrito con dos modos:
@@ -271,11 +272,11 @@ export const useCartStore = create<CartState>()(
           try {
             for (const branchId of branchIds) {
               const itemsForBranch = localItems.filter((i) => i.branch_id === branchId);
+              const mergeItems = toMergeItems(itemsForBranch);
+              // Sin líneas válidas el backend respondería 400: no se llama y se conserva lo local.
+              if (mergeItems.length === 0) continue;
               try {
-                await cartApi.mergeLocalCart(
-                  branchId,
-                  itemsForBranch.map((i) => ({ tx_slug: i.tx_slug, qty_product: i.qty }))
-                );
+                await cartApi.mergeLocalCart(branchId, mergeItems);
                 const remoteItems = await cartApi.getCartItems(branchId);
                 const otherBranchesItems = get().items.filter((i) => i.branch_id !== branchId);
                 set({
@@ -283,6 +284,10 @@ export const useCartStore = create<CartState>()(
                 });
               } catch (err) {
                 console.warn(`[cart.store] No se pudo sincronizar el carrito de la sede ${branchId}:`, err);
+                // El carrito local queda intacto: se avisa en vez de perder lo que armó el cliente.
+                useToastStore
+                  .getState()
+                  .show(err instanceof Error && err.message ? err.message : 'No pudimos agregar los productos de tu carrito a tu cuenta.');
               }
             }
           } finally {
