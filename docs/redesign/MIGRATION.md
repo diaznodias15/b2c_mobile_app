@@ -129,5 +129,5 @@ Fuente: `b2c_app/docs/novedades-features.md` (la app web). Cada fila es un commi
 | 1 Favoritos | hecho y probado con sesión | `FavoriteButton`, `favorites.store`, ruta `/favorites` desde Perfil. En las filas el corazón va junto al botón "+" (arriba chocaba con el nombre). Animación "pop" al marcar (omitida con *reducir movimiento*, que se consulta solo en ese momento). |
 | G3 Variantes | hecho, **sin probar con datos reales** | Producción aún no manda `family` ni `variants_count`. No se soporta `VARIANTS_COLLAPSE_CATALOG`. |
 | G4 Escáner de barras | hecho, lectura real sin probar | `expo-camera` (nativo: rebuild). Probado en emulador el permiso, la cámara y la entrada manual; falta un teléfono real o una imagen con código en la cámara virtual. |
-| G5 Lite + `TBD` | ya estaba | Sigue bloqueado por el backend (debe aceptar `TBD`). |
+| G5 Lite + `TBD` | hecho | El backend ya acepta `fulfillment_type = "TBD"` (confirmado por el equipo, 2026-10-26): los pedidos Lite ya no dan 400. |
 | 6 Variantes de diseño, 11 Kiosko | no aplican | Son de la web. |
