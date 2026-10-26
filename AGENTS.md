@@ -454,6 +454,13 @@ completo.
   `VARIANTS_COLLAPSE_CATALOG` (`price_from`/`price_to`) NO se soporta. **Al 2026-10-26 producción
   aún no manda `family` ni `variants_count`** (verificado con curl): sin probar con datos reales.
 
+- **Escáner de código de barras** (`BarcodeScannerModal`, botón en Buscar): `expo-camera` (paquete
+  NATIVO: instalarlo exigió rebuild del dev-client y copiarlo a `C:\dev` con `npm install`). Lee
+  EAN-13/8, UPC-A/E y Code 128 y exige 2 lecturas consecutivas iguales (`utils/barcode.ts`); el código
+  se usa como término de búsqueda (no hay endpoint propio). Siempre hay entrada manual. La cámara
+  existe solo con el modal abierto. El permiso se declara en `app.json` (`recordAudioAndroid: false`:
+  no se pide micrófono). **Sin probar en dispositivo real**: hace falta un APK nuevo.
+
 ## Mapa de rutas y BottomTabs (`src/redesign/components/bottom-tabs.tsx`)
 
 5 tabs: **Inicio** (`/`), **Departamentos** (`/departments`; la tab se

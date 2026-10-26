@@ -55,6 +55,13 @@
       "expo-image",
       "expo-secure-store",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Usamos la cámara para leer el código de barras de un producto.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
         "expo-location",
         {
           "locationWhenInUsePermission": "Usamos tu ubicación para sugerirte la sede más cercana."

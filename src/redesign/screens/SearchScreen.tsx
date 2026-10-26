@@ -3,7 +3,7 @@ import { ActivityIndicator, FlatList, Pressable, TextInput, View } from 'react-n
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Clock, PackageSearch, Search as SearchIcon, X } from 'lucide-react-native';
+import { Clock, PackageSearch, ScanBarcode, Search as SearchIcon, X } from 'lucide-react-native';
 
 import { getProductSearch } from '@/api/services/products.services';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
@@ -17,6 +17,7 @@ import { useSearchHistoryStore } from '@/store/searchHistory.store';
 import type { ThemeColors } from '@/theme/colors';
 import type { Product } from '@/types/whitelabel';
 
+import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
 import { BottomTabs } from '../components/bottom-tabs';
 import { ProductListItem } from '../components/ProductListItem';
 import { ProductListItemSkeleton } from '../components/ProductListItemSkeleton';
@@ -56,6 +57,7 @@ export default function SearchScreen() {
   const departments = useDepartmentStore((s) => s.departments);
 
   const [query, setQuery] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(query.trim(), DEBOUNCE_MS);
   const isQueryValid = debouncedQuery.length >= MIN_QUERY_LENGTH;
 
@@ -131,6 +133,14 @@ export default function SearchScreen() {
               <X size={20} color={colors.muted} />
             </Pressable>
           )}
+          <Pressable
+            onPress={() => setScannerOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Escanear código de barras"
+            style={{ width: MIN_TOUCH, height: MIN_TOUCH, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <ScanBarcode size={22} color={colors.primary} />
+          </Pressable>
         </View>
       </View>
 
@@ -184,6 +194,14 @@ export default function SearchScreen() {
         }
       />
       <BottomTabs />
+
+      {/* El código leído se usa como término de búsqueda (no hay endpoint propio). */}
+      <BarcodeScannerModal
+        visible={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onDetect={setQuery}
+        colors={colors}
+      />
     </View>
   );
 }
