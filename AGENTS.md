@@ -464,8 +464,9 @@ completo.
 - **Búsqueda aproximada** (doc 19 §F, `b2c_app/docs/mobile/19-novedades-octubre-2026.md`): si lo escrito no
   da resultados el backend puede responder productos similares con `metadata.approximate`
   (`utils/searchApproximation.ts`); Buscar lo avisa y NO pagina esa respuesta. `getProductSearch`
-  acepta `exact: true` (`exact=1`). Depende de la rama `improve-search`: **al 2026-10-26 producción
-  no manda el campo**, así que solo hay tests, sin probar con datos reales.
+  acepta `exact: true` (`exact=1`). **Producción ya la manda** (verificado con curl y en el emulador
+  Android: «capsulax» → 5 productos de Capsuven con el aviso, sin paginación; «gasa» → 13 resultados
+  sin aviso).
 
 ## Mapa de rutas y BottomTabs (`src/redesign/components/bottom-tabs.tsx`)
 
