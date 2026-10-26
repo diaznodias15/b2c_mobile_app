@@ -182,3 +182,49 @@ describe('onUnauthorized', () => {
 afterEach(() => {
   vi.restoreAllMocks();
 });
+
+describe('429 (demasiadas solicitudes)', () => {
+  const tooMany = (retryAfter?: string) => ({
+    response: { status: 429, data: { message: 'Too Many Requests' }, headers: retryAfter ? { 'retry-after': retryAfter } : {} },
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('reintenta un GET respetando Retry-After y entrega la respuesta', async () => {
+    vi.mocked(axiosInstance.request)
+      .mockRejectedValueOnce(tooMany('2'))
+      .mockResolvedValueOnce({ data: { ok: true } });
+
+    const promise = axiosRequest({ url: '/api/retry-ok' });
+    await vi.advanceTimersByTimeAsync(1999);
+    expect(axiosInstance.request).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(2);
+    await expect(promise).resolves.toEqual({ ok: true });
+    expect(axiosInstance.request).toHaveBeenCalledTimes(2);
+  });
+
+  it('tras agotar los reintentos lanza un error con status y retryAfterMs', async () => {
+    vi.mocked(axiosInstance.request).mockRejectedValue(tooMany('1'));
+
+    const promise = axiosRequest({ url: '/api/retry-fail' });
+    const assertion = expect(promise).rejects.toMatchObject({ status: 429, retryAfterMs: 1000 });
+    await vi.advanceTimersByTimeAsync(5000);
+    await assertion;
+    expect(axiosInstance.request).toHaveBeenCalledTimes(3); // 1 intento + 2 reintentos
+  });
+
+  it('NUNCA reintenta un POST', async () => {
+    vi.mocked(axiosInstance.request).mockRejectedValue(tooMany('1'));
+
+    await expect(axiosRequest({ method: 'POST', url: '/api/orders/create', data: {} })).rejects.toMatchObject({
+      status: 429,
+    });
+    expect(axiosInstance.request).toHaveBeenCalledTimes(1);
+  });
+});

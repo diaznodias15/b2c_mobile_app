@@ -1,4 +1,11 @@
 import { create, type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import { useToastStore } from '@/store/toast.store';
+import {
+  getRetryDelayMs,
+  RATE_LIMIT_MAX_RETRIES,
+  RATE_LIMIT_MESSAGE,
+  RATE_LIMIT_NOTICE_WINDOW_MS,
+} from '@/utils/rateLimit';
 import * as SecureStore from '@/utils/secureStorage';
 import { API_BASE_URL, API_TIMEOUT_MS } from './config';
 
@@ -9,7 +16,9 @@ import { API_BASE_URL, API_TIMEOUT_MS } from './config';
  * - Inyecta token desde SecureStore (Keychain/Keystore).
  * - Timeout 60s por defecto.
  * - Soporta AbortController vía `signal`.
- * - Reintentos opcionales.
+ * - Un GET que recibe 429 se reintenta hasta 2 veces respetando `Retry-After`
+ *   (ver `utils/rateLimit.ts`). POST/PUT/DELETE NUNCA se repiten solos: crear
+ *   una orden o tocar el carrito no debe duplicarse.
  *
  * Las funciones de servicio (en services/*) consumen este wrapper;
  * nunca se llama axios directo desde la UI.
@@ -78,6 +87,32 @@ function makeKey(method: string, url: string, data?: unknown): string {
   return `${method.toUpperCase()}::${url}::${data ? JSON.stringify(data) : ''}`;
 }
 
+let lastRateLimitNoticeAt = 0;
+
+/** Un solo aviso de "muchas solicitudes" por ventana, aunque fallen varias peticiones. */
+function notifyRateLimited(): void {
+  const now = Date.now();
+  if (now - lastRateLimitNoticeAt < RATE_LIMIT_NOTICE_WINDOW_MS) return;
+  lastRateLimitNoticeAt = now;
+  useToastStore.getState().show(RATE_LIMIT_MESSAGE);
+}
+
+/** Espera `ms`; si se cancela con `signal`, resuelve `false` para abandonar sin error. */
+function waitCancelable(ms: number, signal?: AbortSignal): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (signal?.aborted) return resolve(false);
+    const onAbort = () => {
+      clearTimeout(timer);
+      resolve(false);
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve(true);
+    }, ms);
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
 export async function axiosRequest<T = unknown>(
   options: RequestOptions
 ): Promise<T> {
@@ -93,8 +128,29 @@ export async function axiosRequest<T = unknown>(
     }
   }
 
-  const promise = instance
-    .request<T>({ method, url, data, signal, ...rest })
+  const isGet = method.toUpperCase() === 'GET';
+
+  // Los reintentos viven DENTRO de la promesa registrada en `ongoing`: mientras espera, la
+  // petición sigue "en curso" y la deduplicación no lanza otra igual.
+  const send = async (): Promise<{ data: T }> => {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await instance.request<T>({ method, url, data, signal, ...rest });
+      } catch (err: any) {
+        const status = err?.response?.status;
+        if (status !== 429) throw err;
+        const delay = getRetryDelayMs(attempt, err?.response?.headers?.['retry-after']);
+        err.retryAfterMs = delay;
+        if (!isGet || attempt >= RATE_LIMIT_MAX_RETRIES) {
+          notifyRateLimited();
+          throw err;
+        }
+        if (!(await waitCancelable(delay, signal))) throw err;
+      }
+    }
+  };
+
+  const promise = send()
     .then((res) => {
       history.set(key, Date.now());
       return res.data;
@@ -115,7 +171,10 @@ export async function axiosRequest<T = unknown>(
       // Re-throw con mensaje limpio del backend.
       const backendMessage =
         err?.response?.data?.message || err?.message || 'Error de red';
-      throw new Error(backendMessage);
+      const error = new Error(backendMessage) as Error & { status?: number; retryAfterMs?: number };
+      if (err?.response?.status) error.status = err.response.status;
+      if (typeof err?.retryAfterMs === 'number') error.retryAfterMs = err.retryAfterMs;
+      throw error;
     })
     .finally(() => {
       ongoing.delete(key);
