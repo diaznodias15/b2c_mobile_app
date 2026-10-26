@@ -28,11 +28,33 @@ const initialState: Pick<BranchState, 'branchTree' | 'selectedBranch'> = {
   selectedBranch: null,
 };
 
+/**
+ * La sede elegida se persiste entre visitas, pero puede haberse inhabilitado o cambiado de datos
+ * en el backend. Al llegar el árbol vigente se resuelve contra él: se toma la versión fresca por
+ * `value` y, si ya no existe, se descarta (el selector efectivo cae a la sede por defecto). Con un
+ * árbol vacío se conserva (una respuesta incompleta no debe borrar la elección del usuario).
+ */
+export function reconcileSelectedBranch(
+  tree: BranchGroup[],
+  selected: BranchItem | null
+): BranchItem | null {
+  if (!selected || tree.length === 0) return selected;
+  for (const group of tree) {
+    const fresh = group.items.find((item) => item.value === selected.value);
+    if (fresh) return fresh;
+  }
+  return null;
+}
+
 export const useBranchStore = create<BranchState>()(
   persist(
     (set) => ({
       ...initialState,
-      setBranchTree: (tree) => set({ branchTree: tree }),
+      setBranchTree: (tree) =>
+        set((state) => ({
+          branchTree: tree,
+          selectedBranch: reconcileSelectedBranch(tree, state.selectedBranch),
+        })),
       setSelectedBranch: (b) => set({ selectedBranch: b }),
       reset: () => set(initialState),
     }),

@@ -57,6 +57,24 @@ describe('useBranchStore', () => {
     expect(useBranchStore.getState().branchTree[0].items).toHaveLength(2);
   });
 
+  it('setBranchTree conserva la sede elegida y la refresca con los datos vigentes', () => {
+    useBranchStore.getState().setSelectedBranch({ ...itemB, label: 'Nombre viejo' });
+    useBranchStore.getState().setBranchTree(tree);
+    expect(useBranchStore.getState().selectedBranch).toBe(itemB);
+  });
+
+  it('setBranchTree descarta la sede elegida si ya no existe en el árbol', () => {
+    useBranchStore.getState().setSelectedBranch({ ...itemB, value: 99 });
+    useBranchStore.getState().setBranchTree(tree);
+    expect(useBranchStore.getState().selectedBranch).toBeNull();
+  });
+
+  it('setBranchTree con un árbol vacío no borra la elección', () => {
+    useBranchStore.getState().setSelectedBranch(itemA);
+    useBranchStore.getState().setBranchTree([]);
+    expect(useBranchStore.getState().selectedBranch).toEqual(itemA);
+  });
+
   it('setBranchTree does NOT auto-select a branch', () => {
     useBranchStore.getState().setBranchTree(tree);
     expect(useBranchStore.getState().selectedBranch).toBeNull();
