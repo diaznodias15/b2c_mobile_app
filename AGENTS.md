@@ -141,7 +141,7 @@ coincide con esas versiones. Hay que compilar un dev-client.
   cambios. Excluir la carpeta de Windows Defender NO alcanza. La copia de
   trabajo para builds nativos vive en `C:\dev\b2c_mobile_app` (fuera de
   OneDrive); el repo real/fuente de verdad para git sigue siendo la carpeta
-  de OneDrive. Si movés/copiás el proyect, no uses `robocopy /XJ` sobre
+  de OneDrive. Si mueves/copias el proyect, no uses `robocopy /XJ` sobre
   `node_modules` (excluye symlinks/junctions y rompe paquetes anidados
   como `expo/node_modules/@expo/cli`) — copiá todo excepto `node_modules`
   y corré `npm install` fresco en el destino.
@@ -342,8 +342,8 @@ sí era idéntica ya no está copiada 3 veces.
 Regla general del proyecto (surgió al notar que la lógica de
 "agregar al carrito" se había copiado 3 veces en vez de compartirse):
 cuando el mismo dato se necesita en varios componentes con **layouts
-distintos**, no fuerces un único componente — extraé la lógica pura a
-un hook/util y dejá que cada componente arme su propio JSX. Ejemplos
+distintos**, no fuerces un único componente — extrae la lógica pura a
+un hook/util y deja que cada componente arme su propio JSX. Ejemplos
 ya establecidos:
 
 - `useAddToCartFlight()` (arriba) — la lógica del flying-to-cart.
@@ -365,8 +365,8 @@ ya establecidos:
   componente completo.
 
 Cuando dudes si extraer: si el JSX que envuelve la lógica es
-sustancialmente distinto entre los call sites, extraé solo la lógica
-(hook/util). Si el JSX también es igual (o casi), extraé el componente
+sustancialmente distinto entre los call sites, extrae solo la lógica
+(hook/util). Si el JSX también es igual (o casi), extrae el componente
 completo.
 
 ## Bugs de datos ya resueltos (no reintroducir)
@@ -421,9 +421,11 @@ completo.
   (`useCurrencyStore`). Si se agrega código nuevo que toque precios, no
   asumir USD — la base es Bs.
 
-## Mapa de rutas y BottomTabs (`src/components/bottom-tabs.tsx`)
+## Mapa de rutas y BottomTabs (`src/redesign/components/bottom-tabs.tsx`)
 
-5 tabs: **Inicio** (`/`), **Departamentos** (`/departments`), **Buscar**
+5 tabs: **Inicio** (`/`), **Departamentos** (`/departments`; la tab se
+muestra como "Categorías" porque a 12 px no cabe — constante `NAV_TABS`, el
+lector de pantalla sigue diciendo "Departamentos"), **Buscar**
 (`/search`), **Carrito** (`/cart`, con badge de `selectCartCount`) y
 **Ver Más** (abre un `<Modal>` nativo de RN, no navega directo) con
 **Perfil** (`/profile`) y **Ayuda** (`/help`).
@@ -439,9 +441,9 @@ está en la lista de `Stack.Screen` con `animation: 'slide_from_right'`
 funcione (ver el comentario ahí sobre por qué el default global es
 `animation: 'none'`).
 
-`help.tsx` sigue siendo un placeholder tab (mismo patrón que las demás
-screens: `<Text className="text-2xl font-bold text-foreground">` +
-`<BottomTabs />`) — falta implementar de verdad.
+`help.tsx` reexporta `HelpScreen` (`redesign/screens/`): WhatsApp, teléfono,
+correo y datos de la sede activa, leídos de la config del backend. Aún no hay
+enlaces a términos/privacidad ni recuperación de contraseña.
 
 ## "Mis órdenes" (`src/app/orders.tsx`) — basado en `16-mis-ordenes.md` (`b2c_app/docs/mobile/`)
 

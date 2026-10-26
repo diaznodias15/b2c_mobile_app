@@ -1,6 +1,7 @@
 # Rediseño UI/UX e-commerce — plan y convenciones
 
-Rama: `rediseno`. Objetivo: una alternativa de interfaz pensada para
+Estado: el rediseño ya vive en `developer` (la rama `rediseno` ya no existe). Seguimiento por paso en [`MIGRATION.md`](./MIGRATION.md).
+Objetivo: una alternativa de interfaz pensada para
 conversión en e-commerce (descubrir → comparar → agregar → pagar), **sin tocar
 los archivos actuales** y adoptable pantalla por pantalla.
 

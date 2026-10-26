@@ -79,6 +79,10 @@ verificados en el código actual; el resto se confirma al diseñar cada pieza.
 
 ## Checklist por paso
 
+Plantilla de aceptación: se aplica a cada paso al cerrarlo (no se marca aquí;
+el resultado de cada paso queda en §Seguimiento, incluido lo que quedó sin
+probar).
+
 - [ ] `npm run typecheck`, `npm run lint` (archivos tocados) y `npm test` en verde.
 - [ ] Mismas props que el original; ningún llamador necesita otro cambio.
 - [ ] Objetivos táctiles ≥48 dp; ningún texto <12 px.

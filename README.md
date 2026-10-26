@@ -188,7 +188,8 @@ emulador es `x86_64` y el build de desarrollo las necesita.
 
 `npm run web` abre la versión web (útil para iterar layout; algunas pantallas
 dependen de módulos nativos). iOS requiere macOS + Xcode (`npm run ios`) y
-está sin validar: el `bundleIdentifier` de `app.json` es provisional.
+está sin validar. El `bundleIdentifier` (`com.maraplus.app`) es el definitivo
+y no debe cambiarse tras publicar.
 
 ### Conectar un dispositivo físico por LAN
 
@@ -348,7 +349,8 @@ la lógica pura va en archivos aparte (ver `utils/orderStatusStep.ts`).
 
 ## Contribuir
 
-- **Ramas**: `developer` para trabajo en curso, `main` solo para releases.
+- **Ramas**: `developer` para trabajo en curso, `main` solo para releases
+  (la rama local `master` es antigua; no se usa).
 - **Commits**: [Conventional Commits](https://www.conventionalcommits.org/)
   (`feat:`, `fix:`, `chore:`, `perf:`…).
 - **Tests**: la lógica nueva (api, stores, utils) viene con su `*.test.ts`
