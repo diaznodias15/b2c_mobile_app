@@ -421,6 +421,19 @@ completo.
   (`useCurrencyStore`). Si se agrega código nuevo que toque precios, no
   asumir USD — la base es Bs.
 
+- **Publicidad del Home: solo `tx_img_url_web`** (verificado 2026-10-26: el backend ya no
+  manda `tx_img_url_mobile`). El banner es 2:1, `contain` sobre una copia desenfocada.
+
+- **Error 429**: `axiosRequest` reintenta los GET hasta 2 veces respetando `Retry-After` y
+  muestra un único toast por ventana de 5 s (`utils/rateLimit.ts`). POST/PUT/DELETE nunca se
+  repiten solos. El error lanzado trae `status` y `retryAfterMs`.
+
+- **Contraseñas**: símbolos válidos = todo el ASCII imprimible (`PASSWORD_SYMBOLS` en
+  `utils/validations.ts`), misma lista que la web y el backend; sin espacios ni acentos.
+
+- **Sede elegida**: `setBranchTree` la resuelve contra las sedes vigentes (si ya no existe, se
+  descarta y cae a la `is_default`).
+
 ## Mapa de rutas y BottomTabs (`src/redesign/components/bottom-tabs.tsx`)
 
 5 tabs: **Inicio** (`/`), **Departamentos** (`/departments`; la tab se
