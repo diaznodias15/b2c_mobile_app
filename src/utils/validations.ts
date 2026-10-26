@@ -17,12 +17,25 @@ export function isEmailValid(value: string): boolean {
  * (registro, cambio de contraseña) pueda iterarlos y mostrar cada uno
  * como cumplido/pendiente sin duplicar los regex.
  */
+/**
+ * Símbolos válidos en una contraseña: todo el ASCII imprimible que no es letra ni dígito
+ * (rangos \x21-\x2F, \x3A-\x40, \x5B-\x60 y \x7B-\x7E). Misma lista que la web
+ * (`PASSWORD_SYMBOLS_SOURCE`) y que el backend: cualquier cambio debe replicarse en ambos.
+ */
+export const PASSWORD_SYMBOLS = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~';
+
+// Dentro de una clase de caracteres solo hay que escapar `\`, `]`, `^` y `-`.
+const SYMBOLS_CLASS = PASSWORD_SYMBOLS.replace(/[\\\]^-]/g, '\\$&');
+
 export const PASSWORD_REQUIREMENTS: { re: RegExp; label: string }[] = [
   { re: /[0-9]/, label: 'Un número' },
   { re: /[a-z]/, label: 'Una minúscula' },
   { re: /[A-Z]/, label: 'Una mayúscula' },
-  { re: /[$&+,:;=?@#<>.^*()%!-]/, label: 'Un símbolo' },
+  { re: new RegExp(`[${SYMBOLS_CLASS}]`), label: 'Un símbolo' },
 ];
+
+/** Solo letras ASCII, dígitos y los símbolos válidos (sin espacios ni acentos). */
+const PASSWORD_ALLOWED_CHARS_RE = new RegExp(`^[A-Za-z0-9${SYMBOLS_CLASS}]+$`);
 
 /**
  * Política real del backend (AUTH_WEB_FLOWS.md): 8-40 caracteres,
@@ -33,6 +46,7 @@ export const PASSWORD_REQUIREMENTS: { re: RegExp; label: string }[] = [
 export function isPasswordValid(value: string, requireStrong = true): boolean {
   if (value.length < 8 || value.length > 40) return false;
   if (!requireStrong) return true;
+  if (!PASSWORD_ALLOWED_CHARS_RE.test(value)) return false;
   return PASSWORD_REQUIREMENTS.every((r) => r.re.test(value));
 }
 

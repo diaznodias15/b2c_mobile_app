@@ -8,6 +8,7 @@ import {
   DOC_TYPES,
   PAYMENT_METHODS,
   GENDER_OPTIONS,
+  PASSWORD_SYMBOLS,
 } from './validations';
 
 describe('isEmailValid', () => {
@@ -55,6 +56,24 @@ describe('isPasswordValid', () => {
   it('accepts strong password (8-40, minúscula+mayúscula+dígito+especial)', () => {
     expect(isPasswordValid('C0mpl3j0!')).toBe(true);
     expect(isPasswordValid('Secreto1$')).toBe(true);
+  });
+
+  it.each([...PASSWORD_SYMBOLS])('acepta el símbolo %s', (symbol) => {
+    expect(isPasswordValid(`Abcdef1${symbol}`)).toBe(true);
+  });
+
+  it('PASSWORD_SYMBOLS cubre todo el ASCII imprimible que no es letra ni dígito', () => {
+    const expected: string[] = [];
+    for (let c = 0x21; c <= 0x7e; c++) {
+      const ch = String.fromCharCode(c);
+      if (!/[A-Za-z0-9]/.test(ch)) expected.push(ch);
+    }
+    expect([...PASSWORD_SYMBOLS].sort()).toEqual(expected.sort());
+  });
+
+  it('rechaza espacios y caracteres acentuados', () => {
+    expect(isPasswordValid('Abcdef1! x')).toBe(false);
+    expect(isPasswordValid('Abcdéf1!')).toBe(false);
   });
 
   it('rejects passwords longer than 40 chars', () => {
