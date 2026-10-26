@@ -63,6 +63,10 @@ export default function RootLayout() {
           options={{ animation: 'slide_from_right', gestureEnabled: true, gestureDirection: 'horizontal' }}
         />
         <Stack.Screen
+          name="favorites"
+          options={{ animation: 'slide_from_right', gestureEnabled: true, gestureDirection: 'horizontal' }}
+        />
+        <Stack.Screen
           name="checkout"
           options={{ animation: 'slide_from_right', gestureEnabled: true, gestureDirection: 'horizontal' }}
         />

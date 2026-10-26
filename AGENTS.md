@@ -434,6 +434,18 @@ completo.
 - **Sede elegida**: `setBranchTree` la resuelve contra las sedes vigentes (si ya no existe, se
   descarta y cae a la `is_default`).
 
+- **Favoritos** (`favorites.store`, `favorites.services`, `FavoriteButton`, ruta `/favorites` desde
+  Perfil): el favorito es el producto, no la sede. El store guarda solo los slugs, no se persiste y
+  `user.store` lo carga al iniciar sesión y lo vacía al cerrarla. **No es optimista**: el corazón
+  cambia cuando el backend confirma. "Mis favoritos" reutiliza `ProductListItem` vía
+  `favoriteToProduct` (`utils/favorites.ts`); un favorito con `is_in_branch: false` se muestra
+  "No disponible en esta sede".
+
+- **Repetir pedido** (botón en `ModalOrderDetail`) y "Agregar todos" de favoritos comparten la
+  respuesta por línea `ADDED/ADJUSTED/SKIPPED` (`utils/cartBulkResult.ts` +
+  `utils/notifyCartBulkResult.ts`): toast si todo entró, diálogo con el motivo de cada producto
+  incompleto. Siempre se repone el carrito con `refreshFromServer` antes de abrirlo.
+
 ## Mapa de rutas y BottomTabs (`src/redesign/components/bottom-tabs.tsx`)
 
 5 tabs: **Inicio** (`/`), **Departamentos** (`/departments`; la tab se

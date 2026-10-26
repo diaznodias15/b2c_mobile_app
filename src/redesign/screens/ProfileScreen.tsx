@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronRight, KeyRound, LogIn, LogOut, Package, User } from 'lucide-react-native';
+import { ChevronRight, Heart, KeyRound, LogIn, LogOut, Package, User } from 'lucide-react-native';
 
 import { logout as logoutRequest } from '@/api/services/auth.services';
 import { ModuleMaintenance } from '@/components/ModuleMaintenance';
@@ -132,6 +132,14 @@ export default function ProfileScreen() {
             hint="Revisa el estado de tus pedidos"
             onPress={() => push('/orders')}
             colors={colors}
+          />
+          <NavRow
+            icon={<Heart size={22} color={colors.primary} />}
+            label="Mis favoritos"
+            hint="Tus productos guardados"
+            onPress={() => push('/favorites')}
+            colors={colors}
+            bordered
           />
           <NavRow
             icon={<KeyRound size={22} color={colors.primary} />}
