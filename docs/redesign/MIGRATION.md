@@ -126,7 +126,7 @@ Fuente: `b2c_app/docs/novedades-features.md` (la app web). Cada fila es un commi
 | G7 Recordar sede | hecho | La persistida se resuelve contra `/config/get` (`reconcileSelectedBranch`). |
 | G8 Error 429 | hecho | GET con reintentos y `Retry-After`; nunca POST/PUT/DELETE. |
 | 2 Repetir pedido | hecho y probado con sesión | Botón en `ModalOrderDetail`; resumen compartido con favoritos (`utils/cartBulkResult.ts`). |
-| 1 Favoritos | hecho y probado con sesión | `FavoriteButton`, `favorites.store`, ruta `/favorites` desde Perfil. En las filas el corazón va junto al botón "+" (arriba chocaba con el nombre). Pendiente: animación "pop" (respetando *reducir movimiento*). |
+| 1 Favoritos | hecho y probado con sesión | `FavoriteButton`, `favorites.store`, ruta `/favorites` desde Perfil. En las filas el corazón va junto al botón "+" (arriba chocaba con el nombre). Animación "pop" al marcar (omitida con *reducir movimiento*, que se consulta solo en ese momento). |
 | G3 Variantes | hecho, **sin probar con datos reales** | Producción aún no manda `family` ni `variants_count`. No se soporta `VARIANTS_COLLAPSE_CATALOG`. |
 | G4 Escáner de barras | hecho, lectura real sin probar | `expo-camera` (nativo: rebuild). Probado en emulador el permiso, la cámara y la entrada manual; falta un teléfono real o una imagen con código en la cámara virtual. |
 | G5 Lite + `TBD` | ya estaba | Sigue bloqueado por el backend (debe aceptar `TBD`). |
