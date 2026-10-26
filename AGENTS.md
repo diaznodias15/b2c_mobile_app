@@ -461,6 +461,12 @@ completo.
   existe solo con el modal abierto. El permiso se declara en `app.json` (`recordAudioAndroid: false`:
   no se pide micrófono). **Sin probar en dispositivo real**: hace falta un APK nuevo.
 
+- **Búsqueda aproximada** (doc 19 §F, `b2c_app/docs/mobile/19-novedades-octubre-2026.md`): si lo escrito no
+  da resultados el backend puede responder productos similares con `metadata.approximate`
+  (`utils/searchApproximation.ts`); Buscar lo avisa y NO pagina esa respuesta. `getProductSearch`
+  acepta `exact: true` (`exact=1`). Depende de la rama `improve-search`: **al 2026-10-26 producción
+  no manda el campo**, así que solo hay tests, sin probar con datos reales.
+
 ## Mapa de rutas y BottomTabs (`src/redesign/components/bottom-tabs.tsx`)
 
 5 tabs: **Inicio** (`/`), **Departamentos** (`/departments`; la tab se

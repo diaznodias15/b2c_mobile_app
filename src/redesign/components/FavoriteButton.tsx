@@ -21,9 +21,9 @@ const DEFAULT_SIZE = 36;
  * porque `hitSlop` rellena la diferencia (mínimo de Android). Sobre una foto lleva un fondo claro
  * casi opaco con borde fino, para que el corazón se lea sobre cualquier imagen.
  *
- * Al pasar a favorito (ya confirmado) el corazón da un "pop" breve. Es la única animación y se
- * omite con *reducir movimiento*: se consulta solo en ese momento (no hay un listener por cada
- * card de una lista).
+ * Mientras la petición va en vuelo el corazón "late" (opacidad) y, al confirmarse un favorito
+ * nuevo, da un "pop" breve. Ambas animaciones se omiten con *reducir movimiento* (el latido queda
+ * como una opacidad fija): se consulta solo en ese momento, sin un listener por cada card.
  *
  * Los selectores devuelven booleanos primitivos, así que son seguros con Zustand.
  */
@@ -47,6 +47,35 @@ export const FavoriteButton = memo(function FavoriteButton({
   const isPending = useFavoritesStore((s) => s.pending.includes(slug));
 
   const scale = useRef(new Animated.Value(1)).current;
+  const pulse = useRef(new Animated.Value(1)).current;
+
+  // Latido mientras el backend responde.
+  useEffect(() => {
+    if (!isPending) return;
+    let cancelled = false;
+    let loop: Animated.CompositeAnimation | null = null;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .catch(() => false)
+      .then((reduce) => {
+        if (cancelled) return;
+        if (reduce) {
+          pulse.setValue(0.5);
+          return;
+        }
+        loop = Animated.loop(
+          Animated.sequence([
+            Animated.timing(pulse, { toValue: 0.35, duration: 350, useNativeDriver: true }),
+            Animated.timing(pulse, { toValue: 0.85, duration: 350, useNativeDriver: true }),
+          ])
+        );
+        loop.start();
+      });
+    return () => {
+      cancelled = true;
+      loop?.stop();
+      pulse.setValue(1);
+    };
+  }, [isPending, pulse]);
   // Solo anima al CAMBIAR a favorito, no al montar una card que ya lo era.
   const wasFavorite = useRef(isFavorite);
 
@@ -97,10 +126,10 @@ export const FavoriteButton = memo(function FavoriteButton({
         backgroundColor: plain ? 'transparent' : hexToRgba(colors.productCard, 0.92),
         borderWidth: plain ? 0 : 1,
         borderColor: hexToRgba(colors.border, 0.8),
-        opacity: isPending ? 0.5 : pressed ? 0.8 : 1,
+        opacity: pressed ? 0.8 : 1,
       })}
     >
-      <Animated.View style={{ transform: [{ scale }] }}>
+      <Animated.View style={{ opacity: pulse, transform: [{ scale }] }}>
         <Heart
           size={Math.round(size * 0.55)}
           color={isFavorite ? colors.danger : colors.muted}
