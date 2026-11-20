@@ -1,6 +1,6 @@
 # Rediseño UI/UX e-commerce — plan y convenciones
 
-Estado: el rediseño ya vive en `developer` (la rama `rediseno` ya no existe). Seguimiento por paso en [`MIGRATION.md`](./MIGRATION.md).
+Estado (2026-11-20): **fases 0 a 3 terminadas y activadas** en `developer` (la rama `rediseno` ya no existe); los componentes y vistas originales fueron retirados. Solo queda la fase 4 opcional (fuentes, modo oscuro, animaciones). Seguimiento por paso en [`MIGRATION.md`](./MIGRATION.md).
 Objetivo: una alternativa de interfaz pensada para
 conversión en e-commerce (descubrir → comparar → agregar → pagar), **sin tocar
 los archivos actuales** y adoptable pantalla por pantalla.

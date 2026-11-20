@@ -11,6 +11,12 @@ farmacias venezolana. Permite a los clientes:
   del backend
 - Iniciar sesión, registrarse, ver su perfil y "Mis órdenes" (con el estado
   de cada pedido, que se puede refrescar bajando con el dedo)
+- **Repetir un pedido** anterior y guardar **favoritos** (con "Agregar todos"
+  al carrito)
+- Elegir **variantes** de un producto (p. ej. «100 mg / 50 mg»)
+- Buscar con historial, **escáner de código de barras** y aviso de resultados
+  aproximados cuando lo escrito no coincide exacto
+- Pedir ayuda (WhatsApp, teléfono, correo y datos de la sede activa)
 
 Construida con **React Native + Expo SDK 57**. El objetivo principal es
 **Android** (se prueba en emulador y dispositivo real); iOS y Web existen en
@@ -20,6 +26,13 @@ soporte de TV.
 > Antes de tocar código, lee [`AGENTS.md`](./AGENTS.md): documenta las
 > decisiones de arquitectura, los bugs ya resueltos y las convenciones.
 > Este README cubre solo setup, comandos y estructura.
+
+| Documento | Contenido |
+|---|---|
+| [`AGENTS.md`](./AGENTS.md) (`CLAUDE.md` lo importa) | Estado del proyecto, arquitectura, trampas y convenciones |
+| [`docs/redesign/DESIGN-SYSTEM.md`](./docs/redesign/DESIGN-SYSTEM.md) | Sistema de diseño: principios, roles de color, tipografía, primitivas |
+| [`docs/redesign/MIGRATION.md`](./docs/redesign/MIGRATION.md) | Plan y seguimiento del rediseño y de la paridad con la web |
+| [`CHANGELOG.md`](./CHANGELOG.md) | Historial de cambios por hitos |
 
 ---
 
@@ -35,9 +48,11 @@ soporte de TV.
 - **Formularios**: estado local de React + validadores propios
   (`utils/validations.ts`, `utils/phone.ts`, `utils/passwordChange.ts`)
 - **react-native-reanimated** 4 + **worklets**, **react-native-keyboard-controller**,
-  **react-native-webview** (mapas con Leaflet/OpenStreetMap)
-- **Vitest** (tests de lógica: API, stores, utils, theme; no hay tests de
-  pantallas)
+  **react-native-webview** (mapas con Leaflet/OpenStreetMap),
+  **expo-camera** (escáner de código de barras; nativo, exige rebuild),
+  **expo-location** (GPS del mapa de entrega)
+- **Vitest** (51 archivos / 499 tests de lógica: API, stores, utils, theme; no
+  hay tests de pantallas)
 
 Backend: `https://api-maraplus.icommerce360.com`. El whitelabel (colores,
 RIF, contacto, tasa de cambio, modo Lite, sedes, departamentos, publicidad,
@@ -191,6 +206,13 @@ dependen de módulos nativos). iOS requiere macOS + Xcode (`npm run ios`) y
 está sin validar. El `bundleIdentifier` (`com.maraplus.app`) es el definitivo
 y no debe cambiarse tras publicar.
 
+### Publicación en tiendas
+
+`app.json` y `eas.json` ya están preparados: perfiles `development`, `preview`
+(APK interno liviano) y `production` (AAB con `autoIncrement`). La versión de
+la app es `1.0.0`. El escáner de barras pide permiso de cámara (texto en
+`app.json`) y **no** pide micrófono.
+
 ### Conectar un dispositivo físico por LAN
 
 ```bash
@@ -237,6 +259,7 @@ src/
 │   ├── help.tsx          # Ayuda (contacto y sede, leídos de la config)
 │   ├── login.tsx · register.tsx
 │   ├── orders.tsx        # Mis órdenes (desde Perfil)
+│   ├── favorites.tsx     # Mis favoritos (desde Perfil)
 │   ├── checkout.tsx      # Checkout Lite / Full
 │   ├── product/[slug].tsx
 │   ├── products/[department].tsx  # Listado + filtros por departamento
@@ -246,7 +269,8 @@ src/
 │   ├── ui/               # primitivas: Txt, Surface, Button, IconButton, Chip,
 │   │                     # Badge, TextField, SelectField, PriceBlock, StockPill…
 │   ├── components/       # componentes por vista (ProductCard, bottom-tabs,
-│   │                     # CartLineItem, CheckoutPagoStep, ModalOrderDetail…)
+│   │                     # CartLineItem, CheckoutPagoStep, ModalOrderDetail,
+│   │                     # FavoriteButton, VariantSelector, BarcodeScannerModal…)
 │   └── screens/          # el cuerpo de cada pantalla (HomeScreen, CartScreen…)
 ├── components/           # piezas compartidas que no son del rediseño:
 │                         #  Providers, Toast, FlyingCartOverlay, Skeleton, Footer,
@@ -256,11 +280,11 @@ src/
 ├── api/
 │   ├── axiosRequest.ts   # wrapper: token, anti-duplicados 5 s, onUnauthorized
 │   ├── config.ts         # API_BASE_URL, timeout
-│   └── services/         # auth, cart, config, orders, payment-methods,
+│   └── services/         # auth, cart, config, favorites, orders, payment-methods,
 │                         # products, utilities (+ un .test.ts por servicio)
 ├── store/                # Zustand: config, branch, department, advertising,
 │                         # brands, user, ui, cart, cartTimer, checkout,
-│                         # currency, flyingCart, toast, searchHistory
+│                         # currency, favorites, flyingCart, toast, searchHistory
 ├── hooks/                # useAddToCartFlight, useListAddToCart, useCartTimer,
 │                         # useDisplayCurrency, useRefreshControl,
 │                         # useSafePush, useSlowLoading, useDebouncedValue
@@ -271,7 +295,9 @@ src/
 │                         # orderStatus(Step), orderList, orderPayload,
 │                         # passwordChange, productDetailState, refreshGuard,
 │                         # navigation, validations, queryParams, contact,
-│                         # productFilters, searchHistory,
+│                         # productFilters, searchHistory, rateLimit, barcode,
+│                         # variants, favorites, cartMerge, cartBulkResult,
+│                         # notifyCartBulkResult, searchApproximation,
 │                         # secureStorage (.native / .web)
 ├── types/                # cart, checkout, orders, whitelabel
 ├── test/setup.ts         # setup de Vitest
@@ -283,7 +309,7 @@ patches/                  # parches de patch-package (react-native,
 Navegación: 5 tabs (**Inicio, Categorías, Buscar, Carrito, Ver más**; "Categorías" abre Departamentos);
 "Ver más" abre un modal con la moneda de precios, **Mi perfil** (o **Iniciar
 sesión** si no hay sesión) y Ayuda. Las demás pantallas (`login`, `register`,
-`orders`, `checkout`, `product/[slug]`) son rutas del stack con animación
+`orders`, `favorites`, `checkout`, `product/[slug]`, `products/[department]`) son rutas del stack con animación
 `slide_from_right`. Detalle completo en `AGENTS.md`.
 
 ---

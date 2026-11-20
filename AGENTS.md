@@ -28,6 +28,33 @@ Reglas del rediseño (detalle y justificación en `docs/redesign/DESIGN-SYSTEM.m
 - Una pantalla nueva = archivo en `redesign/screens/` + ruta que reexporta. Lo que no se pueda probar sin
   sesión se puede ver con datos de muestra en la galería (`maraplus_mobile_app://redesign-gallery`, solo `__DEV__`).
 
+# Estado del proyecto (actualizado 2026-11-20)
+
+- **Rama de trabajo:** `developer` (`main` solo para releases). Versión de la app `1.0.0`;
+  `app.json`/`eas.json` ya están preparados para tiendas (ids `com.maraplus.app`).
+- **Rediseño UI/UX:** fases 0 a 3 terminadas y activadas (incluido el checkout Full v2). Solo queda
+  la **fase 4 opcional** (fuentes con `expo-font`, modo oscuro, animaciones de entrada). Seguimiento
+  paso a paso en `docs/redesign/MIGRATION.md`.
+- **Paridad con la web (sept–oct 2026):** banners, símbolos de contraseña, validación del merge del
+  carrito, recordar sede, error 429, repetir pedido, favoritos, variantes de producto, escáner de
+  barras, búsqueda aproximada y `TBD` en Lite. Detalle en `MIGRATION.md` §Paridad con la web y en
+  `CHANGELOG.md`.
+- **Pruebas:** Vitest, 51 archivos / 499 tests de lógica (api, stores, utils, theme); no hay tests de
+  pantallas. Antes de commitear: `npm run typecheck && npm test`.
+- **Pendiente de verificar en dispositivo real:** lectura real del escáner de barras (hace falta un
+  APK nuevo con `expo-camera`), el mapa y la cotización de envío del checkout Full, y los formularios
+  de pago (Pago móvil/Zelle/Transferencia: requieren sesión). No se crean pedidos de prueba contra
+  producción.
+- **Datos de relleno en producción:** la config trae contacto de ejemplo (`example@example.com`,
+  `Calle 77`, `0422-9876543`) y `brands: []`, `departments[].categories: []`; hay que cargarlos en el
+  admin. Es un tema de datos, no de la app.
+- **No existe aún:** recuperación de contraseña, pantallas de términos/privacidad, modo oscuro.
+
+**Mapa de documentación:** `README.md` (setup, comandos, estructura) · este archivo (decisiones y
+trampas) · `docs/redesign/DESIGN-SYSTEM.md` (principios, tokens y primitivas de UI) ·
+`docs/redesign/MIGRATION.md` (plan y seguimiento del rediseño) · `CHANGELOG.md` (historial por hitos).
+Al terminar un cambio relevante, actualiza el que corresponda **en el mismo commit**.
+
 # Arquitectura actual (actualizado 2026-10-08)
 
 ## Providers (`src/app/_layout.tsx` + `src/components/Providers.tsx`)
@@ -262,10 +289,10 @@ Si se sube un asset nuevo a `assets/images/`, recordar copiarlo también a
 `C:\dev\b2c_mobile_app\assets\images\` (ver "Entorno de build local" abajo)
 o Metro no lo va a encontrar al bundlear desde ahí.
 
-## Home (`src/app/index.tsx`) — orden de secciones y patrón de título
+## Home (`src/app/index.tsx` → `HomeScreen`) — orden de secciones y patrón de título
 
-De arriba hacia abajo: `HomeNavbar` (fijo, fuera del `ScrollView`) →
-carrusel de publicidad (1:1, `react-native-reanimated-carousel`) →
+De arriba hacia abajo: `HomeNavbar` (fijo, fuera del `ScrollView`) → `DepartmentChips` →
+carrusel de publicidad (2:1, `react-native-reanimated-carousel`) →
 `TopProducts` ("Más vendidos") → grid de `DepartmentCard` → `WhyChooseUs`
 → `DeliveryBanner` → `BrandsMarquee`.
 
@@ -478,6 +505,11 @@ lector de pantalla sigue diciendo "Departamentos"), **Buscar**
 (`/search`), **Carrito** (`/cart`, con badge de `selectCartCount`) y
 **Ver Más** (abre un `<Modal>` nativo de RN, no navega directo) con
 **Perfil** (`/profile`) y **Ayuda** (`/help`).
+
+**Rutas del stack (sin tabs)**: `login`, `register`, `orders`, `favorites`, `checkout`,
+`product/[slug]`, `products/[department]`. `favorites` ("Mis favoritos") también se alcanza solo desde
+Perfil. Las pantallas viven en `src/redesign/screens/`; los nombres de archivo de las secciones de
+abajo (`cart.tsx`, `profile.tsx`…) son la ruta que las reexporta.
 
 **`/orders` ("Pedidos") NO está en el menú "Ver más" a propósito** —
 pedido explícito del usuario: se accede solo desde `ProfileActionCard`

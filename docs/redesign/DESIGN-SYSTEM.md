@@ -1,5 +1,8 @@
 # Sistema de diseño del rediseño
 
+> Estado: **implementado y activo** en toda la app (fases 0–3, ver `MIGRATION.md`). Este documento es
+> la referencia viva para pantallas nuevas; la guía de código está en `AGENTS.md`.
+
 Generado con la skill `ui-ux-pro-max` (consulta `--design-system` para
 "pharmacy ecommerce health trust mobile" + guías de React Native y UX) y
 **adaptado a las restricciones reales del proyecto**. Lo que la skill
@@ -49,13 +52,12 @@ el texto (patrón ya usado en la navbar), no con hex fijos.
 
 ## 3. Tipografía
 
-La app hoy muestra la fuente del sistema (`theme/typography.ts` declara
-*Plus Jakarta Sans* e *Inter* pero **nunca se cargan** en nativo y ningún
-componente usa esa escala).
+**Estado (2026-11-20):** la app usa la fuente del sistema con la escala única de abajo (`TYPE` en
+`redesign/ui/tokens.ts`, aplicada por `Txt`) y **ningún texto menor a 12 px**. `theme/typography.ts`
+declara *Plus Jakarta Sans* e *Inter* pero **nunca se cargan**; las fuentes personalizadas son la
+fase 4 opcional (abajo).
 
-**Fase 1 (sin riesgo):** fuente del sistema, pero con una escala única y
-**mínimo 12 px** (hoy hay textos de 10 y 10.5 px, p. ej. marca y precio
-tachado en `ProductCard`). Escala del rediseño:
+Escala del rediseño:
 
 | Token | Tamaño / interlineado | Peso | Uso |
 |---|---|---|---|
@@ -97,6 +99,29 @@ de accesibilidad:
 | `PriceBlock` | Precio final + tachado + `-N%` + etiqueta de IVA, usando `getProductPricing`/`formatDisplayPrice` |
 | `StockPill` | Estado de stock (texto + punto de color) con `STOCK_META` de `utils/stock.ts` |
 | `Skeleton` | Reusa el `Skeleton` actual |
+| `Badge` | Pastillas pequeñas (`-N%`, estados) con texto ≥12 px |
+| `TextField` | Etiqueta **siempre visible**, alto 48, error en línea junto al campo, icono, mostrar/ocultar contraseña de 48 dp, `autoComplete` |
+| `SelectField` | Campo de selección (banco, moneda…) con hoja de búsqueda y filas de 56 dp |
+| `LinkButton` | Enlace/acción terciaria con área táctil de 48 |
+| `useReduceMotion` | Hook que lee *reducir movimiento*; lo usan marquee, "pop" del corazón y entradas de login |
+
+`Button` tiene variantes `primary`, `secondary`, `ghost` y `danger` y estado `loading`;
+`IconButton` también acepta `loading`. Las constantes (`TYPE`, `MIN_TOUCH = 48`,
+`MAX_FONT_SCALE = 1.3`) viven en `ui/tokens.ts`.
+
+### Patrones compuestos (en `redesign/components/`)
+
+- **Barra de acción fija inferior** (detalle, carrito, checkout): Total grande + desglose plegable +
+  un único CTA; sombra `Shadows.md`; respeta safe areas.
+- **Tarjeta de producto / fila**: precio como jerarquía principal, `StockPill`, `-N%`, "+N opciones"
+  (variantes) y `FavoriteButton`. En la fila el corazón va junto al "+", no arriba (chocaba con el nombre).
+- **`FavoriteButton`**: círculo de 36 con área táctil de 48 por `hitSlop`, sin fondo en filas, "pop"
+  al marcar y latido mientras responde el backend (fijos con *reducir movimiento*).
+- **Cabecera de marca de login/registro** (`AuthHeader` + `AuthTrustStrip`): fondo tintado con
+  `primaryOverlay`, tarjeta de formulario superpuesta, sello de confianza.
+- **Pasos del checkout** (`CheckoutStepHeader`): "Paso N de 2" con progreso.
+- **Estado de pedido**: barra de 5 segmentos + texto ("Procesando · Paso 3 de 5"), nunca solo color.
+- **Aviso de qué falta** bajo un botón deshabilitado (registro, checkout).
 
 ## 6. Interacción y movimiento
 
@@ -111,7 +136,7 @@ de accesibilidad:
 
 ## 7. Accesibilidad (criterio de aceptación)
 
-- Objetivo táctil ≥48×48 dp (hoy el botón "+" de `ProductCard` mide 28×28).
+- Objetivo táctil ≥48×48 dp (el "+" de `ProductCard` era de 28 y ahora cumple con `hitSlop`).
 - Todo control con `accessibilityLabel` y `accessibilityRole`; estados
   (`selected`, `busy`, `disabled`) en `accessibilityState`.
 - Soportar texto grande del sistema sin cortar precios (probar al 130 %).
